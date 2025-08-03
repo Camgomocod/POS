@@ -1,7 +1,8 @@
 # main.py
 import sys
 from PyQt5.QtWidgets import QApplication
-from views.pos_window import POSWindow
+from PyQt5.QtCore import Qt
+from controllers.app_controller import AppController
 from utils.database import init_database
 
 def main():
@@ -14,13 +15,21 @@ def main():
     # Crear aplicación PyQt5
     app = QApplication(sys.argv)
     app.setApplicationName("POS RestauranteFast")
-    app.setApplicationVersion("1.0")
+    app.setApplicationVersion("2.0")
     app.setStyle('Fusion')  # Estilo moderno
     
-    # Crear y mostrar ventana principal
-    print("🎨 Cargando interfaz principal...")
-    window = POSWindow()
-    window.show()
+    # Configuraciones adicionales para mejor apariencia
+    app.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    app.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    
+    print("🔐 Iniciando sistema de autenticación...")
+    
+    # Crear controlador principal de la aplicación
+    app_controller = AppController()
+    
+    # Iniciar aplicación con login
+    app_controller.start_application()
+    
     print("✅ Sistema POS listo para usar!")
     
     # Ejecutar aplicación

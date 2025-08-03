@@ -3,6 +3,7 @@ from models.category import Category
 from models.product import Product
 from models.order import Order, OrderStatus
 from models.order_item import OrderItem
+from models.user import User, UserRole
 from datetime import datetime, timedelta
 import random
 
@@ -117,6 +118,51 @@ def init_database():
         # Actualizar total de la orden
         order.total = total
         db.commit()
+    
+    print("  👥 Creando usuarios por defecto...")
+    # Crear usuarios por defecto
+    default_users = [
+        {
+            "username": "admin",
+            "password": "admin123",
+            "full_name": "Administrador Principal",
+            "email": "admin@restaurantefast.com",
+            "role": UserRole.ADMIN
+        },
+        {
+            "username": "usuario",
+            "password": "usuario123", 
+            "full_name": "Usuario Regular",
+            "email": "usuario@restaurantefast.com",
+            "role": UserRole.REGULAR
+        },
+        {
+            "username": "cajero",
+            "password": "cajero123",
+            "full_name": "Cajero Principal",
+            "email": "cajero@restaurantefast.com", 
+            "role": UserRole.REGULAR
+        },
+        {
+            "username": "gerente",
+            "password": "gerente123",
+            "full_name": "Gerente de Restaurante",
+            "email": "gerente@restaurantefast.com",
+            "role": UserRole.ADMIN
+        }
+    ]
+    
+    for user_data in default_users:
+        user = User(
+            username=user_data["username"],
+            password=user_data["password"],
+            full_name=user_data["full_name"],
+            email=user_data["email"],
+            role=user_data["role"]
+        )
+        db.add(user)
+    
+    db.commit()
     
     db.close()
     print("✅ Base de datos inicializada con datos de ejemplo")

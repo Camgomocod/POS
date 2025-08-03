@@ -406,6 +406,9 @@ class CustomerInfoDialog(QDialog):
 class POSWindow(QMainWindow):
     """Ventana POS mejorada con diseño moderno"""
     
+    # Señales para comunicación con el controlador principal
+    logout_requested = pyqtSignal()
+    
     def __init__(self):
         super().__init__()
         self.product_controller = ProductController()
@@ -558,6 +561,25 @@ class POSWindow(QMainWindow):
         """)
         history_btn.clicked.connect(self.open_payment_history)
         header_layout.addWidget(history_btn)
+        
+        # Botón cerrar sesión
+        logout_btn = QPushButton("🚪 Logout")
+        logout_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ColorPalette.ERROR};
+                color: #ffffff;
+                border: none;
+                padding: 12px 18px;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: 14px;
+            }}
+            QPushButton:hover {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.ERROR, 0.8)};
+            }}
+        """)
+        logout_btn.clicked.connect(self.handle_logout)
+        header_layout.addWidget(logout_btn)
         
         layout.addLayout(header_layout)
         
@@ -1221,6 +1243,40 @@ class POSWindow(QMainWindow):
             # Solo recargar productos si cambió la categoría de tamaño
             if old_is_small != self.is_small_screen:
                 self.load_products()
+    
+    def handle_logout(self):
+        """Manejar solicitud de logout"""
+        reply = QMessageBox.question(self, "Cerrar Sesión", 
+                                   "¿Estás seguro de que deseas cerrar sesión?",
+                                   QMessageBox.Yes | QMessageBox.No,
+                                   QMessageBox.No)
+        
+        if reply == QMessageBox.Yes:
+            self.logout_requested.emit()
+    
+    def get_optimal_columns(self):
+        """Calcular número óptimo de columnas según resolución"""
+        if not hasattr(self, 'products_area'):
+            return 3
+        
+        # Obtener ancho disponible para productos
+        available_width = self.products_area.width() - 40  # Margen
+        
+        # Ancho de cada botón de producto (incluyendo espaciado)
+        button_width = 140 if self.is_small_screen else 160
+        button_spacing = 8
+        total_button_width = button_width + button_spacing
+        
+        # Calcular columnas
+        columns = max(2, available_width // total_button_width)
+        
+        # Límites según resolución
+        if self.is_small_screen:
+            columns = min(columns, 6)  # Máximo 6 en pantallas pequeñas
+        else:
+            columns = min(columns, 8)  # Máximo 8 en pantallas grandes
+        
+        return columns
     
     def get_optimal_columns(self):
         """Calcular número óptimo de columnas según el ancho actual"""
