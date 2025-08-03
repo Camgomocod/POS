@@ -241,10 +241,10 @@ class MainWindow(QMainWindow):
             QPushButton:hover {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                     stop:0 {color}ee, stop:1 {color}cc);
-                transform: translateY(-3px);
             }}
             QPushButton:pressed {{
-                transform: translateY(0px);
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 {color}aa, stop:1 {color}88);
             }}
         """)
         

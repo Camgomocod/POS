@@ -8,172 +8,280 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushBut
                              QFormLayout, QTextEdit, QMessageBox, QProgressBar,
                              QFileDialog, QScrollArea, QSizePolicy)
 from PyQt5.QtCore import Qt, pyqtSignal, QDate, QThread, pyqtSlot
-from PyQt5.QtGui import QFont, QIcon
+from PyQt5.QtGui import QFont, QIcon, QColor
 from controllers.payment_controller import PaymentController
 from models.order import OrderStatus
 from utils.colors import ColorPalette, CommonStyles
 
 class PaymentDetailDialog(QDialog):
-    """Dialog para mostrar detalles completos de un pago"""
+    """Dialog mejorado para mostrar detalles completos de un pago"""
     
     def __init__(self, order, parent=None):
         super().__init__(parent)
         self.order = order
         self.setWindowTitle(f"Detalle del Pago - Orden #{order.id}")
-        self.setFixedSize(500, 600)
+        self.setFixedSize(400, 450)  # Tamaño optimizado para laptop
+        self.setModal(True)
         self.init_ui()
     
     def init_ui(self):
+        # Layout principal con espaciado optimizado
         layout = QVBoxLayout(self)
-        layout.setSpacing(20)
-        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(6)  # Espaciado entre elementos
+        layout.setContentsMargins(12, 12, 12, 12)  # Márgenes consistentes
         
-        # Header
+        # Header compacto con información principal
         header_frame = QFrame()
+        header_frame.setFixedHeight(60)  # Altura fija para el header
         header_frame.setStyleSheet(f"""
             QFrame {{
-                background: {ColorPalette.gradient_primary()};
-                border-radius: 15px;
-                padding: 20px;
+                background: {ColorPalette.YINMN_BLUE};
+                border-radius: 8px;
+                border: 1px solid {ColorPalette.OXFORD_BLUE};
             }}
         """)
         header_layout = QVBoxLayout(header_frame)
+        header_layout.setContentsMargins(8, 8, 8, 8)
+        header_layout.setSpacing(2)
         
-        title = QLabel(f"ORDEN #{self.order.id}")
-        title.setStyleSheet(f"font-size: 24px; font-weight: bold; color: {ColorPalette.PLATINUM};")
+        # Título principal
+        title = QLabel(f"🧾 ORDEN #{self.order.id}")
+        title.setStyleSheet(f"""
+            font-size: 14px; 
+            font-weight: bold; 
+            color: {ColorPalette.PLATINUM};
+        """)
         title.setAlignment(Qt.AlignCenter)
         header_layout.addWidget(title)
         
-        date_label = QLabel(self.order.created_at.strftime('%d/%m/%Y - %H:%M:%S'))
-        date_label.setStyleSheet(f"font-size: 16px; color: {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.9)};")
-        date_label.setAlignment(Qt.AlignCenter)
-        header_layout.addWidget(date_label)
+        # Fecha y estado en una línea
+        info_layout = QHBoxLayout()
+        info_layout.setSpacing(5)
         
-        layout.addWidget(header_frame)
-        
-        # Información del cliente
-        customer_frame = QFrame()
-        customer_frame.setStyleSheet(f"""
-            QFrame {{
-                background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
-                border-radius: 10px;
-                padding: 15px;
-            }}
+        date_label = QLabel(self.order.created_at.strftime('%d/%m/%Y %H:%M'))
+        date_label.setStyleSheet(f"""
+            color: {ColorPalette.PLATINUM};
+            font-size: 10px;
+            font-weight: bold;
         """)
-        customer_layout = QFormLayout(customer_frame)
+        info_layout.addWidget(date_label)
         
-        customer_layout.addRow(
-            QLabel("Cliente:"), 
-            QLabel(self.order.customer_name)
-        )
-        
-        table_info = f"Mesa {self.order.table_number}" if self.order.table_number else "Para llevar"
-        customer_layout.addRow(
-            QLabel("Mesa:"), 
-            QLabel(table_info)
-        )
+        info_layout.addStretch()
         
         status_label = QLabel(self.order.status_display)
         status_label.setStyleSheet(f"""
-            background-color: {self.order.status_color};
-            color: white;
-            padding: 5px 10px;
-            border-radius: 10px;
+            background-color: {ColorPalette.SUCCESS};
+            color: {ColorPalette.PLATINUM};
+            padding: 2px 6px;
+            border-radius: 4px;
             font-weight: bold;
+            font-size: 9px;
         """)
-        customer_layout.addRow(QLabel("Estado:"), status_label)
+        info_layout.addWidget(status_label)
+        
+        header_layout.addLayout(info_layout)
+        layout.addWidget(header_frame)
+        
+        # Información del cliente compacta
+        customer_frame = QFrame()
+        customer_frame.setFixedHeight(55)  # Altura fija
+        customer_frame.setStyleSheet(f"""
+            QFrame {{
+                background: {ColorPalette.PLATINUM};
+                border-radius: 6px;
+                border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
+            }}
+        """)
+        customer_layout = QVBoxLayout(customer_frame)
+        customer_layout.setContentsMargins(8, 6, 8, 6)
+        customer_layout.setSpacing(2)
+        
+        # Información en líneas horizontales compactas
+        customer_info_layout = QHBoxLayout()
+        customer_info = QLabel(f"👤 {self.order.customer_name}")
+        customer_info.setStyleSheet(f"font-size: 11px; color: {ColorPalette.RICH_BLACK}; font-weight: bold;")
+        customer_info_layout.addWidget(customer_info)
+        customer_info_layout.addStretch()
+        
+        table_info = f"Mesa {self.order.table_number}" if self.order.table_number else "Para llevar"
+        location_info = QLabel(f"📍 {table_info}")
+        location_info.setStyleSheet(f"font-size: 10px; color: {ColorPalette.SILVER_LAKE_BLUE};")
+        customer_info_layout.addWidget(location_info)
+        customer_layout.addLayout(customer_info_layout)
+        
+        # Método de pago
+        payment_info = QLabel(f"💳 Pago: {(self.order.payment_method or 'Efectivo').capitalize()}")
+        payment_info.setStyleSheet(f"font-size: 10px; color: {ColorPalette.RICH_BLACK};")
+        customer_layout.addWidget(payment_info)
         
         layout.addWidget(customer_frame)
         
-        # Productos
-        products_label = QLabel("📋 Productos Vendidos")
-        products_label.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {ColorPalette.RICH_BLACK};")
-        layout.addWidget(products_label)
+        # Productos con diseño muy simplificado
+        products_title = QLabel("🛍️ PRODUCTOS")
+        products_title.setStyleSheet(f"""
+            font-size: 14px; 
+            font-weight: bold; 
+            color: {ColorPalette.RICH_BLACK};
+            padding: 5px 0;
+        """)
+        layout.addWidget(products_title)
         
+        # Área de productos con scroll personalizada
         products_scroll = QScrollArea()
-        products_scroll.setMaximumHeight(200)
+        products_scroll.setFixedHeight(180)  # Altura fija para evitar overflow
         products_scroll.setWidgetResizable(True)
+        products_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        products_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        products_scroll.setStyleSheet(f"""
+            QScrollArea {{
+                border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
+                border-radius: 6px;
+                background-color: {ColorPalette.PLATINUM};
+            }}
+            QScrollBar:vertical {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
+                width: 8px;
+                border-radius: 4px;
+            }}
+            QScrollBar::handle:vertical {{
+                background-color: {ColorPalette.SILVER_LAKE_BLUE};
+                border-radius: 4px;
+                min-height: 20px;
+            }}
+        """)
         
+        # Widget contenedor de productos
         products_widget = QWidget()
         products_layout = QVBoxLayout(products_widget)
+        products_layout.setContentsMargins(8, 8, 8, 8)
+        products_layout.setSpacing(3)
         
+        # Mostrar todos los productos con scroll
         for item in self.order.items:
             item_frame = QFrame()
             item_frame.setStyleSheet(f"""
                 QFrame {{
-                    background-color: {ColorPalette.PLATINUM};
-                    border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
-                    border-radius: 8px;
-                    padding: 10px;
-                    margin: 2px;
+                    background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.05)};
+                    border-radius: 4px;
+                    padding: 2px;
                 }}
             """)
             item_layout = QHBoxLayout(item_frame)
+            item_layout.setContentsMargins(4, 2, 4, 2)
+            item_layout.setSpacing(5)
             
-            # Producto info
-            product_info = QVBoxLayout()
-            name_label = QLabel(item.product.name)
-            name_label.setStyleSheet(f"font-weight: bold; color: {ColorPalette.RICH_BLACK};")
-            product_info.addWidget(name_label)
+            # Nombre del producto (expandible)
+            product_info = QLabel(f"{item.product.name}")
+            product_info.setStyleSheet(f"font-size: 10px; color: {ColorPalette.RICH_BLACK}; font-weight: bold;")
+            product_info.setWordWrap(True)
+            item_layout.addWidget(product_info, 1)  # Factor de expansión
             
-            detail_label = QLabel(f"{item.quantity} x ${item.unit_price:.2f}")
-            detail_label.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE}; font-size: 12px;")
-            product_info.addWidget(detail_label)
+            # Cantidad y precio
+            qty_price = QLabel(f"{item.quantity}x")
+            qty_price.setStyleSheet(f"font-size: 10px; color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold;")
+            qty_price.setFixedWidth(25)
+            item_layout.addWidget(qty_price)
             
-            item_layout.addLayout(product_info)
-            item_layout.addStretch()
+            price_label = QLabel(f"${item.unit_price:.0f}")
+            price_label.setStyleSheet(f"font-size: 10px; color: {ColorPalette.SILVER_LAKE_BLUE};")
+            price_label.setFixedWidth(40)
+            price_label.setAlignment(Qt.AlignRight)
+            item_layout.addWidget(price_label)
             
             # Subtotal
-            subtotal_label = QLabel(f"${item.subtotal:.2f}")
-            subtotal_label.setStyleSheet(f"font-weight: bold; color: {ColorPalette.SUCCESS}; font-size: 14px;")
+            subtotal_label = QLabel(f"${item.subtotal:.0f}")
+            subtotal_label.setStyleSheet(f"""
+                font-weight: bold; 
+                color: {ColorPalette.SUCCESS}; 
+                font-size: 10px;
+            """)
+            subtotal_label.setFixedWidth(50)
+            subtotal_label.setAlignment(Qt.AlignRight)
             item_layout.addWidget(subtotal_label)
             
             products_layout.addWidget(item_frame)
         
+        # Espaciador al final para evitar que los elementos se estiren
+        products_layout.addStretch()
+        
         products_scroll.setWidget(products_widget)
         layout.addWidget(products_scroll)
         
-        # Total y método de pago
-        payment_frame = QFrame()
-        payment_frame.setStyleSheet(f"""
+        # Total final
+        total_frame = QFrame()
+        total_frame.setFixedHeight(35)  # Altura fija
+        total_frame.setStyleSheet(f"""
             QFrame {{
-                background: {ColorPalette.gradient_secondary()};
-                border-radius: 15px;
-                padding: 20px;
+                background: {ColorPalette.SUCCESS};
+                border-radius: 6px;
             }}
         """)
-        payment_layout = QVBoxLayout(payment_frame)
+        total_layout = QHBoxLayout(total_frame)
+        total_layout.setContentsMargins(10, 5, 10, 5)
         
-        total_label = QLabel(f"TOTAL: ${self.order.total:.2f}")
-        total_label.setStyleSheet(f"font-size: 24px; font-weight: bold; color: {ColorPalette.PLATINUM};")
+        total_label = QLabel(f"💰 TOTAL: ${self.order.total:.2f}")
+        total_label.setStyleSheet(f"""
+            font-size: 16px; 
+            font-weight: bold; 
+            color: {ColorPalette.PLATINUM};
+        """)
         total_label.setAlignment(Qt.AlignCenter)
-        payment_layout.addWidget(total_label)
+        total_layout.addWidget(total_label)
         
-        method_label = QLabel(f"Método: {(self.order.payment_method or 'Efectivo').capitalize()}")
-        method_label.setStyleSheet(f"font-size: 14px; color: {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.9)};")
-        method_label.setAlignment(Qt.AlignCenter)
-        payment_layout.addWidget(method_label)
+        layout.addWidget(total_frame)
         
-        layout.addWidget(payment_frame)
-        
-        # Botones
+        # Botones de acción
         buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(8)
         
-        close_btn = QPushButton("Cerrar")
-        close_btn.setStyleSheet(CommonStyles.button_secondary())
+        close_btn = QPushButton("❌ Cerrar")
+        close_btn.setFixedSize(90, 32)
+        close_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ColorPalette.SILVER_LAKE_BLUE};
+                color: {ColorPalette.PLATINUM};
+                border: none;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 11px;
+            }}
+            QPushButton:hover {{
+                background-color: {ColorPalette.OXFORD_BLUE};
+            }}
+        """)
         close_btn.clicked.connect(self.accept)
         buttons_layout.addWidget(close_btn)
         
-        # Botón imprimir (opcional)
-        print_btn = QPushButton("🖨️ Reimprimir Recibo")
-        print_btn.setStyleSheet(CommonStyles.button_primary())
+        print_btn = QPushButton("🖨️ Reimprimir")
+        print_btn.setFixedSize(110, 32)
+        print_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ColorPalette.YINMN_BLUE};
+                color: {ColorPalette.PLATINUM};
+                border: none;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 11px;
+            }}
+            QPushButton:hover {{
+                background-color: {ColorPalette.OXFORD_BLUE};
+            }}
+        """)
         print_btn.clicked.connect(self.reprint_receipt)
         buttons_layout.addWidget(print_btn)
         
         layout.addLayout(buttons_layout)
-    
+        
+        # Estilo general del diálogo simplificado
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: {ColorPalette.PLATINUM};
+                border-radius: 10px;
+            }}
+        """)
+        
     def reprint_receipt(self):
-        """Reimprimir recibo"""
+        """Reimprimir recibo con mejor manejo de errores"""
         try:
             from utils.printer import ReceiptPrinter
             printer = ReceiptPrinter()
@@ -187,9 +295,39 @@ class PaymentDetailDialog(QDialog):
                 })
             
             printer.print_receipt(self.order, cart_items)
-            QMessageBox.information(self, "Éxito", "Recibo enviado a impresión")
+            
+            # Mostrar mensaje de éxito mejorado
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Impresión Exitosa")
+            msg.setText("✅ El recibo se ha enviado a impresión correctamente")
+            msg.setIcon(QMessageBox.Information)
+            msg.setStyleSheet(f"""
+                QMessageBox {{
+                    background-color: {ColorPalette.PLATINUM};
+                }}
+                QMessageBox QLabel {{
+                    color: {ColorPalette.RICH_BLACK};
+                    font-size: 14px;
+                }}
+            """)
+            msg.exec_()
+            
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error al imprimir recibo:\n{str(e)}")
+            # Mostrar error mejorado
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Error de Impresión")
+            msg.setText(f"❌ Error al imprimir el recibo:\n\n{str(e)}")
+            msg.setIcon(QMessageBox.Critical)
+            msg.setStyleSheet(f"""
+                QMessageBox {{
+                    background-color: {ColorPalette.PLATINUM};
+                }}
+                QMessageBox QLabel {{
+                    color: {ColorPalette.RICH_BLACK};
+                    font-size: 14px;
+                }}
+            """)
+            msg.exec_()
 
 class ExportThread(QThread):
     """Thread para exportar datos sin bloquear la UI"""
@@ -260,7 +398,7 @@ class ExportThread(QThread):
             self.error.emit(str(e))
 
 class PaymentHistoryView(QWidget):
-    """Vista para el historial de pagos"""
+    """Vista para el historial de pagos con diseño optimizado"""
     
     back_to_pos = pyqtSignal()  # Señal para volver a POS
     
@@ -268,7 +406,7 @@ class PaymentHistoryView(QWidget):
         super().__init__(parent)
         self.payment_controller = PaymentController()
         self.current_page = 1
-        self.page_size = 20
+        self.page_size = 15  # Reducido para mejor rendimiento visual
         self.current_orders = []
         self.init_ui()
         # No cargar datos automáticamente en __init__
@@ -292,297 +430,835 @@ class PaymentHistoryView(QWidget):
             self.refresh_data()
     
     def init_ui(self):
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
+        # Layout principal optimizado para resoluciones pequeñas (1366x768)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(8, 4, 8, 4)  # Márgenes mínimos para laptop
+        main_layout.setSpacing(4)  # Espaciado ultra-compacto
         
-        # Header
+        # Header ultra-compacto
         header_layout = self.create_header()
-        layout.addLayout(header_layout)
+        main_layout.addLayout(header_layout)
         
-        # Filtros
-        filters_frame = self.create_filters()
-        layout.addWidget(filters_frame)
+        # Contenido principal en layout horizontal con espaciado mínimo
+        content_layout = QHBoxLayout()
+        content_layout.setSpacing(6)  # Espaciado mínimo
         
-        # Tabla de pagos
-        table_frame = self.create_payment_table()
-        layout.addWidget(table_frame)
+        # Panel izquierdo - Filtros (ancho más reducido)
+        filters_panel = self.create_filters_panel()
+        content_layout.addWidget(filters_panel)
         
-        # Paginación y exportar
-        bottom_layout = self.create_bottom_controls()
-        layout.addLayout(bottom_layout)
+        # Panel derecho - Tabla y controles (resto del espacio disponible)
+        table_panel = self.create_table_panel()
+        content_layout.addWidget(table_panel, 1)  # Factor de expansión
         
-        # Estilo general
+        main_layout.addLayout(content_layout)
+        
+        # Footer con controles de paginación y exportar
+        footer_layout = self.create_footer_controls()
+        main_layout.addLayout(footer_layout)
+        
+        # Estilo general mejorado sin gradiente problemático
         self.setStyleSheet(f"""
             QWidget {{
                 background-color: {ColorPalette.PLATINUM};
+                font-family: 'Segoe UI', 'Arial', sans-serif;
             }}
         """)
     
     def create_header(self):
-        """Crear header de la vista"""
+        """Crear header ultra-compacto para laptops pequeños"""
         layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 2)  # Márgenes mínimos
+        
+        # Contenedor del título con ícono muy compacto
+        title_container = QHBoxLayout()
         
         title = QLabel("💰 HISTORIAL DE PAGOS")
         title.setStyleSheet(f"""
-            font-size: 28px;
+            font-size: 18px;  /* Reducido para laptop */
             font-weight: bold;
             color: {ColorPalette.RICH_BLACK};
-            margin-bottom: 10px;
+            margin: 0;
+            padding: 2px 0;  /* Mínimo padding */
         """)
-        layout.addWidget(title)
+        title_container.addWidget(title)
         
-        layout.addStretch()
+        # Información adicional más compacta
+        subtitle = QLabel("Gestión de transacciones")
+        subtitle.setStyleSheet(f"""
+            font-size: 10px;  /* Muy reducido */
+            color: {ColorPalette.SILVER_LAKE_BLUE};
+            margin-left: 6px;  /* Mínimo margen */
+            font-style: italic;
+        """)
+        title_container.addWidget(subtitle)
+        title_container.addStretch()
         
-        # Botón volver a POS
-        pos_btn = QPushButton("🍽️ Volver a POS")
-        pos_btn.setStyleSheet(CommonStyles.button_success())
+        layout.addLayout(title_container)
+        
+        # Botones de acción ultra-compactos para laptop
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(4)  # Mínimo espaciado
+        
+        # Botón refrescar más pequeño
+        refresh_btn = QPushButton("🔄")
+        refresh_btn.setFixedSize(28, 28)  # Muy pequeño para laptop
+        refresh_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ColorPalette.YINMN_BLUE};
+                color: {ColorPalette.PLATINUM};
+                border: none;
+                padding: 4px;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 12px;
+            }}
+            QPushButton:hover {{
+                background-color: {ColorPalette.OXFORD_BLUE};
+            }}
+        """)
+        refresh_btn.setToolTip("Actualizar datos")
+        refresh_btn.clicked.connect(self.refresh_data)
+        buttons_layout.addWidget(refresh_btn)
+        
+        # Botón volver a POS más pequeño
+        pos_btn = QPushButton("🍽️ POS")
+        pos_btn.setFixedSize(70, 28)  # Reducido para laptop
+        pos_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ColorPalette.SUCCESS};
+                color: {ColorPalette.PLATINUM};
+                border: none;
+                padding: 4px 8px;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 10px;
+            }}
+            QPushButton:hover {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.8)};
+            }}
+        """)
         pos_btn.clicked.connect(lambda: self.back_to_pos.emit())
-        layout.addWidget(pos_btn)
+        buttons_layout.addWidget(pos_btn)
+        
+        layout.addLayout(buttons_layout)
         
         return layout
     
-    def create_filters(self):
-        """Crear sección de filtros"""
-        frame = QFrame()
-        frame.setStyleSheet(CommonStyles.panel_main())
+    def create_filters_panel(self):
+        """Crear panel de filtros ultra-compacto para laptop 1366x768"""
+        panel = QFrame()
+        panel.setFixedWidth(200)  # Reducido aún más para laptop
+        panel.setStyleSheet(f"""
+            QFrame {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                           stop:0 {ColorPalette.PLATINUM},
+                           stop:1 {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)});
+                border: 2px solid {ColorPalette.SILVER_LAKE_BLUE};
+                border-radius: 8px;
+                padding: 8px;
+                margin: 1px;
+            }}
+        """)
         
-        layout = QVBoxLayout(frame)
+        layout = QVBoxLayout(panel)
+        layout.setSpacing(6)  # Espaciado mínimo
+        layout.setContentsMargins(6, 6, 6, 6)  # Márgenes mínimos
         
-        # Título de filtros
-        filter_title = QLabel("🔎 Filtros de Búsqueda")
-        filter_title.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {ColorPalette.RICH_BLACK}; margin-bottom: 15px;")
-        layout.addWidget(filter_title)
+        # Título del panel más compacto
+        title = QLabel("🔍 FILTROS")
+        title.setStyleSheet(f"""
+            font-size: 12px;
+            font-weight: bold;
+            color: {ColorPalette.RICH_BLACK};
+            text-align: center;
+            padding: 4px;
+            background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.1)};
+            border-radius: 4px;
+            margin-bottom: 4px;
+        """)
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
         
-        # Controles de filtro
-        filters_layout = QHBoxLayout()
+        # Sección de fechas ultra-compacta
+        date_section = QFrame()
+        date_section.setStyleSheet(f"""
+            QFrame {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.8)};
+                border-radius: 6px;
+                padding: 6px;
+                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
+            }}
+        """)
+        date_layout = QVBoxLayout(date_section)
+        date_layout.setSpacing(4)  # Espaciado mínimo
         
-        # Rango de fechas
-        date_layout = QVBoxLayout()
-        date_layout.addWidget(QLabel("Desde:"))
+        # Título de sección más compacto
+        date_title = QLabel("📅 Fechas")
+        date_title.setStyleSheet(f"""
+            font-size: 11px;
+            font-weight: bold;
+            color: {ColorPalette.RICH_BLACK};
+            margin-bottom: 2px;
+        """)
+        date_layout.addWidget(date_title)
+        
+        # Fecha desde
+        from_label = QLabel("Desde:")
+        from_label.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold; font-size: 10px;")
+        date_layout.addWidget(from_label)
+        
         self.start_date = QDateEdit()
-        self.start_date.setDate(QDate.currentDate().addDays(-30))  # Últimos 30 días por defecto
+        self.start_date.setDate(QDate.currentDate().addDays(-30))
         self.start_date.setCalendarPopup(True)
-        self.start_date.setStyleSheet(CommonStyles.input_field())
+        self.start_date.setFixedHeight(22)  # Muy compacto para laptop
+        self.start_date.setStyleSheet(f"""
+            QDateEdit {{
+                background-color: {ColorPalette.PLATINUM};
+                border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
+                border-radius: 3px;
+                padding: 2px 4px;
+                font-size: 10px;
+                color: {ColorPalette.RICH_BLACK};
+            }}
+            QDateEdit:focus {{
+                border-color: {ColorPalette.YINMN_BLUE};
+                background-color: white;
+            }}
+            QDateEdit::drop-down {{
+                border: none;
+                background-color: {ColorPalette.YINMN_BLUE};
+                border-radius: 2px;
+                width: 16px;
+            }}
+        """)
         date_layout.addWidget(self.start_date)
-        filters_layout.addLayout(date_layout)
         
-        date_layout2 = QVBoxLayout()
-        date_layout2.addWidget(QLabel("Hasta:"))
+        # Fecha hasta
+        to_label = QLabel("Hasta:")
+        to_label.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold; font-size: 10px;")
+        date_layout.addWidget(to_label)
+        
         self.end_date = QDateEdit()
         self.end_date.setDate(QDate.currentDate())
         self.end_date.setCalendarPopup(True)
-        self.end_date.setStyleSheet(CommonStyles.input_field())
-        date_layout2.addWidget(self.end_date)
-        filters_layout.addLayout(date_layout2)
+        self.end_date.setFixedHeight(22)  # Muy compacto para laptop
+        self.end_date.setStyleSheet(f"""
+            QDateEdit {{
+                background-color: {ColorPalette.PLATINUM};
+                border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
+                border-radius: 3px;
+                padding: 2px 4px;
+                font-size: 10px;
+                color: {ColorPalette.RICH_BLACK};
+            }}
+            QDateEdit:focus {{
+                border-color: {ColorPalette.YINMN_BLUE};
+                background-color: white;
+            }}
+            QDateEdit::drop-down {{
+                border: none;
+                background-color: {ColorPalette.YINMN_BLUE};
+                border-radius: 2px;
+                width: 16px;
+            }}
+        """)
+        date_layout.addWidget(self.end_date)
         
-        # Campo de búsqueda
-        search_layout = QVBoxLayout()
-        search_layout.addWidget(QLabel("Buscar (Orden # o Cliente):"))
+        layout.addWidget(date_section)
+        
+        # Sección de búsqueda compacta
+        search_section = QFrame()
+        search_section.setStyleSheet(f"""
+            QFrame {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.8)};
+                border-radius: 6px;
+                padding: 6px;
+                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
+            }}
+        """)
+        search_layout = QVBoxLayout(search_section)
+        search_layout.setSpacing(4)
+        
+        # Título de sección
+        search_title = QLabel("🔎 Búsqueda")
+        search_title.setStyleSheet(f"""
+            font-size: 11px;
+            font-weight: bold;
+            color: {ColorPalette.RICH_BLACK};
+            margin-bottom: 2px;
+        """)
+        search_layout.addWidget(search_title)
+        
+        search_label = QLabel("Orden/Cliente:")
+        search_label.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold; font-size: 10px;")
+        search_layout.addWidget(search_label)
+        
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Ingrese número de orden o nombre del cliente...")
-        self.search_input.setStyleSheet(CommonStyles.input_field())
+        self.search_input.setPlaceholderText("Ej: #123 o Juan...")
+        self.search_input.setFixedHeight(22)  # Muy compacto para laptop
+        self.search_input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {ColorPalette.PLATINUM};
+                border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
+                border-radius: 3px;
+                padding: 2px 4px;
+                font-size: 10px;
+                color: {ColorPalette.RICH_BLACK};
+            }}
+            QLineEdit:focus {{
+                border-color: {ColorPalette.YINMN_BLUE};
+                background-color: white;
+            }}
+            QLineEdit::placeholder {{
+                color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.7)};
+                font-style: italic;
+            }}
+        """)
         self.search_input.returnPressed.connect(self.search_payments)
         search_layout.addWidget(self.search_input)
-        filters_layout.addLayout(search_layout)
         
-        # Botones
-        buttons_layout = QVBoxLayout()
-        buttons_layout.addWidget(QLabel(""))  # Spacer
+        layout.addWidget(search_section)
         
-        search_btn = QPushButton("🔍 Buscar")
-        search_btn.setStyleSheet(CommonStyles.button_primary())
+        # Botones de acción compactos
+        buttons_section = QFrame()
+        buttons_section.setStyleSheet(f"""
+            QFrame {{
+                background-color: transparent;
+                border: none;
+            }}
+        """)
+        buttons_layout = QVBoxLayout(buttons_section)
+        buttons_layout.setSpacing(4)
+        
+        # Botón buscar compacto
+        search_btn = QPushButton("🔍 BUSCAR")
+        search_btn.setFixedHeight(24)  # Muy reducido para laptop
+        search_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                           stop:0 {ColorPalette.YINMN_BLUE},
+                           stop:1 {ColorPalette.OXFORD_BLUE});
+                color: {ColorPalette.PLATINUM};
+                border: none;
+                padding: 4px;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 10px;
+            }}
+            QPushButton:hover {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                           stop:0 {ColorPalette.OXFORD_BLUE},
+                           stop:1 {ColorPalette.YINMN_BLUE});
+            }}
+        """)
         search_btn.clicked.connect(self.search_payments)
         buttons_layout.addWidget(search_btn)
         
-        clear_btn = QPushButton("🗑️ Limpiar")
-        clear_btn.setStyleSheet(CommonStyles.button_secondary())
+        # Botón limpiar compacto
+        clear_btn = QPushButton("🗑️ LIMPIAR")
+        clear_btn.setFixedHeight(22)  # Muy reducido para laptop
+        clear_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.2)};
+                color: {ColorPalette.RICH_BLACK};
+                border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
+                padding: 2px;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 9px;
+            }}
+            QPushButton:hover {{
+                background-color: {ColorPalette.SILVER_LAKE_BLUE};
+                color: {ColorPalette.PLATINUM};
+            }}
+        """)
         clear_btn.clicked.connect(self.clear_filters)
         buttons_layout.addWidget(clear_btn)
         
-        filters_layout.addLayout(buttons_layout)
+        layout.addWidget(buttons_section)
         
-        layout.addLayout(filters_layout)
+        # Espaciador al final
+        layout.addStretch()
         
-        return frame
+        return panel
     
-    def create_payment_table(self):
-        """Crear tabla de pagos"""
-        frame = QFrame()
-        frame.setStyleSheet(CommonStyles.panel_main())
+    def create_table_panel(self):
+        """Crear panel de tabla optimizado para laptop 1366x768"""
+        panel = QFrame()
+        panel.setStyleSheet(f"""
+            QFrame {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                           stop:0 {ColorPalette.PLATINUM},
+                           stop:1 {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.05)});
+                border: 2px solid {ColorPalette.SILVER_LAKE_BLUE};
+                border-radius: 8px;
+                padding: 6px;
+                margin: 1px;
+            }}
+        """)
         
-        layout = QVBoxLayout(frame)
+        layout = QVBoxLayout(panel)
+        layout.setSpacing(6)  # Espaciado mínimo
+        layout.setContentsMargins(8, 8, 8, 8)  # Márgenes mínimos
         
-        # Título de tabla
-        table_title = QLabel("📋 Historial de Transacciones")
-        table_title.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {ColorPalette.RICH_BLACK}; margin-bottom: 15px;")
-        layout.addWidget(table_title)
+        # Header de la tabla más compacto
+        table_header = QHBoxLayout()
         
-        # Tabla
+        # Título principal más compacto
+        table_title = QLabel("📋 TRANSACCIONES")
+        table_title.setStyleSheet(f"""
+            font-size: 16px;  # Aumentado +2 según petición
+            font-weight: bold;
+            color: {ColorPalette.RICH_BLACK};
+            padding: 2px 0;  # Mínimo padding
+        """)
+        table_header.addWidget(table_title)
+        
+        table_header.addStretch()
+        
+        # Información de estado/carga más compacta
+        self.table_status = QLabel("Datos actualizados")
+        self.table_status.setStyleSheet(f"""
+            color: {ColorPalette.SUCCESS};
+            font-size: 11px;  # Aumentado +2 según petición
+            font-weight: bold;
+            padding: 2px 4px;  # Mínimo padding
+            background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.1)};
+            border-radius: 3px;  # Muy reducido
+            border: 1px solid {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.3)};
+        """)
+        table_header.addWidget(self.table_status)
+        
+        # Botón exportar más compacto
+        export_btn = QPushButton("📤 Excel")
+        export_btn.setFixedSize(70, 24)  # Muy compacto para laptop
+        export_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ColorPalette.SUCCESS};
+                color: {ColorPalette.PLATINUM};
+                border: none;
+                padding: 2px 4px;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 11px;  # Aumentado +2 según petición
+            }}
+            QPushButton:hover {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.8)};
+            }}
+        """)
+        export_btn.clicked.connect(self.export_data)
+        table_header.addWidget(export_btn)
+        
+        layout.addLayout(table_header)
+        
+        # Crear tabla con diseño compacto y bien dimensionado
         self.payment_table = QTableWidget()
-        self.payment_table.setColumnCount(7)
+        self.payment_table.setColumnCount(6)  # 6 columnas optimizadas
         self.payment_table.setHorizontalHeaderLabels([
-            "Fecha/Hora", "Orden #", "Cliente", "Mesa", "Total", "Método", "Acciones"
+            "Fecha", "Orden", "Cliente", "Total", "Método", "Ver"
         ])
         
-        # Configurar tabla
+        # Configurar tabla con proporciones exactas para laptop 1366x768
         header = self.payment_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # Fecha
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # Orden #
-        header.setSectionResizeMode(2, QHeaderView.Stretch)           # Cliente
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)  # Mesa
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)  # Total
-        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)  # Método
-        header.setSectionResizeMode(6, QHeaderView.ResizeToContents)  # Acciones
+        header.setSectionResizeMode(0, QHeaderView.Fixed)          # Fecha - ancho fijo
+        header.setSectionResizeMode(1, QHeaderView.Fixed)          # Orden - ancho fijo
+        header.setSectionResizeMode(2, QHeaderView.Stretch)        # Cliente - expandible
+        header.setSectionResizeMode(3, QHeaderView.Fixed)          # Total - ancho fijo
+        header.setSectionResizeMode(4, QHeaderView.Fixed)          # Método - ancho fijo
+        header.setSectionResizeMode(5, QHeaderView.Fixed)          # Acción - ancho fijo
         
+        # Establecer anchos específicos calculados para evitar solapamiento
+        self.payment_table.setColumnWidth(0, 80)   # Fecha - espacio justo para dd/mm/yyyy
+        self.payment_table.setColumnWidth(1, 55)   # Orden - espacio para #123
+        # Cliente: se expande automáticamente (resto del espacio)
+        self.payment_table.setColumnWidth(3, 65)   # Total - espacio para $999.99
+        self.payment_table.setColumnWidth(4, 70)   # Método - espacio para "Efec." o "Tarj."
+        self.payment_table.setColumnWidth(5, 45)   # Acción - botón pequeño
+        
+        # Configuración adicional de la tabla
         self.payment_table.setAlternatingRowColors(True)
         self.payment_table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.payment_table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.payment_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.payment_table.setSortingEnabled(True)
+        self.payment_table.setGridStyle(Qt.SolidLine)
+        
+        # Filas con altura adecuada para mostrar todo el texto
+        self.payment_table.verticalHeader().setDefaultSectionSize(30)  # Altura aumentada +2
+        self.payment_table.verticalHeader().setVisible(False)  # Ocultar números de fila para ahorrar espacio
+        
+        # Estilo mejorado de la tabla para laptop con espaciado correcto
         self.payment_table.setStyleSheet(f"""
             QTableWidget {{
-                border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
+                border: 2px solid {ColorPalette.SILVER_LAKE_BLUE};
                 border-radius: 8px;
                 background-color: {ColorPalette.PLATINUM};
-                gridline-color: {ColorPalette.SILVER_LAKE_BLUE};
+                gridline-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
+                selection-background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.2)};
+                font-size: 11px;  /* Aumentado +2 según petición */
             }}
             QTableWidget::item {{
-                padding: 8px;
-                border-bottom: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
+                padding: 3px 2px;  /* Padding aumentado para mejor legibilidad */
+                border-bottom: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
                 color: {ColorPalette.RICH_BLACK};
+                text-align: center;
+                line-height: 1.3;  /* Mejorar espaciado de línea */
             }}
             QTableWidget::item:selected {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
+                color: {ColorPalette.RICH_BLACK};
+            }}
+            QTableWidget::item:hover {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.1)};
             }}
             QHeaderView::section {{
-                background-color: {ColorPalette.YINMN_BLUE};
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                           stop:0 {ColorPalette.YINMN_BLUE},
+                           stop:1 {ColorPalette.OXFORD_BLUE});
                 color: {ColorPalette.PLATINUM};
-                padding: 10px;
+                padding: 6px 4px;  /* Padding aumentado para mostrar texto completo */
                 font-weight: bold;
+                font-size: 10px;  /* Aumentado +2 según petición */
                 border: none;
                 border-right: 1px solid {ColorPalette.OXFORD_BLUE};
+                height: 32px;  /* Altura aumentada para mostrar texto completo */
+                text-align: center;
+            }}
+            QHeaderView::section:first {{
+                border-top-left-radius: 6px;
+            }}
+            QHeaderView::section:last {{
+                border-top-right-radius: 6px;
+                border-right: none;
+            }}
+            QScrollBar:vertical {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
+                width: 8px;  /* Scrollbar muy delgado */
+                border-radius: 4px;
+                margin: 0;
+            }}
+            QScrollBar::handle:vertical {{
+                background-color: {ColorPalette.SILVER_LAKE_BLUE};
+                border-radius: 4px;
+                min-height: 20px;
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: {ColorPalette.YINMN_BLUE};
             }}
         """)
         
         layout.addWidget(self.payment_table)
         
-        return frame
+        return panel
     
-    def create_bottom_controls(self):
-        """Crear controles inferiores (paginación y exportar)"""
+    def create_footer_controls(self):
+        """Crear controles de footer ultra-compactos para laptop 1366x768"""
         layout = QHBoxLayout()
+        layout.setContentsMargins(4, 2, 4, 2)  # Márgenes mínimos para laptop
+        layout.setSpacing(6)  # Espaciado muy reducido
         
-        # Información de paginación
-        self.pagination_info = QLabel("Mostrando 0 de 0 registros")
-        self.pagination_info.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold;")
-        layout.addWidget(self.pagination_info)
+        # Panel izquierdo - Información de registros ultra-compacto
+        info_panel = QFrame()
+        info_panel.setStyleSheet(f"""
+            QFrame {{
+                background-color: {ColorPalette.PLATINUM};
+                border-radius: 4px;
+                padding: 2px 4px;
+                border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
+            }}
+        """)
+        info_layout = QHBoxLayout(info_panel)
+        info_layout.setContentsMargins(3, 1, 3, 1)
+        
+        # Ícono de información muy pequeño
+        info_icon = QLabel("📊")
+        info_icon.setStyleSheet("font-size: 10px; margin-right: 1px;")
+        info_layout.addWidget(info_icon)
+        
+        # Información de paginación muy compacta
+        self.pagination_info = QLabel("Mostrando 0 de 0")
+        self.pagination_info.setStyleSheet(f"""
+            color: {ColorPalette.RICH_BLACK};
+            font-weight: bold;
+            font-size: 9px;
+        """)
+        info_layout.addWidget(self.pagination_info)
+        
+        layout.addWidget(info_panel)
         
         layout.addStretch()
         
-        # Controles de paginación
-        self.prev_btn = QPushButton("◀ Anterior")
-        self.prev_btn.setStyleSheet(CommonStyles.button_secondary())
+        # Panel central - Controles de paginación ultra-compactos
+        pagination_panel = QFrame()
+        pagination_panel.setStyleSheet(f"""
+            QFrame {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.1)};
+                border-radius: 4px;
+                padding: 2px 4px;
+                border: 1px solid {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
+            }}
+        """)
+        pagination_layout = QHBoxLayout(pagination_panel)
+        pagination_layout.setSpacing(3)  # Espaciado muy reducido
+        pagination_layout.setContentsMargins(3, 1, 3, 1)  # Márgenes muy reducidos
+        
+        # Botón página anterior muy pequeño
+        self.prev_btn = QPushButton("◀")
+        self.prev_btn.setFixedSize(20, 20)  # Muy pequeño para laptop
+        self.prev_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ColorPalette.SILVER_LAKE_BLUE};
+                color: {ColorPalette.PLATINUM};
+                border: none;
+                padding: 2px;
+                border-radius: 3px;
+                font-weight: bold;
+                font-size: 8px;
+            }}
+            QPushButton:hover {{
+                background-color: {ColorPalette.YINMN_BLUE};
+            }}
+            QPushButton:disabled {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.5)};
+                color: {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.7)};
+            }}
+        """)
+        self.prev_btn.setToolTip("Página anterior")
         self.prev_btn.clicked.connect(self.previous_page)
-        layout.addWidget(self.prev_btn)
+        pagination_layout.addWidget(self.prev_btn)
         
-        self.page_info = QLabel("Página 1 de 1")
-        self.page_info.setStyleSheet(f"margin: 0 15px; font-weight: bold; color: {ColorPalette.RICH_BLACK};")
-        layout.addWidget(self.page_info)
+        # Información de página actual muy compacta
+        self.page_info = QLabel("1/1")
+        self.page_info.setStyleSheet(f"""
+            color: {ColorPalette.RICH_BLACK};
+            font-weight: bold;
+            font-size: 9px;
+            padding: 2px 4px;
+            background-color: {ColorPalette.PLATINUM};
+            border-radius: 3px;
+            border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
+        """)
+        self.page_info.setAlignment(Qt.AlignCenter)
+        self.page_info.setMinimumWidth(30)  # Muy reducido
+        pagination_layout.addWidget(self.page_info)
         
-        self.next_btn = QPushButton("Siguiente ▶")
-        self.next_btn.setStyleSheet(CommonStyles.button_secondary())
+        # Botón página siguiente muy pequeño
+        self.next_btn = QPushButton("▶")
+        self.next_btn.setFixedSize(20, 20)  # Muy pequeño para laptop
+        self.next_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ColorPalette.SILVER_LAKE_BLUE};
+                color: {ColorPalette.PLATINUM};
+                border: none;
+                padding: 2px;
+                border-radius: 3px;
+                font-weight: bold;
+                font-size: 8px;
+            }}
+            QPushButton:hover {{
+                background-color: {ColorPalette.YINMN_BLUE};
+            }}
+            QPushButton:disabled {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.5)};
+                color: {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.7)};
+            }}
+        """)
+        self.next_btn.setToolTip("Página siguiente")
         self.next_btn.clicked.connect(self.next_page)
-        layout.addWidget(self.next_btn)
+        pagination_layout.addWidget(self.next_btn)
         
-        # Botón exportar
-        export_btn = QPushButton("📤 Exportar a Excel")
-        export_btn.setStyleSheet(CommonStyles.button_success())
-        export_btn.clicked.connect(self.export_data)
-        layout.addWidget(export_btn)
+        layout.addWidget(pagination_panel)
+        
+        layout.addStretch()
+        
+        # Panel derecho - Acciones adicionales muy compacto
+        actions_panel = QFrame()
+        actions_panel.setStyleSheet(f"""
+            QFrame {{
+                background-color: {ColorPalette.PLATINUM};
+                border-radius: 4px;
+                padding: 2px 4px;
+                border: 1px solid {ColorPalette.SUCCESS};
+            }}
+        """)
+        actions_layout = QHBoxLayout(actions_panel)
+        actions_layout.setContentsMargins(3, 1, 3, 1)
+        actions_layout.setSpacing(2)
+        
+        # Indicador de estado muy pequeño
+        status_icon = QLabel("✅")
+        status_icon.setStyleSheet("font-size: 8px;")
+        actions_layout.addWidget(status_icon)
+        
+        status_text = QLabel("OK")
+        status_text.setStyleSheet(f"""
+            color: {ColorPalette.SUCCESS};
+            font-weight: bold;
+            font-size: 8px;
+        """)
+        actions_layout.addWidget(status_text)
+        
+        layout.addWidget(actions_panel)
         
         return layout
     
     def load_payment_history(self):
-        """Cargar historial de pagos"""
-        # Mostrar mensaje de carga
-        self.pagination_info.setText("Cargando datos...")
+        """Cargar historial de pagos con indicadores visuales mejorados"""
+        # Mostrar estado de carga compacto
+        self.table_status.setText("🔄")
+        self.table_status.setStyleSheet(f"""
+            color: {ColorPalette.WARNING};
+            font-size: 11px;  # Aumentado +2 según petición
+            font-weight: bold;
+            padding: 2px 4px;
+            background-color: {ColorPalette.with_alpha(ColorPalette.WARNING, 0.1)};
+            border-radius: 3px;
+            border: 1px solid {ColorPalette.with_alpha(ColorPalette.WARNING, 0.3)};
+        """)
+        self.pagination_info.setText("Cargando...")
         
         # Obtener valores de filtros
         start_date = self.start_date.date().toPyDate()
         end_date = self.end_date.date().toPyDate()
         search_term = self.search_input.text().strip() or None
         
-        # Obtener datos
-        result = self.payment_controller.get_payment_history(
-            start_date=start_date,
-            end_date=end_date,
-            search_term=search_term,
-            page=self.current_page,
-            page_size=self.page_size
-        )
-        
-        self.current_orders = result['orders']
-        
-        # Actualizar tabla
-        self.update_table(result['orders'])
-        
-        # Actualizar información de paginación
-        self.update_pagination_info(result)
+        try:
+            # Obtener datos
+            result = self.payment_controller.get_payment_history(
+                start_date=start_date,
+                end_date=end_date,
+                search_term=search_term,
+                page=self.current_page,
+                page_size=self.page_size
+            )
+            
+            self.current_orders = result['orders']
+            
+            # Actualizar tabla
+            self.update_table(result['orders'])
+            
+            # Actualizar información de paginación
+            self.update_pagination_info(result)
+            
+        # Actualizar estado de éxito con formato compacto
+            self.table_status.setText("✅ OK")
+            self.table_status.setStyleSheet(f"""
+                color: {ColorPalette.SUCCESS};
+                font-size: 11px;  # Aumentado +2 según petición
+                font-weight: bold;
+                padding: 2px 4px;  # Mínimo padding
+                background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.1)};
+                border-radius: 3px;  # Muy reducido
+                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.3)};
+            """)
+            
+        except Exception as e:
+            # Mostrar estado de error compacto
+            self.table_status.setText("❌")
+            self.table_status.setStyleSheet(f"""
+                color: {ColorPalette.ERROR};
+                font-size: 11px;  # Aumentado +2 según petición
+                font-weight: bold;
+                padding: 2px 4px;
+                background-color: {ColorPalette.with_alpha(ColorPalette.ERROR, 0.1)};
+                border-radius: 3px;
+                border: 1px solid {ColorPalette.with_alpha(ColorPalette.ERROR, 0.3)};
+            """)
+            self.pagination_info.setText(f"Error: {str(e)}")
+            print(f"Error cargando historial: {e}")
     
     def update_table(self, orders):
-        """Actualizar contenido de la tabla"""
+        """Actualizar contenido de la tabla con diseño optimizado para laptop sin solapamiento"""
         self.payment_table.setRowCount(len(orders))
         
         for row, order in enumerate(orders):
-            # Fecha/Hora
-            datetime_str = order.created_at.strftime('%d/%m/%Y\n%H:%M:%S')
-            self.payment_table.setItem(row, 0, QTableWidgetItem(datetime_str))
+            # Fecha compacta (solo fecha, formato corto)
+            date_str = order.created_at.strftime('%d/%m/%y')  # Formato más corto
+            date_item = QTableWidgetItem(date_str)
+            date_item.setTextAlignment(Qt.AlignCenter)
+            date_item.setFont(QFont("Arial", 9))  # Aumentado +2 según petición
+            self.payment_table.setItem(row, 0, date_item)
             
-            # Orden #
+            # Orden # compacto
             order_item = QTableWidgetItem(f"#{order.id}")
             order_item.setTextAlignment(Qt.AlignCenter)
+            order_item.setFont(QFont("Arial", 9, QFont.Bold))  # Aumentado +2 según petición
+            order_item.setForeground(QColor(ColorPalette.YINMN_BLUE))
             self.payment_table.setItem(row, 1, order_item)
             
-            # Cliente
-            self.payment_table.setItem(row, 2, QTableWidgetItem(order.customer_name))
+            # Cliente - truncar si es muy largo para evitar solapamiento
+            customer_name = order.customer_name
+            if len(customer_name) > 15:  # Truncar nombres largos
+                customer_name = customer_name[:12] + "..."
+            customer_item = QTableWidgetItem(customer_name)
+            customer_item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            customer_item.setFont(QFont("Arial", 9))  # Aumentado +2 según petición
+            customer_item.setToolTip(order.customer_name)  # Tooltip con nombre completo
+            self.payment_table.setItem(row, 2, customer_item)
             
-            # Mesa
-            table_text = f"Mesa {order.table_number}" if order.table_number else "Para llevar"
-            table_item = QTableWidgetItem(table_text)
-            table_item.setTextAlignment(Qt.AlignCenter)
-            self.payment_table.setItem(row, 3, table_item)
-            
-            # Total
-            total_item = QTableWidgetItem(f"${order.total:.2f}")
+            # Total con formato compacto
+            total_item = QTableWidgetItem(f"${order.total:.0f}")  # Sin decimales para ahorrar espacio
             total_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            self.payment_table.setItem(row, 4, total_item)
+            total_item.setFont(QFont("Arial", 9, QFont.Bold))  # Aumentado +2 según petición
+            total_item.setForeground(QColor(ColorPalette.SUCCESS))
+            total_item.setToolTip(f"${order.total:.2f}")  # Tooltip con decimales
+            self.payment_table.setItem(row, 3, total_item)
             
-            # Método
-            payment_method = order.payment_method or "Efectivo"
-            method_item = QTableWidgetItem(payment_method.capitalize())
+            # Método de pago muy abreviado
+            method = (order.payment_method or 'Efectivo')
+            if method.lower() == 'efectivo':
+                method = 'Efec'
+            elif method.lower() == 'tarjeta':
+                method = 'Tarj'
+            elif method.lower() == 'transferencia':
+                method = 'Transf'
+            else:
+                method = method[:5]  # Máximo 5 caracteres
+            
+            method_item = QTableWidgetItem(method)
             method_item.setTextAlignment(Qt.AlignCenter)
-            self.payment_table.setItem(row, 5, method_item)
+            method_item.setFont(QFont("Arial", 9))  # Aumentado +2 según petición
+            method_item.setToolTip(order.payment_method or 'Efectivo')  # Tooltip completo
+            self.payment_table.setItem(row, 4, method_item)
             
-            # Botón ver detalles
-            view_btn = QPushButton("🔍 Ver")
-            view_btn.setStyleSheet(CommonStyles.button_primary())
-            view_btn.clicked.connect(lambda checked, o=order: self.show_order_details(o))
-            self.payment_table.setCellWidget(row, 6, view_btn)
-        
-        # Ajustar altura de las filas
-        self.payment_table.resizeRowsToContents()
+            # Botón de acción muy compacto sin texto
+            action_btn = QPushButton("👁")
+            action_btn.setFixedSize(20, 20)  # Aumentado +2 para mejor legibilidad
+            action_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {ColorPalette.YINMN_BLUE};
+                    color: {ColorPalette.PLATINUM};
+                    border: none;
+                    border-radius: 2px;
+                    font-size: 9px;  # Aumentado +2 según petición
+                    font-weight: bold;
+                    margin: 1px;
+                }}
+                QPushButton:hover {{
+                    background-color: {ColorPalette.OXFORD_BLUE};
+                }}
+            """)
+            action_btn.setToolTip(f"Ver detalles de la orden #{order.id}")
+            action_btn.clicked.connect(lambda checked, o=order: self.show_order_details(o))
+            self.payment_table.setCellWidget(row, 5, action_btn)
+            
+            # Establecer altura de fila para mostrar todo el contenido
+            self.payment_table.setRowHeight(row, 30)  # Altura aumentada +2
     
     def update_pagination_info(self, result):
-        """Actualizar información de paginación"""
-        total_count = result['total_count']
-        total_pages = result['total_pages']
-        current_page = result['current_page']
+        """Actualizar información de paginación con formato compacto"""
+        total_orders = result.get('total', 0)
+        current_page = result.get('current_page', 1)
+        total_pages = result.get('total_pages', 1)
         
-        # Información general
+        # Calcular rango de registros mostrados
         start_record = (current_page - 1) * self.page_size + 1
-        end_record = min(current_page * self.page_size, total_count)
-        self.pagination_info.setText(f"Mostrando {start_record}-{end_record} de {total_count} registros")
+        end_record = min(current_page * self.page_size, total_orders)
         
-        # Información de página
-        self.page_info.setText(f"Página {current_page} de {total_pages}")
+        # Actualizar información con formato muy compacto
+        self.pagination_info.setText(f"{start_record}-{end_record} de {total_orders}")
+        self.page_info.setText(f"{current_page}/{total_pages}")
         
         # Habilitar/deshabilitar botones
         self.prev_btn.setEnabled(current_page > 1)
