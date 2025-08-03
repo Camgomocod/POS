@@ -1,6 +1,8 @@
 # utils/printer.py
 import os
 import tempfile
+import subprocess
+import platform
 from datetime import datetime
 
 class ReceiptPrinter:
@@ -18,16 +20,26 @@ class ReceiptPrinter:
         temp_file.write(receipt_content)
         temp_file.close()
         
-        # Abrir con el programa predeterminado (para imprimir)
+        # Abrir con el programa predeterminado (para imprimir) sin usar terminal
         try:
-            os.startfile(temp_file.name)  # Windows
-        except AttributeError:
-            try:
-                os.system(f'open {temp_file.name}')  # macOS
-            except:
-                os.system(f'xdg-open {temp_file.name}')  # Linux
+            self._open_file(temp_file.name)
+        except Exception as e:
+            print(f"Error al abrir recibo: {e}")
         
         return temp_file.name
+    
+    def _open_file(self, filepath):
+        """Abrir archivo de forma segura según el SO"""
+        system = platform.system()
+        
+        if system == "Windows":
+            os.startfile(filepath)
+        elif system == "Darwin":  # macOS
+            subprocess.run(['open', filepath], check=False)
+        else:  # Linux
+            # Usar subprocess sin shell para evitar problemas de terminal
+            subprocess.run(['xdg-open', filepath], check=False, 
+                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     def generate_receipt_content(self, order, cart_items):
         """Generar contenido del recibo"""
