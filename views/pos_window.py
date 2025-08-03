@@ -45,28 +45,36 @@ class CartItemWidget(QWidget):
         self.init_ui()
     
     def init_ui(self):
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(10, 8, 10, 8)
+        layout = QVBoxLayout(self)  # Cambiar a vertical para mejor uso del espacio
+        layout.setContentsMargins(8, 6, 8, 6)
+        layout.setSpacing(4)
         
-        # Nombre del producto
+        # Primera fila: Nombre del producto
         name_label = QLabel(self.product.name)
-        name_label.setStyleSheet(f"font-weight: bold; color: {ColorPalette.RICH_BLACK};")
+        name_label.setStyleSheet(f"font-weight: bold; color: {ColorPalette.RICH_BLACK}; font-size: 11px;")
+        name_label.setWordWrap(True)
+        name_label.setMaximumHeight(30)  # Limitar altura para evitar que ocupe mucho espacio
         layout.addWidget(name_label)
         
-        layout.addStretch()
+        # Segunda fila: Controles (cantidad, precio, eliminar)
+        controls_layout = QHBoxLayout()
+        controls_layout.setSpacing(6)
+        controls_layout.setContentsMargins(0, 0, 0, 0)
         
-        # Controles de cantidad
+        # Controles de cantidad más compactos
         qty_layout = QHBoxLayout()
+        qty_layout.setSpacing(4)
         
         minus_btn = QPushButton("-")
-        minus_btn.setFixedSize(25, 25)
+        minus_btn.setFixedSize(22, 22)
         minus_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ColorPalette.ERROR};
                 color: {ColorPalette.PLATINUM};
                 border: none;
-                border-radius: 12px;
+                border-radius: 11px;
                 font-weight: bold;
+                font-size: 12px;
             }}
             QPushButton:hover {{ background-color: {ColorPalette.with_alpha(ColorPalette.ERROR, 0.8)}; }}
         """)
@@ -75,72 +83,87 @@ class CartItemWidget(QWidget):
         
         self.qty_label = QLabel(str(self.quantity))
         self.qty_label.setAlignment(Qt.AlignCenter)
-        self.qty_label.setFixedWidth(30)
-        self.qty_label.setStyleSheet(f"font-weight: bold; font-size: 14px; color: {ColorPalette.RICH_BLACK};")
+        self.qty_label.setFixedWidth(25)
+        self.qty_label.setStyleSheet(f"font-weight: bold; font-size: 12px; color: {ColorPalette.RICH_BLACK};")
         qty_layout.addWidget(self.qty_label)
         
         plus_btn = QPushButton("+")
-        plus_btn.setFixedSize(25, 25)
+        plus_btn.setFixedSize(22, 22)
         plus_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ColorPalette.SUCCESS};
                 color: {ColorPalette.PLATINUM};
                 border: none;
-                border-radius: 12px;
+                border-radius: 11px;
                 font-weight: bold;
+                font-size: 12px;
             }}
             QPushButton:hover {{ background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.8)}; }}
         """)
         plus_btn.clicked.connect(self.increase_quantity)
         qty_layout.addWidget(plus_btn)
         
-        layout.addLayout(qty_layout)
+        controls_layout.addLayout(qty_layout)
+        
+        # Espaciador flexible
+        controls_layout.addStretch()
         
         # Precio
-        price_label = QLabel(f"${self.product.price * self.quantity:.2f}")
-        price_label.setStyleSheet(f"font-weight: bold; color: {ColorPalette.SUCCESS}; margin-left: 10px;")
-        price_label.setFixedWidth(60)
-        price_label.setAlignment(Qt.AlignRight)
-        layout.addWidget(price_label)
+        self.price_label = QLabel(f"${self.product.price * self.quantity:.2f}")
+        self.price_label.setStyleSheet(f"font-weight: bold; color: {ColorPalette.SUCCESS}; font-size: 11px;")
+        self.price_label.setFixedWidth(55)
+        self.price_label.setAlignment(Qt.AlignCenter)
+        controls_layout.addWidget(self.price_label)
         
-        # Botón eliminar
-        remove_btn = QPushButton("✕")
-        remove_btn.setFixedSize(25, 25)
+        # Botón eliminar más visible
+        remove_btn = QPushButton("🗑️")
+        remove_btn.setFixedSize(28, 22)
+        remove_btn.setToolTip("Eliminar del carrito")
         remove_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {ColorPalette.SILVER_LAKE_BLUE};
+                background-color: {ColorPalette.ERROR};
                 color: {ColorPalette.PLATINUM};
                 border: none;
-                border-radius: 12px;
+                border-radius: 8px;
                 font-weight: bold;
+                font-size: 10px;
             }}
-            QPushButton:hover {{ background-color: {ColorPalette.OXFORD_BLUE}; }}
+            QPushButton:hover {{ 
+                background-color: {ColorPalette.with_alpha(ColorPalette.ERROR, 0.8)};
+                border: 2px solid {ColorPalette.PLATINUM};
+            }}
         """)
         remove_btn.clicked.connect(lambda: self.item_removed.emit(self.product.id))
-        layout.addWidget(remove_btn)
+        controls_layout.addWidget(remove_btn)
         
-        # Estilo del widget
+        layout.addLayout(controls_layout)
+        
+        # Estilo del widget - más compacto para layout vertical
         self.setStyleSheet(f"""
             CartItemWidget {{
                 background-color: {ColorPalette.PLATINUM};
-                border-radius: 10px;
-                margin: 2px;
+                border-radius: 8px;
                 border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
+                min-height: 55px;
+                max-height: 65px;
             }}
             CartItemWidget:hover {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
+                border: 1px solid {ColorPalette.YINMN_BLUE};
             }}
         """)
     
     def increase_quantity(self):
         self.quantity += 1
         self.qty_label.setText(str(self.quantity))
+        self.price_label.setText(f"${self.product.price * self.quantity:.2f}")
         self.quantity_changed.emit(self.product.id, self.quantity)
     
     def decrease_quantity(self):
         if self.quantity > 1:
             self.quantity -= 1
             self.qty_label.setText(str(self.quantity))
+            self.price_label.setText(f"${self.product.price * self.quantity:.2f}")
             self.quantity_changed.emit(self.product.id, self.quantity)
 
 class CustomerInfoDialog(QDialog):
@@ -214,7 +237,7 @@ class CustomerInfoDialog(QDialog):
                 color: {ColorPalette.RICH_BLACK};
             }}
             QLineEdit:focus {{
-                border-color: {ColorPalette.YINMN_BLUE};
+                border: 1px solid {ColorPalette.YINMN_BLUE};
             }}
         """)
         layout.addWidget(self.name_input)
@@ -239,7 +262,7 @@ class CustomerInfoDialog(QDialog):
                 color: {ColorPalette.RICH_BLACK};
             }}
             QSpinBox:focus {{
-                border-color: {ColorPalette.YINMN_BLUE};
+                border: 1px solid {ColorPalette.YINMN_BLUE};
             }}
         """)
         layout.addWidget(self.table_input)
@@ -250,7 +273,7 @@ class CustomerInfoDialog(QDialog):
             font-weight: bold; 
             color: {ColorPalette.RICH_BLACK}; 
             font-size: 13px;
-            margin-top: 5px;
+            padding: 5px 0px 0px 0px;
         """)
         layout.addWidget(payment_title)
         
@@ -275,15 +298,14 @@ class CustomerInfoDialog(QDialog):
                     border-radius: 5px;
                     font-weight: bold;
                     font-size: 10px;
-                    text-align: center;
                 }}
                 QPushButton:checked {{
                     background-color: {ColorPalette.YINMN_BLUE};
                     color: {ColorPalette.PLATINUM};
-                    border-color: {ColorPalette.OXFORD_BLUE};
+                    border: 1px solid {ColorPalette.OXFORD_BLUE};
                 }}
                 QPushButton:hover {{
-                    border-color: {ColorPalette.YINMN_BLUE};
+                    border: 1px solid {ColorPalette.YINMN_BLUE};
                 }}
             """)
         
@@ -408,20 +430,43 @@ class POSWindow(QMainWindow):
         
     def init_ui(self):
         self.setWindowTitle("🍔 POS - Restaurante FastFood")
-        self.setGeometry(100, 100, 1500, 950)  # Tamaño aumentado para mejor distribución
         
-        # Layout principal para la vista POS
+        # Detectar resolución para diseño responsivo
+        screen = QApplication.primaryScreen().geometry()
+        self.is_small_screen = screen.width() <= 1366
+        self.screen_width = screen.width()
+        self.screen_height = screen.height()
+        
+        # Ajustar tamaño de ventana según resolución
+        if self.screen_width <= 1366:
+            # Para tu resolución específica - usar más espacio horizontal
+            self.setGeometry(30, 30, 1320, 720)  # Usar casi toda la pantalla
+        else:
+            # Para pantallas más grandes
+            self.setGeometry(100, 100, 1500, 950)
+        
+        # Layout principal para la vista POS con espaciado adaptativo
         main_layout = QHBoxLayout(self.pos_view)
-        main_layout.setSpacing(15)
-        main_layout.setContentsMargins(15, 15, 15, 15)
+        spacing = 8 if self.screen_width <= 1366 else 15
+        margins = 8 if self.screen_width <= 1366 else 15
+        main_layout.setSpacing(spacing)
+        main_layout.setContentsMargins(margins, margins, margins, margins)
         
-        # Panel izquierdo - Productos (70% del espacio)
-        left_panel = self.create_product_panel()
-        main_layout.addWidget(left_panel, 7)  # Proporción aumentada
-        
-        # Panel derecho - Carrito (30% del espacio)
-        right_panel = self.create_cart_panel()
-        main_layout.addWidget(right_panel, 3)  # Proporción optimizada
+        # Ajustar proporciones para mejor distribución en 1366x768
+        if self.screen_width <= 1366:
+            # 70/30 para productos/carrito - más espacio para el carrito
+            left_panel = self.create_product_panel()
+            main_layout.addWidget(left_panel, 7)  # 70% del espacio
+            
+            right_panel = self.create_cart_panel()
+            main_layout.addWidget(right_panel, 3)  # 30% del espacio
+        else:
+            # Proporciones estándar para pantallas más grandes
+            left_panel = self.create_product_panel()
+            main_layout.addWidget(left_panel, 7)
+            
+            right_panel = self.create_cart_panel()
+            main_layout.addWidget(right_panel, 3)
         
         # Estilo general
         self.setStyleSheet(f"""
@@ -434,43 +479,83 @@ class POSWindow(QMainWindow):
         panel = QFrame()
         panel.setStyleSheet(CommonStyles.panel_main())
         layout = QVBoxLayout(panel)
-        layout.setSpacing(15)
+        
+        # Espaciado adaptativo
+        spacing = 10 if self.is_small_screen else 15
+        layout.setSpacing(spacing)
         
         # Header del panel
         header_layout = QHBoxLayout()
         
+        # Contenedor del título con gradiente de fondo (estilo unificado con kitchen_orders)
+        title_container = QFrame()
+        title_container.setStyleSheet(f"""
+            QFrame {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                           stop:0 {ColorPalette.PLATINUM},
+                           stop:0.5 {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.98)},
+                           stop:1 {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.05)});
+                border-radius: 8px;
+                padding: 8px 12px;
+                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.2)};
+            }}
+        """)
+        title_container_layout = QHBoxLayout(title_container)
+        title_container_layout.setContentsMargins(4, 2, 4, 2)
+        
         title = QLabel("🍽️ MENÚ")
         title.setAlignment(Qt.AlignLeft)
+        title_font_size = 22 if self.is_small_screen else 26
         title.setStyleSheet(f"""
-            font-size: 26px;
+            font-size: {title_font_size}px;
             font-weight: bold;
             color: {ColorPalette.RICH_BLACK};
-            margin-bottom: 5px;
+            background: transparent;
+            border: none;
+            padding: 4px 8px;
         """)
-        header_layout.addWidget(title)
+        title_container_layout.addWidget(title)
+        title_container_layout.addStretch()
+        
+        header_layout.addWidget(title_container)
         
         header_layout.addStretch()
         
-        # Botón abrir cocina
+        # Botón abrir cocina (estilo unificado)
         kitchen_btn = QPushButton("👨‍🍳 Cocina")
         kitchen_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ColorPalette.WARNING};
-                color: {ColorPalette.PLATINUM};
+                color: #ffffff;
                 border: none;
                 padding: 12px 18px;
-                border-radius: 10px;
+                border-radius: 8px;
                 font-weight: bold;
                 font-size: 14px;
             }}
-            QPushButton:hover {{ background-color: {ColorPalette.with_alpha(ColorPalette.WARNING, 0.8)}; }}
+            QPushButton:hover {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.WARNING, 0.8)};
+            }}
         """)
         kitchen_btn.clicked.connect(self.open_kitchen_window)
         header_layout.addWidget(kitchen_btn)
         
-        # Botón historial de pagos
+        # Botón historial de pagos (estilo unificado)
         history_btn = QPushButton("💰 Historial")
-        history_btn.setStyleSheet(CommonStyles.button_primary())
+        history_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ColorPalette.YINMN_BLUE};
+                color: #ffffff;
+                border: none;
+                padding: 12px 18px;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: 14px;
+            }}
+            QPushButton:hover {{
+                background-color: {ColorPalette.OXFORD_BLUE};
+            }}
+        """)
         history_btn.clicked.connect(self.open_payment_history)
         header_layout.addWidget(history_btn)
         
@@ -530,9 +615,18 @@ class POSWindow(QMainWindow):
         
         self.products_widget = QWidget()
         self.products_layout = QGridLayout(self.products_widget)
-        self.products_layout.setSpacing(12)  # Espaciado optimizado
-        self.products_layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)  # Alineación izquierda
-        self.products_layout.setContentsMargins(15, 15, 15, 15)
+        
+        # Espaciado optimizado para 1366x768
+        if self.screen_width <= 1366:
+            spacing = 10  # Espaciado óptimo para 4 columnas
+            margin = 10   # Márgenes ajustados
+        else:
+            spacing = 12  # Espaciado estándar para pantallas más grandes
+            margin = 15
+        
+        self.products_layout.setSpacing(spacing)
+        self.products_layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.products_layout.setContentsMargins(margin, margin, margin, margin)
         
         scroll.setWidget(self.products_widget)
         layout.addWidget(scroll)
@@ -542,9 +636,17 @@ class POSWindow(QMainWindow):
     def create_cart_panel(self):
         panel = QFrame()
         panel.setStyleSheet(CommonStyles.panel_main())
-        panel.setMinimumWidth(380)  # Ancho mínimo para el panel del carrito
+        
+        # Ancho del carrito aumentado para mejor visualización del texto
+        if self.screen_width <= 1366:
+            panel.setMinimumWidth(380)  # Más espacio para que el texto se vea bien
+            panel.setMaximumWidth(420)  # Permite suficiente espacio para contenido
+        else:
+            panel.setMinimumWidth(380)  # Ancho estándar para pantallas grandes
+        
         layout = QVBoxLayout(panel)
-        layout.setSpacing(15)
+        spacing = 8 if self.screen_width <= 1366 else 15
+        layout.setSpacing(spacing)
         
         # Header del carrito mejorado
         header_frame = QFrame()
@@ -563,7 +665,7 @@ class POSWindow(QMainWindow):
             font-size: 18px;
             font-weight: bold;
             color: {ColorPalette.PLATINUM};
-            margin-bottom: 5px;
+            padding: 0px 0px 5px 0px;
         """)
         header_layout.addWidget(title)
         
@@ -705,25 +807,29 @@ class POSWindow(QMainWindow):
             
         categories_layout = categories_frame.layout()
         
-        # Estilo para botones de categorías
+        # Estilo para botones de categorías con tamaño responsivo
+        padding = "8px 12px" if self.is_small_screen else "12px 16px"
+        font_size = 12 if self.is_small_screen else 14
+        min_width = 100 if self.is_small_screen else 120
+        
         category_button_style = f"""
             QPushButton {{
                 background-color: {ColorPalette.PLATINUM};
                 color: {ColorPalette.RICH_BLACK};
                 border: 2px solid {ColorPalette.SILVER_LAKE_BLUE};
-                padding: 12px 16px;
+                padding: {padding};
                 border-radius: 10px;
                 font-weight: bold;
-                font-size: 14px;
-                min-width: 120px;
+                font-size: {font_size}px;
+                min-width: {min_width}px;
             }}
             QPushButton:checked {{
                 background-color: {ColorPalette.YINMN_BLUE};
                 color: {ColorPalette.PLATINUM};
-                border-color: {ColorPalette.OXFORD_BLUE};
+                border: 2px solid {ColorPalette.OXFORD_BLUE};
             }}
             QPushButton:hover {{
-                border-color: {ColorPalette.YINMN_BLUE};
+                border: 2px solid {ColorPalette.YINMN_BLUE};
                 background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.1)};
             }}
             QPushButton:checked:hover {{
@@ -766,7 +872,7 @@ class POSWindow(QMainWindow):
         self.load_products()
     
     def load_products(self):
-        """Cargar productos según la categoría seleccionada"""
+        """Cargar productos según la categoría seleccionada con grid responsivo"""
         # Limpiar productos actuales
         for i in reversed(range(self.products_layout.count())):
             child = self.products_layout.itemAt(i).widget()
@@ -779,9 +885,11 @@ class POSWindow(QMainWindow):
         else:
             products = self.product_controller.get_products_by_category(self.selected_category_id)
         
-        # Mostrar productos en grid (4 columnas para mejor aprovechamiento del espacio)
+        # Usar la función optimizada para calcular columnas
+        columns = self.get_optimal_columns()
+        
+        # Mostrar productos en grid responsivo
         row, col = 0, 0
-        columns = 4  # Aumentado a 4 columnas
         
         for product in products:
             btn = self.create_product_button(product)
@@ -792,15 +900,42 @@ class POSWindow(QMainWindow):
                 row += 1
     
     def create_product_button(self, product):
-        """Crear botón de producto con diseño moderno y tamaño optimizado"""
+        """Crear botón de producto con diseño responsivo"""
         container = QFrame()
-        container.setFixedSize(220, 160)  # Tamaño optimizado para 4 columnas
+        
+        # Tamaño optimizado para 3 columnas en distribución 70/30
+        if self.screen_width <= 1366:
+            # Para 1366x768 - 3 columnas con distribución 70/30
+            # Panel: 924px, disponible: 904px, 3 columnas = 294px por botón
+            button_width = 290  # Botones optimizados para 70/30
+            button_height = 170  # Altura proporcional
+            font_size_name = 14
+            font_size_price = 17
+            padding_container = 12
+            padding_name = 8
+        elif self.screen_width <= 1440:
+            button_width = 210
+            button_height = 155
+            font_size_name = 13
+            font_size_price = 15
+            padding_container = 10
+            padding_name = 6
+        else:
+            # Para pantallas más grandes
+            button_width = 220
+            button_height = 160
+            font_size_name = 14
+            font_size_price = 16
+            padding_container = 12
+            padding_name = 6
+        
+        container.setFixedSize(button_width, button_height)
         container.setCursor(Qt.PointingHandCursor)
         
-        # Layout interno
+        # Layout interno con espaciado adaptativo
         layout = QVBoxLayout(container)
-        layout.setContentsMargins(12, 15, 12, 12)
-        layout.setSpacing(8)
+        layout.setContentsMargins(padding_container, padding_container + 3, padding_container, padding_container)
+        layout.setSpacing(6)
         
         # Contenedor para el nombre
         name_container = QWidget()
@@ -808,18 +943,21 @@ class POSWindow(QMainWindow):
         name_layout.setContentsMargins(0, 0, 0, 0)
         name_layout.setSpacing(0)
         
-        # Nombre del producto
+        # Nombre del producto con tamaño de fuente adaptativo
         name_label = QLabel(product.name)
         name_label.setStyleSheet(f"""
             color: {ColorPalette.RICH_BLACK};
             font-weight: bold;
-            font-size: 14px;
+            font-size: {font_size_name}px;
             background-color: transparent;
-            padding: 6px;
+            padding: {padding_name}px;
         """)
         name_label.setWordWrap(True)
         name_label.setAlignment(Qt.AlignCenter)
-        name_label.setMinimumHeight(50)
+        
+        # Altura mínima adaptativa para el nombre
+        min_height_name = 45 if self.is_small_screen else 50
+        name_label.setMinimumHeight(min_height_name)
         name_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         name_layout.addWidget(name_label)
         
@@ -831,28 +969,29 @@ class POSWindow(QMainWindow):
         line.setStyleSheet(f"background-color: {ColorPalette.SILVER_LAKE_BLUE}; max-height: 1px;")
         layout.addWidget(line)
         
-        # Precio
+        # Precio con tamaño de fuente adaptativo
         price_label = QLabel(f"${product.price:.2f}")
         price_label.setStyleSheet(f"""
             color: {ColorPalette.SUCCESS};
             font-weight: bold;
-            font-size: 16px;
+            font-size: {font_size_price}px;
             background-color: transparent;
             padding: 4px;
         """)
         price_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(price_label, 1)
         
-        # Estilo del contenedor
+        # Estilo del contenedor con border-radius adaptativo
+        border_radius = 10 if self.is_small_screen else 12
         container.setStyleSheet(f"""
             QFrame {{
                 background-color: {ColorPalette.PLATINUM};
                 border: 2px solid {ColorPalette.SILVER_LAKE_BLUE};
-                border-radius: 12px;
+                border-radius: {border_radius}px;
             }}
             QFrame:hover {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.1)};
-                border-color: {ColorPalette.YINMN_BLUE};
+                border: 2px solid {ColorPalette.YINMN_BLUE};
             }}
         """)
         
@@ -1038,6 +1177,9 @@ class POSWindow(QMainWindow):
             self.kitchen_view.back_to_pos.connect(self.show_pos_view)
             self.kitchen_view.open_history.connect(self.open_payment_history)
             self.stack_widget.addWidget(self.kitchen_view)
+        else:
+            # Actualizar órdenes al abrir la vista de cocina
+            self.kitchen_view.load_orders()
         
         self.stack_widget.setCurrentWidget(self.kitchen_view)
     
@@ -1048,6 +1190,7 @@ class POSWindow(QMainWindow):
             from views.payment_history_window import PaymentHistoryView
             self.payment_history_view = PaymentHistoryView(self)
             self.payment_history_view.back_to_pos.connect(self.show_pos_view)
+            self.payment_history_view.open_kitchen.connect(self.open_kitchen_window)
             self.stack_widget.addWidget(self.payment_history_view)
         
         # Refrescar datos cada vez que se abre el historial
@@ -1057,6 +1200,40 @@ class POSWindow(QMainWindow):
     def show_pos_view(self):
         """Volver a la vista de POS"""
         self.stack_widget.setCurrentWidget(self.pos_view)
+    
+    def resizeEvent(self, event):
+        """Manejar el redimensionamiento de la ventana"""
+        super().resizeEvent(event)
+        
+        # Actualizar información de pantalla
+        new_width = event.size().width()
+        new_height = event.size().height()
+        
+        # Si el cambio de tamaño es significativo, recalcular el grid
+        if hasattr(self, 'screen_width') and abs(new_width - self.screen_width) > 100:
+            self.screen_width = new_width
+            self.screen_height = new_height
+            
+            # Recalcular si es pantalla pequeña
+            old_is_small = self.is_small_screen
+            self.is_small_screen = new_width <= 1366
+            
+            # Solo recargar productos si cambió la categoría de tamaño
+            if old_is_small != self.is_small_screen:
+                self.load_products()
+    
+    def get_optimal_columns(self):
+        """Calcular número óptimo de columnas según el ancho actual"""
+        
+        if self.screen_width <= 1366:
+            # Para resolución 1366x768 - 3 columnas para mejor distribución
+            return 3  # 3 columnas permiten botones más grandes y carrito más espacioso
+        elif self.screen_width <= 1440:
+            return 4  # Para pantallas ligeramente más grandes
+        elif self.screen_width <= 1920:
+            return 5  # Para Full HD
+        else:
+            return 6  # Para pantallas muy grandes
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

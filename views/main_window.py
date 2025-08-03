@@ -21,7 +21,7 @@ class DashboardCard(QFrame):
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                     stop:0 {color}, stop:1 {color}dd);
                 border-radius: 15px;
-                color: white;
+                color: #ffffff;
             }}
             QFrame:hover {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -40,7 +40,7 @@ class DashboardCard(QFrame):
         text_layout.addWidget(title_label)
         
         value_label = QLabel(value)
-        value_label.setStyleSheet("font-size: 24px; font-weight: bold; color: white;")
+        value_label.setStyleSheet("font-size: 24px; font-weight: bold; color: #ffffff;")
         text_layout.addWidget(value_label)
         
         layout.addLayout(text_layout)
@@ -109,8 +109,7 @@ class MainWindow(QMainWindow):
         title.setStyleSheet("""
             font-size: 32px;
             font-weight: bold;
-            color: white;
-            margin: 0;
+            color: #ffffff;
         """)
         title_layout.addWidget(title)
         
@@ -118,7 +117,6 @@ class MainWindow(QMainWindow):
         subtitle.setStyleSheet("""
             font-size: 16px;
             color: rgba(255,255,255,0.8);
-            margin: 0;
         """)
         title_layout.addWidget(subtitle)
         
@@ -130,7 +128,7 @@ class MainWindow(QMainWindow):
         refresh_btn.setStyleSheet("""
             QPushButton {
                 background-color: rgba(255,255,255,0.2);
-                color: white;
+                color: #ffffff;
                 border: 2px solid rgba(255,255,255,0.3);
                 padding: 10px 20px;
                 border-radius: 10px;
@@ -139,7 +137,7 @@ class MainWindow(QMainWindow):
             }
             QPushButton:hover {
                 background-color: rgba(255,255,255,0.3);
-                border-color: rgba(255,255,255,0.5);
+                border: 2px solid rgba(255,255,255,0.5);
             }
         """)
         refresh_btn.clicked.connect(self.load_dashboard_data)
@@ -165,8 +163,7 @@ class MainWindow(QMainWindow):
         dashboard_title.setStyleSheet("""
             font-size: 20px;
             font-weight: bold;
-            color: white;
-            margin-bottom: 15px;
+            color: #ffffff;
         """)
         layout.addWidget(dashboard_title)
         
@@ -231,10 +228,9 @@ class MainWindow(QMainWindow):
             QPushButton {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                     stop:0 {color}, stop:1 {color}dd);
-                color: white;
+                color: #ffffff;
                 border: none;
                 border-radius: 15px;
-                text-align: left;
                 padding: 20px;
                 font-weight: bold;
             }}
@@ -253,7 +249,7 @@ class MainWindow(QMainWindow):
         layout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         
         title_label = QLabel(title)
-        title_label.setStyleSheet("font-size: 16px; font-weight: bold; color: white;")
+        title_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #ffffff;")
         layout.addWidget(title_label)
         
         desc_label = QLabel(description)

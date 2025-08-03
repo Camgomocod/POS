@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushBut
                              QTableWidget, QTableWidgetItem, QHeaderView, QFrame,
                              QDateEdit, QLineEdit, QComboBox, QSpinBox, QDialog,
                              QFormLayout, QTextEdit, QMessageBox, QProgressBar,
-                             QFileDialog, QScrollArea, QSizePolicy)
+                             QFileDialog, QScrollArea, QSizePolicy, QApplication)
 from PyQt5.QtCore import Qt, pyqtSignal, QDate, QThread, pyqtSlot
 from PyQt5.QtGui import QFont, QIcon, QColor
 from controllers.payment_controller import PaymentController
@@ -35,7 +35,7 @@ class PaymentDetailDialog(QDialog):
         header_frame.setFixedHeight(60)  # Altura fija para el header
         header_frame.setStyleSheet(f"""
             QFrame {{
-                background: {ColorPalette.YINMN_BLUE};
+                background-color: {ColorPalette.YINMN_BLUE};
                 border-radius: 8px;
                 border: 1px solid {ColorPalette.OXFORD_BLUE};
             }}
@@ -72,7 +72,7 @@ class PaymentDetailDialog(QDialog):
         status_label.setStyleSheet(f"""
             background-color: {ColorPalette.SUCCESS};
             color: {ColorPalette.PLATINUM};
-            padding: 2px 6px;
+            padding: 2px;
             border-radius: 4px;
             font-weight: bold;
             font-size: 9px;
@@ -87,7 +87,7 @@ class PaymentDetailDialog(QDialog):
         customer_frame.setFixedHeight(55)  # Altura fija
         customer_frame.setStyleSheet(f"""
             QFrame {{
-                background: {ColorPalette.PLATINUM};
+                background-color: {ColorPalette.PLATINUM};
                 border-radius: 6px;
                 border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
             }}
@@ -122,7 +122,7 @@ class PaymentDetailDialog(QDialog):
             font-size: 14px; 
             font-weight: bold; 
             color: {ColorPalette.RICH_BLACK};
-            padding: 5px 0;
+            padding: 5px;
         """)
         layout.addWidget(products_title)
         
@@ -212,7 +212,7 @@ class PaymentDetailDialog(QDialog):
         total_frame.setFixedHeight(35)  # Altura fija
         total_frame.setStyleSheet(f"""
             QFrame {{
-                background: {ColorPalette.SUCCESS};
+                background-color: {ColorPalette.SUCCESS};
                 border-radius: 6px;
             }}
         """)
@@ -401,6 +401,7 @@ class PaymentHistoryView(QWidget):
     """Vista para el historial de pagos con diseño optimizado"""
     
     back_to_pos = pyqtSignal()  # Señal para volver a POS
+    open_kitchen = pyqtSignal()  # Señal para abrir cocina
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -430,6 +431,10 @@ class PaymentHistoryView(QWidget):
             self.refresh_data()
     
     def init_ui(self):
+        # Detectar resolución para diseño responsivo (igual que kitchen_orders_window)
+        screen = QApplication.primaryScreen().geometry()
+        self.is_small_screen = screen.width() <= 1366
+        
         # Layout principal optimizado para resoluciones pequeñas (1366x768)
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(8, 4, 8, 4)  # Márgenes mínimos para laptop
@@ -457,91 +462,119 @@ class PaymentHistoryView(QWidget):
         footer_layout = self.create_footer_controls()
         main_layout.addLayout(footer_layout)
         
-        # Estilo general mejorado sin gradiente problemático
+        # Estilo general mejorado (unificado con kitchen_orders_window)
         self.setStyleSheet(f"""
             QWidget {{
-                background-color: {ColorPalette.PLATINUM};
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                           stop:0 {ColorPalette.PLATINUM},
+                           stop:0.5 {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.98)},
+                           stop:1 {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.05)});
                 font-family: 'Segoe UI', 'Arial', sans-serif;
             }}
         """)
     
     def create_header(self):
-        """Crear header ultra-compacto para laptops pequeños"""
+        """Crear header simplificado usando el estilo de kitchen_orders_window"""
         layout = QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 2)  # Márgenes mínimos
+        layout.setSpacing(12)
         
-        # Contenedor del título con ícono muy compacto
-        title_container = QHBoxLayout()
-        
+        # Título simple y claro (mismo estilo que kitchen orders)
         title = QLabel("💰 HISTORIAL DE PAGOS")
+        title_font_size = 22 if self.is_small_screen else 26
         title.setStyleSheet(f"""
-            font-size: 18px;  /* Reducido para laptop */
+            font-size: {title_font_size}px;
             font-weight: bold;
             color: {ColorPalette.RICH_BLACK};
-            margin: 0;
-            padding: 2px 0;  /* Mínimo padding */
+            padding: 8px;
         """)
-        title_container.addWidget(title)
+        layout.addWidget(title)
         
-        # Información adicional más compacta
-        subtitle = QLabel("Gestión de transacciones")
-        subtitle.setStyleSheet(f"""
-            font-size: 10px;  /* Muy reducido */
-            color: {ColorPalette.SILVER_LAKE_BLUE};
-            margin-left: 6px;  /* Mínimo margen */
-            font-style: italic;
-        """)
-        title_container.addWidget(subtitle)
-        title_container.addStretch()
+        layout.addStretch()
         
-        layout.addLayout(title_container)
-        
-        # Botones de acción ultra-compactos para laptop
-        buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(4)  # Mínimo espaciado
-        
-        # Botón refrescar más pequeño
-        refresh_btn = QPushButton("🔄")
-        refresh_btn.setFixedSize(28, 28)  # Muy pequeño para laptop
-        refresh_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {ColorPalette.YINMN_BLUE};
-                color: {ColorPalette.PLATINUM};
-                border: none;
-                padding: 4px;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 12px;
-            }}
-            QPushButton:hover {{
-                background-color: {ColorPalette.OXFORD_BLUE};
+        # Botones de acción unificados con kitchen_orders_window
+        controls_container = QFrame()
+        controls_container.setStyleSheet(f"""
+            QFrame {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
+                border-radius: 8px;
+                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.2)};
+                padding: 8px;
             }}
         """)
-        refresh_btn.setToolTip("Actualizar datos")
-        refresh_btn.clicked.connect(self.refresh_data)
-        buttons_layout.addWidget(refresh_btn)
+        controls_layout = QHBoxLayout(controls_container)
+        controls_layout.setSpacing(8)
+        controls_layout.setContentsMargins(8, 6, 8, 6)
         
-        # Botón volver a POS más pequeño
+        # Tamaños responsivos
+        screen = QApplication.primaryScreen().geometry()
+        is_small_screen = screen.width() <= 1366
+        btn_height = 34 if is_small_screen else 40
+        btn_font_size = 10 if is_small_screen else 12
+        
+        # Botón volver a POS (estilo unificado)
         pos_btn = QPushButton("🍽️ POS")
-        pos_btn.setFixedSize(70, 28)  # Reducido para laptop
+        pos_btn.setFixedHeight(btn_height)
         pos_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ColorPalette.SUCCESS};
-                color: {ColorPalette.PLATINUM};
+                color: white;
                 border: none;
-                padding: 4px 8px;
-                border-radius: 6px;
+                padding: 6px;
+                border-radius: 8px;
                 font-weight: bold;
-                font-size: 10px;
+                font-size: {btn_font_size}px;
+                min-width: 80px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.8)};
             }}
         """)
         pos_btn.clicked.connect(lambda: self.back_to_pos.emit())
-        buttons_layout.addWidget(pos_btn)
+        controls_layout.addWidget(pos_btn)
         
-        layout.addLayout(buttons_layout)
+        # Botón cocina (nuevo)
+        kitchen_btn = QPushButton("👨‍� Cocina")
+        kitchen_btn.setFixedHeight(btn_height)
+        kitchen_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ColorPalette.WARNING};
+                color: white;
+                border: none;
+                padding: 6px;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: {btn_font_size}px;
+                min-width: 90px;
+            }}
+            QPushButton:hover {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.WARNING, 0.8)};
+            }}
+        """)
+        kitchen_btn.clicked.connect(lambda: self.open_kitchen.emit())
+        controls_layout.addWidget(kitchen_btn)
+        
+        # Botón actualizar (estilo unificado)
+        refresh_btn = QPushButton("🔄 Actualizar")
+        refresh_btn.setFixedHeight(btn_height)
+        refresh_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ColorPalette.SILVER_LAKE_BLUE};
+                color: white;
+                border: none;
+                padding: 6px;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: {btn_font_size}px;
+                min-width: 100px;
+            }}
+            QPushButton:hover {{
+                background-color: {ColorPalette.YINMN_BLUE};
+            }}
+        """)
+        refresh_btn.clicked.connect(self.refresh_data)
+        controls_layout.addWidget(refresh_btn)
+        
+        layout.addWidget(controls_container)
         
         return layout
     
@@ -571,7 +604,6 @@ class PaymentHistoryView(QWidget):
             font-size: 12px;
             font-weight: bold;
             color: {ColorPalette.RICH_BLACK};
-            text-align: center;
             padding: 4px;
             background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.1)};
             border-radius: 4px;
@@ -617,7 +649,7 @@ class PaymentHistoryView(QWidget):
                 background-color: {ColorPalette.PLATINUM};
                 border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
                 border-radius: 3px;
-                padding: 2px 4px;
+                padding: 2px;
                 font-size: 10px;
                 color: {ColorPalette.RICH_BLACK};
             }}
@@ -648,7 +680,7 @@ class PaymentHistoryView(QWidget):
                 background-color: {ColorPalette.PLATINUM};
                 border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
                 border-radius: 3px;
-                padding: 2px 4px;
+                padding: 2px;
                 font-size: 10px;
                 color: {ColorPalette.RICH_BLACK};
             }}
@@ -702,7 +734,7 @@ class PaymentHistoryView(QWidget):
                 background-color: {ColorPalette.PLATINUM};
                 border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
                 border-radius: 3px;
-                padding: 2px 4px;
+                padding: 2px;
                 font-size: 10px;
                 color: {ColorPalette.RICH_BLACK};
             }}
@@ -794,7 +826,7 @@ class PaymentHistoryView(QWidget):
                 border: 2px solid {ColorPalette.SILVER_LAKE_BLUE};
                 border-radius: 8px;
                 padding: 6px;
-                margin: 1px;
+                
             }}
         """)
         
@@ -811,7 +843,7 @@ class PaymentHistoryView(QWidget):
             font-size: 16px;  # Aumentado +2 según petición
             font-weight: bold;
             color: {ColorPalette.RICH_BLACK};
-            padding: 2px 0;  # Mínimo padding
+            padding: 2px;
         """)
         table_header.addWidget(table_title)
         
@@ -823,7 +855,7 @@ class PaymentHistoryView(QWidget):
             color: {ColorPalette.SUCCESS};
             font-size: 11px;  # Aumentado +2 según petición
             font-weight: bold;
-            padding: 2px 4px;  # Mínimo padding
+            padding: 2px;
             background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.1)};
             border-radius: 3px;  # Muy reducido
             border: 1px solid {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.3)};
@@ -902,8 +934,6 @@ class PaymentHistoryView(QWidget):
                 padding: 3px 2px;  /* Padding aumentado para mejor legibilidad */
                 border-bottom: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
                 color: {ColorPalette.RICH_BLACK};
-                text-align: center;
-                line-height: 1.3;  /* Mejorar espaciado de línea */
             }}
             QTableWidget::item:selected {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
@@ -923,7 +953,6 @@ class PaymentHistoryView(QWidget):
                 border: none;
                 border-right: 1px solid {ColorPalette.OXFORD_BLUE};
                 height: 32px;  /* Altura aumentada para mostrar texto completo */
-                text-align: center;
             }}
             QHeaderView::section:first {{
                 border-top-left-radius: 6px;
@@ -936,7 +965,7 @@ class PaymentHistoryView(QWidget):
                 background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
                 width: 8px;  /* Scrollbar muy delgado */
                 border-radius: 4px;
-                margin: 0;
+                
             }}
             QScrollBar::handle:vertical {{
                 background-color: {ColorPalette.SILVER_LAKE_BLUE};
@@ -964,7 +993,7 @@ class PaymentHistoryView(QWidget):
             QFrame {{
                 background-color: {ColorPalette.PLATINUM};
                 border-radius: 4px;
-                padding: 2px 4px;
+                padding: 2px;
                 border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
             }}
         """)
@@ -973,7 +1002,7 @@ class PaymentHistoryView(QWidget):
         
         # Ícono de información muy pequeño
         info_icon = QLabel("📊")
-        info_icon.setStyleSheet("font-size: 10px; margin-right: 1px;")
+        info_icon.setStyleSheet("font-size: 10px; padding-right: 1px;")
         info_layout.addWidget(info_icon)
         
         # Información de paginación muy compacta
@@ -1233,7 +1262,7 @@ class PaymentHistoryView(QWidget):
                     border-radius: 2px;
                     font-size: 9px;  # Aumentado +2 según petición
                     font-weight: bold;
-                    margin: 1px;
+                    
                 }}
                 QPushButton:hover {{
                     background-color: {ColorPalette.OXFORD_BLUE};

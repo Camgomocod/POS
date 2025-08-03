@@ -70,10 +70,10 @@ class OrderController:
         return self.db.query(Order).filter(Order.id == order_id).first()
     
     def complete_payment(self, order_id, payment_method="efectivo"):
-        """Marcar orden como pagada"""
+        """Marcar orden como pagada pero mantenerla como pendiente para cocina"""
         order = self.db.query(Order).filter(Order.id == order_id).first()
         if order:
-            order.status = OrderStatus.PAID
+            # Mantener como PENDING para que aparezca en cocina
             order.payment_method = payment_method
             order.updated_at = datetime.now()
             self.db.commit()
