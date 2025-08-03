@@ -1,40 +1,59 @@
 # views/admin_window.py
-from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QPushButton, QFrame, QStackedWidget, QApplication, QMessageBox,
-                             QTabWidget, QScrollArea, QGridLayout, QSizePolicy)
+from PyQt5.QtWidgets import (
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QPushButton, QFrame, QStackedWidget, QApplication, QMessageBox,
+    QTabWidget, QScrollArea, QGridLayout, QSizePolicy,
+    QTableWidget, QTableWidgetItem, QAbstractItemView
+)
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 from PyQt5.QtGui import QFont, QIcon, QPixmap
 from utils.colors import ColorPalette, CommonStyles
+from controllers.auth_controller import AuthController
+from views.user_management_window import UserManagementWidget
+from datetime import datetime
 import sys
 
 class AdminDashboard(QWidget):
     """Panel principal de administración"""
     
+    # Señales para acciones rápidas que navegan a las pestañas correspondientes
+    manage_users = pyqtSignal()
+    view_reports = pyqtSignal()
+    manage_menu = pyqtSignal()
+    open_settings = pyqtSignal()
+    
     def __init__(self, user):
         super().__init__()
         self.user = user
+        self.auth_ctrl = AuthController()
         self.init_ui()
     
     def init_ui(self):
         """Configurar interfaz del dashboard"""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
+        layout.setContentsMargins(30, 25, 25, 30)
+        layout.setSpacing(10)
         
         # Header con información del admin
         header = self.create_header()
         layout.addWidget(header)
         
         # Área de estadísticas rápidas
-        stats_area = self.create_stats_area()
-        layout.addWidget(stats_area)
-        
-        # Área de acciones rápidas
-        quick_actions = self.create_quick_actions()
-        layout.addWidget(quick_actions)
+        self.stats_area = self.create_stats_area()
+        layout.addWidget(self.stats_area)
         
         # Espaciador
         layout.addStretch()
+    
+    def update_stats(self):
+        """Actualizar estadísticas del dashboard"""
+        # Remover el área de estadísticas existente
+        self.layout().removeWidget(self.stats_area)
+        self.stats_area.deleteLater()
+        
+        # Crear nueva área de estadísticas
+        self.stats_area = self.create_stats_area()
+        self.layout().insertWidget(1, self.stats_area)
     
     def create_header(self):
         """Crear header del dashboard"""
@@ -45,19 +64,19 @@ class AdminDashboard(QWidget):
                            stop:0 {ColorPalette.YINMN_BLUE},
                            stop:1 {ColorPalette.OXFORD_BLUE});
                 border-radius: 15px;
-                padding: 20px;
+                padding: 5px;
             }}
         """)
         
         layout = QHBoxLayout(header_frame)
-        layout.setContentsMargins(25, 20, 25, 20)
+        layout.setContentsMargins(20, 15, 20, 15)
         
         # Información del admin
         info_layout = QVBoxLayout()
         
         welcome_label = QLabel(f"¡Bienvenido, {self.user.full_name}!")
         welcome_label.setStyleSheet(f"""
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             color: {ColorPalette.PLATINUM};
         """)
@@ -75,20 +94,13 @@ class AdminDashboard(QWidget):
         login_label = QLabel(f"🕐 Último acceso: {last_login}")
         login_label.setStyleSheet(f"""
             font-size: 13px;
+            border-radius: 8px;
             color: {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.8)};
         """)
         info_layout.addWidget(login_label)
         
         layout.addLayout(info_layout)
         layout.addStretch()
-        
-        # Avatar/Icono
-        avatar_label = QLabel("👨‍💼")
-        avatar_label.setStyleSheet("""
-            font-size: 48px;
-            color: rgba(255, 255, 255, 0.9);
-        """)
-        layout.addWidget(avatar_label)
         
         return header_frame
     
@@ -104,27 +116,39 @@ class AdminDashboard(QWidget):
         """)
         
         layout = QVBoxLayout(stats_frame)
-        layout.setContentsMargins(20, 15, 20, 15)
+        layout.setContentsMargins(10, 5, 10, 5)
         
         title = QLabel("📊 Estadísticas del Sistema")
         title.setStyleSheet(f"""
             font-size: 18px;
             font-weight: bold;
             color: {ColorPalette.RICH_BLACK};
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         """)
         layout.addWidget(title)
         
         # Grid de estadísticas
         stats_grid = QGridLayout()
-        stats_grid.setSpacing(15)
+        stats_grid.setSpacing(5)
         
-        # Estadísticas de ejemplo (se conectarán con datos reales más adelante)
+        # Obtener estadísticas reales
+        try:
+            users = self.auth_ctrl.get_all_users()
+            active_users = len([u for u in users if u.is_active])
+            admin_users = len([u for u in users if u.role.name == 'ADMIN'])
+            recent_logins = len([u for u in users if u.last_login and 
+                               (datetime.now() - u.last_login).days <= 7])
+        except Exception:
+            active_users = 0
+            admin_users = 0
+            recent_logins = 0
+        
+        # Estadísticas actualizadas
         stats_data = [
-            ("👥", "Usuarios Activos", "5", ColorPalette.SUCCESS),
-            ("🛒", "Pedidos Hoy", "23", ColorPalette.YINMN_BLUE),
-            ("💰", "Ventas del Día", "$245.50", ColorPalette.WARNING),
-            ("📈", "Crecimiento", "+12%", ColorPalette.SUCCESS)
+            ("👥", "Usuarios Activos", str(active_users), ColorPalette.SUCCESS),
+            ("�️", "Administradores", str(admin_users), ColorPalette.WARNING),
+            ("�", "Accesos Recientes", str(recent_logins), ColorPalette.YINMN_BLUE),
+            ("📈", "Sistema", "Funcionando", ColorPalette.SUCCESS)
         ]
         
         for i, (icon, title_text, value, color) in enumerate(stats_data):
@@ -145,13 +169,12 @@ class AdminDashboard(QWidget):
                 background-color: {ColorPalette.with_alpha(color, 0.1)};
                 border-left: 4px solid {color};
                 border-radius: 8px;
-                padding: 10px;
+                padding: 0px;
             }}
         """)
-        
+        # Layout horizontal dentro del frame
         layout = QHBoxLayout(widget)
         layout.setContentsMargins(15, 10, 15, 10)
-        
         # Icono
         icon_label = QLabel(icon)
         icon_label.setStyleSheet(f"""
@@ -159,11 +182,9 @@ class AdminDashboard(QWidget):
             color: {color};
         """)
         layout.addWidget(icon_label)
-        
         # Información
         info_layout = QVBoxLayout()
         info_layout.setSpacing(2)
-        
         title_label = QLabel(title)
         title_label.setStyleSheet(f"""
             font-size: 12px;
@@ -171,7 +192,6 @@ class AdminDashboard(QWidget):
             font-weight: 500;
         """)
         info_layout.addWidget(title_label)
-        
         value_label = QLabel(value)
         value_label.setStyleSheet(f"""
             font-size: 18px;
@@ -179,56 +199,9 @@ class AdminDashboard(QWidget):
             color: {color};
         """)
         info_layout.addWidget(value_label)
-        
         layout.addLayout(info_layout)
         layout.addStretch()
-        
         return widget
-    
-    def create_quick_actions(self):
-        """Crear área de acciones rápidas"""
-        actions_frame = QFrame()
-        actions_frame.setStyleSheet(f"""
-            QFrame {{
-                background-color: {ColorPalette.PLATINUM};
-                border-radius: 12px;
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-            }}
-        """)
-        
-        layout = QVBoxLayout(actions_frame)
-        layout.setContentsMargins(20, 15, 20, 15)
-        
-        title = QLabel("⚡ Acciones Rápidas")
-        title.setStyleSheet(f"""
-            font-size: 18px;
-            font-weight: bold;
-            color: {ColorPalette.RICH_BLACK};
-            margin-bottom: 10px;
-        """)
-        layout.addWidget(title)
-        
-        # Grid de acciones
-        actions_grid = QGridLayout()
-        actions_grid.setSpacing(12)
-        
-        # Acciones disponibles
-        actions_data = [
-            ("👥", "Gestionar Usuarios", "Crear, editar y administrar usuarios del sistema"),
-            ("📊", "Ver Reportes", "Generar reportes de ventas y estadísticas"),
-            ("🍽️", "Gestionar Menú", "Administrar productos y categorías"),
-            ("⚙️", "Configuración", "Configurar el sistema y preferencias")
-        ]
-        
-        for i, (icon, title_text, description) in enumerate(actions_data):
-            action_btn = self.create_action_button(icon, title_text, description)
-            row = i // 2
-            col = i % 2
-            actions_grid.addWidget(action_btn, row, col)
-        
-        layout.addLayout(actions_grid)
-        
-        return actions_frame
     
     def create_action_button(self, icon, title, description):
         """Crear botón de acción"""
@@ -300,6 +273,8 @@ class AdminWindow(QMainWindow):
     def __init__(self, user):
         super().__init__()
         self.user = user
+        # Controlador de autenticación para gestionar usuarios
+        self.auth_ctrl = AuthController()
         self.init_ui()
     
     def init_ui(self):
@@ -325,8 +300,8 @@ class AdminWindow(QMainWindow):
         main_layout.addWidget(top_bar)
         
         # Contenido principal usando tabs
-        content_tabs = QTabWidget()
-        content_tabs.setStyleSheet(f"""
+        self.content_tabs = QTabWidget()
+        self.content_tabs.setStyleSheet(f"""
             QTabWidget::pane {{
                 border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
                 background-color: {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.95)};
@@ -334,11 +309,12 @@ class AdminWindow(QMainWindow):
             QTabBar::tab {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
                 color: {ColorPalette.RICH_BLACK};
-                padding: 12px 20px;
+                padding: 12px 30px;
                 margin-right: 2px;
                 border-top-left-radius: 8px;
                 border-top-right-radius: 8px;
                 font-weight: bold;
+                min-width: 100px;
             }}
             QTabBar::tab:selected {{
                 background-color: {ColorPalette.YINMN_BLUE};
@@ -352,28 +328,32 @@ class AdminWindow(QMainWindow):
         
         # Dashboard principal
         dashboard = AdminDashboard(self.user)
-        content_tabs.addTab(dashboard, "🏠 Dashboard")
+        # Conectar señales de acciones rápidas a navegación de pestañas
+        dashboard.manage_users.connect(lambda: self.content_tabs.setCurrentIndex(1))
+        dashboard.view_reports.connect(lambda: self.content_tabs.setCurrentIndex(2))
+        dashboard.manage_menu.connect(lambda: self.content_tabs.setCurrentIndex(3))
+        dashboard.open_settings.connect(lambda: self.content_tabs.setCurrentIndex(4))
+        self.content_tabs.addTab(dashboard, "🏠 Dashboard")
         
-        # Tabs placeholder para futuras funcionalidades
+        # Pestaña Usuarios funcional
+        self.users_widget = UserManagementWidget(self.user)
+        self.users_widget.user_updated.connect(self.refresh_user_stats)
+        self.content_tabs.addTab(self.users_widget, "👥 Usuarios")
+        # Otras pestañas placeholder
         placeholder_tabs = [
-            ("👥", "Usuarios", "Gestión de usuarios del sistema"),
             ("📊", "Reportes", "Reportes y estadísticas"),
             ("🍽️", "Menú", "Gestión de productos y categorías"),
             ("⚙️", "Configuración", "Configuración del sistema")
         ]
-        
         for icon, title, desc in placeholder_tabs:
             placeholder = self.create_placeholder_tab(icon, title, desc)
-            content_tabs.addTab(placeholder, f"{icon} {title}")
-        
-        main_layout.addWidget(content_tabs)
+            self.content_tabs.addTab(placeholder, f"{icon} {title}")
+        main_layout.addWidget(self.content_tabs)
         
         # Estilo general
         self.setStyleSheet(f"""
             QMainWindow {{
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                           stop:0 {ColorPalette.PLATINUM},
-                           stop:1 {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.05)});
+                background: {ColorPalette.PLATINUM}; 
             }}
         """)
     
@@ -503,6 +483,14 @@ class AdminWindow(QMainWindow):
         
         return widget
     
+    def refresh_user_stats(self):
+        """Refrescar estadísticas de usuarios en el dashboard"""
+        # Actualizar las estadísticas del dashboard
+        if hasattr(self, 'users_widget'):
+            dashboard_widget = self.content_tabs.widget(0)  # El dashboard es la primera pestaña
+            if hasattr(dashboard_widget, 'update_stats'):
+                dashboard_widget.update_stats()
+    
     def center_window(self):
         """Centrar ventana en la pantalla"""
         screen = QApplication.desktop().screenGeometry()
@@ -517,11 +505,8 @@ class AdminWindow(QMainWindow):
                                    "¿Estás seguro de que deseas cerrar sesión?",
                                    QMessageBox.Yes | QMessageBox.No,
                                    QMessageBox.No)
-        
         if reply == QMessageBox.Yes:
+            # Emitir señal y cerrar esta ventana
             self.logout_requested.emit()
+            self.close()
     
-    def closeEvent(self, event):
-        """Manejar cierre de ventana"""
-        self.handle_logout()
-        event.ignore()  # Ignorar el evento por defecto

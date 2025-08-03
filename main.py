@@ -12,15 +12,16 @@ def main():
     init_database()
     print("✅ Base de datos lista")
     
+    # Configuraciones de alta resolución antes de crear la QApplication
+    from PyQt5.QtCore import QCoreApplication
+    QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    QCoreApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    
     # Crear aplicación PyQt5
     app = QApplication(sys.argv)
     app.setApplicationName("POS RestauranteFast")
     app.setApplicationVersion("2.0")
     app.setStyle('Fusion')  # Estilo moderno
-    
-    # Configuraciones adicionales para mejor apariencia
-    app.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-    app.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
     
     print("🔐 Iniciando sistema de autenticación...")
     
