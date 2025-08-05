@@ -382,7 +382,7 @@ class ResetPasswordDialog(QDialog):
         self.setModal(True)
         
         layout = QVBoxLayout(self)
-        layout.setSpacing(5)
+        layout.setSpacing(10)
         layout.setContentsMargins(10, 10, 10, 10)
         
         # Header
@@ -585,7 +585,7 @@ class UserManagementWidget(QWidget):
         
         desc_label = QLabel("Administra usuarios del sistema, roles y permisos")
         desc_label.setStyleSheet(f"""
-            font-size: 10px;
+            font-size: 12px;
             color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.7)};
         """)
         title_layout.addWidget(desc_label)
@@ -602,6 +602,7 @@ class UserManagementWidget(QWidget):
         refresh_btn.setFixedHeight(40)
         refresh_btn.setStyleSheet(f"""
             QPushButton {{
+                font-size: 13px;
                 background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
                 color: {ColorPalette.SILVER_LAKE_BLUE};
                 border: 2px solid {ColorPalette.SILVER_LAKE_BLUE};
@@ -629,6 +630,7 @@ class UserManagementWidget(QWidget):
                 border-radius: 8px;
                 font-weight: bold;
                 font-size: 14px;
+                wid
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.8)};
@@ -711,6 +713,7 @@ class UserManagementWidget(QWidget):
         # Estilo de la tabla
         self.users_table.setStyleSheet(f"""
             QTableWidget {{
+                font-size: 13px;
                 background-color: {ColorPalette.PLATINUM};
                 gridline-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.2)};
                 border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
@@ -718,6 +721,7 @@ class UserManagementWidget(QWidget):
                 selection-background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
             }}
             QTableWidget::item {{
+                font-size: 13px;
                 padding: 12px 8px;
                 border-bottom: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
             }}
@@ -726,6 +730,7 @@ class UserManagementWidget(QWidget):
                 color: {ColorPalette.RICH_BLACK};
             }}
             QHeaderView::section {{
+                font-size: 13px;
                 background-color: {ColorPalette.YINMN_BLUE};
                 color: {ColorPalette.PLATINUM};
                 padding: 12px 8px;
@@ -776,6 +781,7 @@ class UserManagementWidget(QWidget):
         self.user_info_label = QLabel("Selecciona un usuario para ver los detalles")
         self.user_info_label.setWordWrap(True)
         self.user_info_label.setStyleSheet(f"""
+            font-size: 13px;
             color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.6)};
             font-style: italic;
             padding: 20px;
@@ -808,6 +814,7 @@ class UserManagementWidget(QWidget):
         self.edit_btn.setEnabled(False)
         self.edit_btn.setStyleSheet(f"""
             QPushButton {{
+                font-size: 12px;
                 background-color: {ColorPalette.YINMN_BLUE};
                 color: {ColorPalette.PLATINUM};
                 border: none;
@@ -815,7 +822,6 @@ class UserManagementWidget(QWidget):
                 border-radius: 8px;
                 font-weight: bold;
                 text-align: left;
-                min-height: 12px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.8)};
@@ -833,6 +839,7 @@ class UserManagementWidget(QWidget):
         self.reset_password_btn.setEnabled(False)
         self.reset_password_btn.setStyleSheet(f"""
             QPushButton {{
+                font-size: 12px;
                 background-color: {ColorPalette.WARNING};
                 color: {ColorPalette.PLATINUM};
                 border: none;
@@ -857,6 +864,7 @@ class UserManagementWidget(QWidget):
         self.toggle_status_btn.setEnabled(False)
         self.toggle_status_btn.setStyleSheet(f"""
             QPushButton {{
+                font-size: 12px;
                 background-color: {ColorPalette.SILVER_LAKE_BLUE};
                 color: {ColorPalette.PLATINUM};
                 border: none;
@@ -1011,6 +1019,7 @@ class UserManagementWidget(QWidget):
             self.toggle_status_btn.setText("🚫 Desactivar Usuario")
             self.toggle_status_btn.setStyleSheet(f"""
                 QPushButton {{
+                    font-size: 12px;
                     background-color: {ColorPalette.ERROR};
                     color: {ColorPalette.PLATINUM};
                     border: none;

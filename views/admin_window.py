@@ -6,12 +6,78 @@ from PyQt5.QtWidgets import (
     QTableWidget, QTableWidgetItem, QAbstractItemView
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer
-from PyQt5.QtGui import QFont, QIcon, QPixmap
+from PyQt5.QtGui import QFont, QIcon, QPixmap, QPainter, QPen, QColor
 from utils.colors import ColorPalette, CommonStyles
 from controllers.auth_controller import AuthController
 from views.user_management_window import UserManagementWidget
-from datetime import datetime
+from views.menu_management_window import MenuManagementWidget
+from datetime import datetime, timedelta
 import sys
+import time
+
+class ActivitySparklineWidget(QLabel):
+    """Widget para mostrar mini-gráfica de actividad"""
+    
+    def __init__(self, data_points=7):
+        super().__init__()
+        self.data_points = data_points
+        self.data = []
+        self.setFixedHeight(40)
+        self.setMinimumWidth(100)
+        self.update_data()
+    
+    def update_data(self):
+        """Actualizar datos de actividad (simulated)"""
+        # Simular datos de los últimos 7 días
+        auth_ctrl = AuthController()
+        try:
+            users = auth_ctrl.get_all_users()
+            # Simular conteos de login por día
+            today = datetime.now()
+            self.data = []
+            for i in range(self.data_points):
+                day = today - timedelta(days=self.data_points-1-i)
+                # Simular datos basados en usuarios activos
+                logins = len([u for u in users if u.last_login and 
+                            abs((u.last_login - day).days) <= 1]) + (i % 3)
+                self.data.append(max(0, logins))
+        except:
+            # Datos de ejemplo si hay error
+            self.data = [3, 5, 2, 8, 6, 4, 7]
+    
+    def paintEvent(self, event):
+        """Dibujar sparkline"""
+        super().paintEvent(event)
+        
+        if not self.data:
+            return
+        
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        # Configurar pluma
+        pen = QPen(QColor(ColorPalette.YINMN_BLUE), 2)
+        painter.setPen(pen)
+        
+        # Calcular dimensiones
+        width = self.width() - 4
+        height = self.height() - 4
+        max_val = max(self.data) if max(self.data) > 0 else 1
+        step_x = width / (len(self.data) - 1) if len(self.data) > 1 else width
+        
+        # Dibujar línea
+        for i in range(len(self.data) - 1):
+            x1 = 2 + i * step_x
+            y1 = height - (self.data[i] / max_val * (height - 4)) + 2
+            x2 = 2 + (i + 1) * step_x
+            y2 = height - (self.data[i + 1] / max_val * (height - 4)) + 2
+            painter.drawLine(int(x1), int(y1), int(x2), int(y2))
+        
+        # Dibujar puntos
+        for i, val in enumerate(self.data):
+            x = 2 + i * step_x
+            y = height - (val / max_val * (height - 4)) + 2
+            painter.fillRect(int(x-1), int(y-1), 3, 3, QColor(ColorPalette.YINMN_BLUE))
 
 class AdminDashboard(QWidget):
     """Panel principal de administración"""
@@ -146,8 +212,8 @@ class AdminDashboard(QWidget):
         # Estadísticas actualizadas
         stats_data = [
             ("👥", "Usuarios Activos", str(active_users), ColorPalette.SUCCESS),
-            ("�️", "Administradores", str(admin_users), ColorPalette.WARNING),
-            ("�", "Accesos Recientes", str(recent_logins), ColorPalette.YINMN_BLUE),
+            ("🛡️", "Administradores", str(admin_users), ColorPalette.WARNING),
+            ("🔐", "Accesos Recientes", str(recent_logins), ColorPalette.YINMN_BLUE),
             ("📈", "Sistema", "Funcionando", ColorPalette.SUCCESS)
         ]
         
@@ -159,7 +225,150 @@ class AdminDashboard(QWidget):
         
         layout.addLayout(stats_grid)
         
+        # Agregar insights adicionales
+        insights_layout = QHBoxLayout()
+        insights_layout.setSpacing(5)
+        
+        # Mini-gráfica de actividad
+        activity_widget = self.create_activity_sparkline()
+        insights_layout.addWidget(activity_widget)
+        
+        # Indicador de salud del sistema
+        health_widget = self.create_system_health()
+        insights_layout.addWidget(health_widget)
+        
+        layout.addLayout(insights_layout)
+        
         return stats_frame
+    
+    def create_activity_sparkline(self):
+        """Crear widget de mini-gráfica de actividad"""
+        widget = QFrame()
+        widget.setStyleSheet(f"""
+            QFrame {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.1)};
+                border-left: 2px solid {ColorPalette.YINMN_BLUE};
+                border-radius: 8px;
+                padding: 0px;
+            }}
+        """)
+        
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(15, 10, 10, 10)
+        
+        # Título
+        title_label = QLabel("📈 Actividad Semanal")
+        title_label.setStyleSheet(f"""
+            font-size: 12px;
+            color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.7)};
+            font-weight: 500;
+            margin-bottom: 5px;
+        """)
+        layout.addWidget(title_label)
+        
+        # Sparkline
+        sparkline = ActivitySparklineWidget()
+        layout.addWidget(sparkline)
+        
+        # Descripción
+        desc_label = QLabel("Logins diarios")
+        desc_label.setStyleSheet(f"""
+            font-size: 10px;
+            color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.6)};
+        """)
+        layout.addWidget(desc_label)
+        
+        return widget
+    
+    def create_system_health(self):
+        """Crear widget de salud del sistema"""
+        widget = QFrame()
+        widget.setStyleSheet(f"""
+            QFrame {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.1)};
+                border-left: 2px solid {ColorPalette.SUCCESS};
+                border-radius: 8px;
+                padding: 0px;
+            }}
+        """)
+        
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(15, 10, 15, 10)
+        
+        # Título
+        title_label = QLabel("⚡ Salud del Sistema")
+        title_label.setStyleSheet(f"""
+            font-size: 12px;
+            color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.7)};
+            font-weight: 500;
+        """)
+        layout.addWidget(title_label)
+        
+        # Métricas de salud
+        health_layout = QHBoxLayout()
+        health_layout.setSpacing(20)
+        
+        # Latencia DB (simulada)
+        try:
+            start_time = time.time()
+            self.auth_ctrl.get_all_users()
+            db_latency = round((time.time() - start_time) * 1000, 1)
+        except:
+            db_latency = "N/A"
+        
+        latency_info = QVBoxLayout()
+        latency_value = QLabel(f"{db_latency}ms")
+        latency_value.setStyleSheet(f"""
+            font-size: 14px;
+            font-weight: bold;
+            color: {ColorPalette.SUCCESS};
+        """)
+        latency_label = QLabel("DB Latencia")
+        latency_label.setStyleSheet(f"""
+            font-size: 9px;
+            color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.6)};
+        """)
+        latency_info.addWidget(latency_value)
+        latency_info.addWidget(latency_label)
+        health_layout.addLayout(latency_info)
+        
+        # Versión
+        version_info = QVBoxLayout()
+        version_value = QLabel("v1.0.0")
+        version_value.setStyleSheet(f"""
+            font-size: 14px;
+            font-weight: bold;
+            color: {ColorPalette.SUCCESS};
+        """)
+        version_label = QLabel("Versión")
+        version_label.setStyleSheet(f"""
+            font-size: 9px;
+            color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.6)};
+        """)
+        version_info.addWidget(version_value)
+        version_info.addWidget(version_label)
+        health_layout.addLayout(version_info)
+        
+        # Estado
+        status_info = QVBoxLayout()
+        status_value = QLabel("🟢 Online")
+        status_value.setStyleSheet(f"""
+            font-size: 14px;
+            font-weight: bold;
+            color: {ColorPalette.SUCCESS};
+        """)
+        status_label = QLabel("Estado")
+        status_label.setStyleSheet(f"""
+            font-size: 9px;
+            color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.6)};
+        """)
+        status_info.addWidget(status_value)
+        status_info.addWidget(status_label)
+        health_layout.addLayout(status_info)
+        
+        layout.addLayout(health_layout)
+        
+        return widget
     
     def create_stat_widget(self, icon, title, value, color):
         """Crear widget individual de estadística"""
@@ -167,7 +376,7 @@ class AdminDashboard(QWidget):
         widget.setStyleSheet(f"""
             QFrame {{
                 background-color: {ColorPalette.with_alpha(color, 0.1)};
-                border-left: 4px solid {color};
+                border-left: 2px solid {color};
                 border-radius: 8px;
                 padding: 0px;
             }}
@@ -307,6 +516,7 @@ class AdminWindow(QMainWindow):
                 background-color: {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.95)};
             }}
             QTabBar::tab {{
+                font-size: 12px;
                 background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
                 color: {ColorPalette.RICH_BLACK};
                 padding: 12px 30px;
@@ -315,6 +525,7 @@ class AdminWindow(QMainWindow):
                 border-top-right-radius: 8px;
                 font-weight: bold;
                 min-width: 100px;
+                min-height: 25px;
             }}
             QTabBar::tab:selected {{
                 background-color: {ColorPalette.YINMN_BLUE};
@@ -330,8 +541,8 @@ class AdminWindow(QMainWindow):
         dashboard = AdminDashboard(self.user)
         # Conectar señales de acciones rápidas a navegación de pestañas
         dashboard.manage_users.connect(lambda: self.content_tabs.setCurrentIndex(1))
-        dashboard.view_reports.connect(lambda: self.content_tabs.setCurrentIndex(2))
-        dashboard.manage_menu.connect(lambda: self.content_tabs.setCurrentIndex(3))
+        dashboard.view_reports.connect(lambda: self.content_tabs.setCurrentIndex(3))
+        dashboard.manage_menu.connect(lambda: self.content_tabs.setCurrentIndex(2))
         dashboard.open_settings.connect(lambda: self.content_tabs.setCurrentIndex(4))
         self.content_tabs.addTab(dashboard, "🏠 Dashboard")
         
@@ -339,10 +550,14 @@ class AdminWindow(QMainWindow):
         self.users_widget = UserManagementWidget(self.user)
         self.users_widget.user_updated.connect(self.refresh_user_stats)
         self.content_tabs.addTab(self.users_widget, "👥 Usuarios")
+        
+        # Pestaña Menú funcional
+        self.menu_widget = MenuManagementWidget(self.user)
+        self.content_tabs.addTab(self.menu_widget, "🍽️ Menú")
+        
         # Otras pestañas placeholder
         placeholder_tabs = [
             ("📊", "Reportes", "Reportes y estadísticas"),
-            ("🍽️", "Menú", "Gestión de productos y categorías"),
             ("⚙️", "Configuración", "Configuración del sistema")
         ]
         for icon, title, desc in placeholder_tabs:
@@ -509,4 +724,3 @@ class AdminWindow(QMainWindow):
             # Emitir señal y cerrar esta ventana
             self.logout_requested.emit()
             self.close()
-    

@@ -62,7 +62,7 @@ class OrderController:
     def get_active_orders(self):
         """Obtener pedidos activos (no entregados ni cancelados)"""
         return self.db.query(Order).filter(
-            Order.status.in_([OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.READY])
+            Order.status.in_([OrderStatus.PENDING, OrderStatus.PAID, OrderStatus.PREPARING, OrderStatus.READY])
         ).order_by(Order.created_at.asc()).all()
     
     def get_order_details(self, order_id):
@@ -70,10 +70,11 @@ class OrderController:
         return self.db.query(Order).filter(Order.id == order_id).first()
     
     def complete_payment(self, order_id, payment_method="efectivo"):
-        """Marcar orden como pagada pero mantenerla como pendiente para cocina"""
+        """Marcar orden como pagada"""
         order = self.db.query(Order).filter(Order.id == order_id).first()
         if order:
-            # Mantener como PENDING para que aparezca en cocina
+            # Marcar como PAID para que aparezca en historial de pagos
+            order.status = OrderStatus.PAID
             order.payment_method = payment_method
             order.updated_at = datetime.now()
             self.db.commit()
