@@ -60,9 +60,22 @@ class OrderController:
         return self.db.query(Order).filter(Order.status == status).all()
     
     def get_active_orders(self):
-        """Obtener pedidos activos (no entregados ni cancelados)"""
+        """Obtener pedidos activos (no pagados ni cancelados)"""
         return self.db.query(Order).filter(
-            Order.status.in_([OrderStatus.PENDING, OrderStatus.PAID, OrderStatus.PREPARING, OrderStatus.READY])
+            Order.status.in_([OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.READY, OrderStatus.DELIVERED])
+        ).order_by(Order.created_at.asc()).all()
+    
+    def get_all_orders_for_kitchen(self):
+        """Obtener todos los pedidos para la vista de cocina (incluyendo pagados del día actual)"""
+        from datetime import date
+        today = date.today()
+        
+        return self.db.query(Order).filter(
+            Order.status.in_([
+                OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.READY, 
+                OrderStatus.DELIVERED, OrderStatus.PAID
+            ]),
+            Order.created_at >= today  # Solo pedidos del día actual
         ).order_by(Order.created_at.asc()).all()
     
     def get_order_details(self, order_id):

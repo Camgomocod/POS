@@ -81,3 +81,66 @@ class ReceiptPrinter:
         content.append("")
         
         return "\n".join(content)
+    
+    def print_order_ticket(self, order, cart_items):
+        """Generar e imprimir ticket de orden (sin pago)"""
+        ticket_content = self.generate_order_ticket_content(order, cart_items)
+        
+        # Guardar en archivo temporal
+        temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False)
+        temp_file.write(ticket_content)
+        temp_file.close()
+        
+        # Abrir con el programa predeterminado
+        try:
+            self._open_file(temp_file.name)
+        except Exception as e:
+            print(f"Error al abrir ticket: {e}")
+        
+        return temp_file.name
+    
+    def generate_order_ticket_content(self, order, cart_items):
+        """Generar contenido del ticket de orden"""
+        content = []
+        
+        # Encabezado
+        content.append("=" * 40)
+        content.append(f"{self.restaurant_name:^40}")
+        content.append(f"{self.restaurant_address:^40}")
+        content.append(f"{self.restaurant_phone:^40}")
+        content.append("=" * 40)
+        content.append("")
+        content.append("TICKET DE ORDEN")
+        content.append(f"Orden #: {order.id}")
+        content.append(f"Cliente: {order.customer_name}")
+        if order.table_number:
+            content.append(f"Mesa: {order.table_number}")
+        else:
+            content.append("Para llevar")
+        content.append(f"Fecha: {order.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
+        content.append("")
+        content.append("-" * 40)
+        content.append("ITEMS PEDIDOS:")
+        content.append("-" * 40)
+        
+        # Items
+        for item_data in cart_items:
+            product = item_data['product']
+            quantity = item_data['quantity']
+            subtotal = product.price * quantity
+            content.append(f"{product.name}")
+            content.append(f"  {quantity} x ${product.price:.2f} = ${subtotal:.2f}")
+            content.append("")
+        
+        # Total
+        content.append("-" * 40)
+        content.append(f"{'TOTAL A PAGAR:':>30} ${order.total:.2f}")
+        content.append("=" * 40)
+        content.append("")
+        content.append("ESTADO: PENDIENTE DE PREPARAR")
+        content.append("El pago se realizará al final del servicio")
+        content.append("")
+        content.append("¡Gracias por su pedido!")
+        content.append("")
+        
+        return "\n".join(content)

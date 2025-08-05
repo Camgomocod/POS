@@ -12,6 +12,7 @@ class OrderCard(QFrame):
     """Widget individual para mostrar cada pedido como sticky note mejorado"""
     
     status_changed = pyqtSignal(int, OrderStatus)  # Señal para cambio de estado
+    payment_requested = pyqtSignal(int)  # Señal para solicitar pago de una orden
     
     def __init__(self, order):
         super().__init__()
@@ -51,18 +52,24 @@ class OrderCard(QFrame):
         
         header_layout.addStretch()
         
-        # Tiempo transcurrido más simple
+        # Tiempo transcurrido - solo mostrar urgencia para estados activos de cocina
         elapsed = datetime.now() - self.order.created_at
         minutes = int(elapsed.total_seconds() / 60)
         
-        # Determinar color según urgencia
-        if minutes > 30:  # Muy urgente
-            time_color = ColorPalette.ERROR
-            urgency_icon = "🚨"
-        elif minutes > 20:  # Urgente
-            time_color = ColorPalette.WARNING
-            urgency_icon = "⚠️"
+        # Solo aplicar colores de urgencia para estados donde es relevante
+        if self.order.status in [OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.READY]:
+            # Determinar color según urgencia para estados activos
+            if minutes > 30:  # Muy urgente
+                time_color = ColorPalette.ERROR
+                urgency_icon = "🚨"
+            elif minutes > 20:  # Urgente
+                time_color = ColorPalette.WARNING
+                urgency_icon = "⚠️"
+            else:
+                time_color = ColorPalette.SILVER_LAKE_BLUE
+                urgency_icon = "⏱️"
         else:
+            # Para pedidos entregados o pagados, usar color neutro sin urgencia
             time_color = ColorPalette.SILVER_LAKE_BLUE
             urgency_icon = "⏱️"
         
@@ -165,95 +172,135 @@ class OrderCard(QFrame):
         """)
         layout.addWidget(status_label)
         
-        # Botones de acción - simplificados
-        if self.order.status != OrderStatus.DELIVERED and self.order.status != OrderStatus.CANCELLED:
-            buttons_layout = QHBoxLayout()
-            buttons_layout.setSpacing(8)
-            
-            # Tamaño de botones
-            btn_height = 32 if screen.width() <= 1366 else 36
-            
-            if self.order.status == OrderStatus.PENDING:
-                start_btn = QPushButton("🚀 Iniciar")
-                start_btn.setFixedHeight(btn_height)
-                start_btn.setStyleSheet(f"""
-                    QPushButton {{
-                        background-color: {ColorPalette.YINMN_BLUE};
-                        color: #ffffff;
-                        border: none;
-                        padding: 8px 12px;
-                        border-radius: 6px;
-                        font-weight: bold;
-                        font-size: 12px;
-                    }}
-                    QPushButton:hover {{
-                        background-color: {ColorPalette.OXFORD_BLUE};
-                    }}
-                """)
-                start_btn.clicked.connect(lambda: self.change_status(OrderStatus.PREPARING))
-                buttons_layout.addWidget(start_btn)
-            
-            elif self.order.status == OrderStatus.PREPARING:
-                ready_btn = QPushButton("✅ Listo")
-                ready_btn.setFixedHeight(btn_height)
-                ready_btn.setStyleSheet(f"""
-                    QPushButton {{
-                        background-color: {ColorPalette.SUCCESS};
-                        color: #ffffff;
-                        border: none;
-                        padding: 8px 12px;
-                        border-radius: 6px;
-                        font-weight: bold;
-                        font-size: 12px;
-                    }}
-                    QPushButton:hover {{
-                        background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.8)};
-                    }}
-                """)
-                ready_btn.clicked.connect(lambda: self.change_status(OrderStatus.READY))
-                buttons_layout.addWidget(ready_btn)
-            
-            elif self.order.status == OrderStatus.READY:
-                deliver_btn = QPushButton("🚚 Entregar")
-                deliver_btn.setFixedHeight(btn_height)
-                deliver_btn.setStyleSheet(f"""
-                    QPushButton {{
-                        background-color: {ColorPalette.SILVER_LAKE_BLUE};
-                        color: #ffffff;
-                        border: none;
-                        padding: 8px 12px;
-                        border-radius: 6px;
-                        font-weight: bold;
-                        font-size: 12px;
-                    }}
-                    QPushButton:hover {{
-                        background-color: {ColorPalette.YINMN_BLUE};
-                    }}
-                """)
-                deliver_btn.clicked.connect(lambda: self.change_status(OrderStatus.DELIVERED))
-                buttons_layout.addWidget(deliver_btn)
-            
-            # Botón cancelar
-            if self.order.status != OrderStatus.DELIVERED:
-                cancel_btn = QPushButton("❌")
-                cancel_btn.setFixedSize(btn_height, btn_height)
-                cancel_btn.setStyleSheet(f"""
-                    QPushButton {{
-                        background-color: {ColorPalette.ERROR};
-                        color: #ffffff;
-                        border: none;
-                        border-radius: 6px;
-                        font-weight: bold;
-                        font-size: 12px;
-                    }}
-                    QPushButton:hover {{
-                        background-color: {ColorPalette.with_alpha(ColorPalette.ERROR, 0.8)};
-                    }}
-                """)
-                cancel_btn.setToolTip("Cancelar pedido")
-                cancel_btn.clicked.connect(lambda: self.change_status(OrderStatus.CANCELLED))
-                buttons_layout.addWidget(cancel_btn)
-            
+        # Botones de acción - simplificados y mejorados
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(8)
+        
+        # Tamaño de botones
+        btn_height = 32 if screen.width() <= 1366 else 36
+        
+        if self.order.status == OrderStatus.PENDING:
+            start_btn = QPushButton("🚀 Iniciar")
+            start_btn.setFixedHeight(btn_height)
+            start_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {ColorPalette.YINMN_BLUE};
+                    color: #ffffff;
+                    border: none;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    font-weight: bold;
+                    font-size: 12px;
+                }}
+                QPushButton:hover {{
+                    background-color: {ColorPalette.OXFORD_BLUE};
+                }}
+            """)
+            start_btn.clicked.connect(lambda: self.change_status(OrderStatus.PREPARING))
+            buttons_layout.addWidget(start_btn)
+        
+        elif self.order.status == OrderStatus.PREPARING:
+            ready_btn = QPushButton("✅ Listo")
+            ready_btn.setFixedHeight(btn_height)
+            ready_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {ColorPalette.SUCCESS};
+                    color: #ffffff;
+                    border: none;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    font-weight: bold;
+                    font-size: 12px;
+                }}
+                QPushButton:hover {{
+                    background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.8)};
+                }}
+            """)
+            ready_btn.clicked.connect(lambda: self.change_status(OrderStatus.READY))
+            buttons_layout.addWidget(ready_btn)
+        
+        elif self.order.status == OrderStatus.READY:
+            deliver_btn = QPushButton("🚚 Entregar")
+            deliver_btn.setFixedHeight(btn_height)
+            deliver_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {ColorPalette.SILVER_LAKE_BLUE};
+                    color: #ffffff;
+                    border: none;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    font-weight: bold;
+                    font-size: 12px;
+                }}
+                QPushButton:hover {{
+                    background-color: {ColorPalette.YINMN_BLUE};
+                }}
+            """)
+            deliver_btn.clicked.connect(lambda: self.change_status(OrderStatus.DELIVERED))
+            buttons_layout.addWidget(deliver_btn)
+        
+        elif self.order.status == OrderStatus.DELIVERED:
+            # Botón de pago para órdenes entregadas
+            pay_btn = QPushButton("💳 Procesar Pago")
+            pay_btn.setFixedHeight(btn_height)
+            pay_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {ColorPalette.WARNING};
+                    color: #ffffff;
+                    border: none;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    font-weight: bold;
+                    font-size: 12px;
+                }}
+                QPushButton:hover {{
+                    background-color: {ColorPalette.with_alpha(ColorPalette.WARNING, 0.8)};
+                }}
+            """)
+            pay_btn.clicked.connect(self.process_payment)
+            buttons_layout.addWidget(pay_btn)
+        
+        elif self.order.status == OrderStatus.PAID:
+            # Para pedidos pagados, mostrar solo una etiqueta informativa sin interacción
+            paid_label = QLabel("✅ COMPLETADO")
+            paid_label.setAlignment(Qt.AlignCenter)
+            paid_label.setFixedHeight(btn_height)
+            paid_label.setStyleSheet(f"""
+                QLabel {{
+                    background-color: {ColorPalette.SUCCESS};
+                    color: #ffffff;
+                    border: 2px solid {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.8)};
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    font-weight: bold;
+                    font-size: 12px;
+                }}
+            """)
+            buttons_layout.addWidget(paid_label)
+        
+        # Botón cancelar (solo para pedidos que no están entregados, pagados o cancelados)
+        if self.order.status not in [OrderStatus.DELIVERED, OrderStatus.PAID, OrderStatus.CANCELLED]:
+            cancel_btn = QPushButton("❌")
+            cancel_btn.setFixedSize(btn_height, btn_height)
+            cancel_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {ColorPalette.ERROR};
+                    color: #ffffff;
+                    border: none;
+                    border-radius: 6px;
+                    font-weight: bold;
+                    font-size: 12px;
+                }}
+                QPushButton:hover {{
+                    background-color: {ColorPalette.with_alpha(ColorPalette.ERROR, 0.8)};
+                }}
+            """)
+            cancel_btn.setToolTip("Cancelar pedido")
+            cancel_btn.clicked.connect(lambda: self.change_status(OrderStatus.CANCELLED))
+            buttons_layout.addWidget(cancel_btn)
+        
+        # Solo agregar layout si hay botones
+        if buttons_layout.count() > 0:
             layout.addLayout(buttons_layout)
         
         # Total - simple y visible
@@ -274,17 +321,23 @@ class OrderCard(QFrame):
         """Actualizar estilo del card según el estado - más simple"""
         border_color = self.order.status_color
         
-        # Efecto visual según urgencia usando border más grueso
-        elapsed = datetime.now() - self.order.created_at
-        minutes = int(elapsed.total_seconds() / 60)
-        
-        if minutes > 30:
-            border_width = "5px"
-            urgency_color = ColorPalette.ERROR
-        elif minutes > 20:
-            border_width = "4px"
-            urgency_color = ColorPalette.WARNING
+        # Solo aplicar efecto visual de urgencia para estados activos de cocina
+        if self.order.status in [OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.READY]:
+            # Efecto visual según urgencia usando border más grueso
+            elapsed = datetime.now() - self.order.created_at
+            minutes = int(elapsed.total_seconds() / 60)
+            
+            if minutes > 30:
+                border_width = "5px"
+                urgency_color = ColorPalette.ERROR
+            elif minutes > 20:
+                border_width = "4px"
+                urgency_color = ColorPalette.WARNING
+            else:
+                border_width = "3px"
+                urgency_color = border_color
         else:
+            # Para pedidos entregados o pagados, usar borde normal sin urgencia
             border_width = "3px"
             urgency_color = border_color
         
@@ -323,6 +376,10 @@ class OrderCard(QFrame):
     def change_status(self, new_status):
         """Emitir señal de cambio de estado"""
         self.status_changed.emit(self.order.id, new_status)
+    
+    def process_payment(self):
+        """Emitir señal para procesar pago"""
+        self.payment_requested.emit(self.order.id)
 
 class KitchenOrdersView(QWidget):
     """Vista para mostrar estado de pedidos"""
@@ -504,9 +561,10 @@ class KitchenOrdersView(QWidget):
         filter_states = [
             ("Todos", None, ColorPalette.RICH_BLACK),
             ("Pendientes", OrderStatus.PENDING, ColorPalette.WARNING),
-            ("Pagados", OrderStatus.PAID, ColorPalette.SUCCESS),
             ("Preparando", OrderStatus.PREPARING, ColorPalette.YINMN_BLUE),
-            ("Listos", OrderStatus.READY, ColorPalette.SUCCESS)
+            ("Listos", OrderStatus.READY, ColorPalette.SUCCESS),
+            ("Entregados", OrderStatus.DELIVERED, ColorPalette.SILVER_LAKE_BLUE),
+            ("Pagados", OrderStatus.PAID, ColorPalette.SUCCESS)
         ]
         
         self.current_filter = None
@@ -651,13 +709,14 @@ class KitchenOrdersView(QWidget):
             return
         
         pending = sum(1 for order in orders if order.status == OrderStatus.PENDING)
-        paid = sum(1 for order in orders if order.status == OrderStatus.PAID)
         preparing = sum(1 for order in orders if order.status == OrderStatus.PREPARING)
         ready = sum(1 for order in orders if order.status == OrderStatus.READY)
+        delivered = sum(1 for order in orders if order.status == OrderStatus.DELIVERED)
+        paid = sum(1 for order in orders if order.status == OrderStatus.PAID)
         
         # Estadísticas más concisas
         self.stats_label.setText(
-            f"Total: {len(orders)} | Pendientes: {pending} | Pagados: {paid} | Preparando: {preparing} | Listos: {ready}"
+            f"Total: {len(orders)} | Pendientes: {pending} | Preparando: {preparing} | Listos: {ready} | Entregados: {delivered} | Pagados: {paid}"
         )
     
     def load_orders(self):
@@ -694,9 +753,10 @@ class KitchenOrdersView(QWidget):
                 if self.current_filter is not None:
                     filter_names = {
                         OrderStatus.PENDING: "pendientes",
-                        OrderStatus.PAID: "pagados",
                         OrderStatus.PREPARING: "en preparación",
-                        OrderStatus.READY: "listos"
+                        OrderStatus.READY: "listos",
+                        OrderStatus.DELIVERED: "entregados",
+                        OrderStatus.PAID: "pagados"
                     }
                     message = f"🔍 No hay pedidos {filter_names.get(self.current_filter, '')}"
                 else:
@@ -756,13 +816,20 @@ class KitchenOrdersView(QWidget):
                 def get_priority(order):
                     elapsed_minutes = (datetime.now() - order.created_at).total_seconds() / 60
                     status_priority = {
-                        OrderStatus.READY: 1,      # Más prioritario
-                        OrderStatus.PREPARING: 2,
-                        OrderStatus.PAID: 3,       # Pagados listos para preparar
-                        OrderStatus.PENDING: 4     # Menos prioritario
-                    }.get(order.status, 5)
+                        OrderStatus.DELIVERED: 1,  # Más prioritario - esperando pago
+                        OrderStatus.READY: 2,      # Listos para entregar
+                        OrderStatus.PREPARING: 3,  # En preparación
+                        OrderStatus.PENDING: 4,    # Pendientes de iniciar
+                        OrderStatus.PAID: 5        # Menos prioritario - ya pagados
+                    }.get(order.status, 6)
                     
-                    urgency_factor = max(0, elapsed_minutes - 10) * 0.1  # Factor de urgencia
+                    # Solo aplicar factor de urgencia para estados activos de cocina
+                    if order.status in [OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.READY]:
+                        urgency_factor = max(0, elapsed_minutes - 10) * 0.1  # Factor de urgencia
+                    else:
+                        # Para entregados y pagados, no aplicar urgencia
+                        urgency_factor = 0
+                    
                     return (status_priority - urgency_factor, elapsed_minutes)
                 
                 sorted_orders = sorted(orders, key=get_priority)
@@ -770,6 +837,7 @@ class KitchenOrdersView(QWidget):
                 for order in sorted_orders:
                     card = OrderCard(order)
                     card.status_changed.connect(self.update_order_status)
+                    card.payment_requested.connect(self.handle_payment_request)
                     
                     self.orders_layout.addWidget(card, row, col)
                     
@@ -812,6 +880,147 @@ class KitchenOrdersView(QWidget):
         
         finally:
             # Restaurar botón de actualizar
+            self.refresh_btn.setText("🔄 Actualizar")
+            self.refresh_btn.setEnabled(True)
+
+    def update_statistics_summary(self):
+        """Actualizar estadísticas en tiempo real"""
+        try:
+            # Obtener todos los pedidos para estadísticas completas
+            all_orders = self.order_controller.get_all_orders_for_kitchen()
+            
+            # Llamar al método de estadísticas correcto
+            self.update_statistics(all_orders)
+            
+        except Exception as e:
+            self.stats_label.setText(f"❌ Error en estadísticas: {str(e)}")
+
+    def load_orders(self):
+        """Cargar y mostrar pedidos con filtros actualizados"""
+        try:
+            # Mostrar indicador de carga
+            self.refresh_btn.setText("⏳ Cargando...")
+            self.refresh_btn.setEnabled(False)
+            
+            # Limpiar layout actual
+            for i in reversed(range(self.orders_layout.count())):
+                child = self.orders_layout.itemAt(i).widget()
+                if child:
+                    child.setParent(None)
+            
+            # Obtener pedidos según el filtro
+            if self.current_filter == OrderStatus.PAID:
+                # Para pedidos pagados, necesitamos incluir los del día actual
+                all_orders = self.order_controller.get_all_orders_for_kitchen()
+            elif self.current_filter is None:
+                # Para "Todos" solo mostrar pedidos activos (excluyendo PAID)
+                all_orders = self.order_controller.get_active_orders()
+            else:
+                # Para otros filtros específicos, usar pedidos activos
+                all_orders = self.order_controller.get_active_orders()
+            
+            # Aplicar filtro si está activo
+            if self.current_filter is not None:
+                orders = [order for order in all_orders if order.status == self.current_filter]
+            else:
+                orders = all_orders
+            
+            # Actualizar estadísticas (usar todos los pedidos para estadísticas completas)
+            stats_orders = self.order_controller.get_all_orders_for_kitchen()
+            self.update_statistics(stats_orders)
+            
+            # Actualizar tiempo
+            current_time = datetime.now().strftime("%H:%M:%S")
+            self.last_update_label.setText(f"Última actualización: {current_time}")
+            
+            if not orders:
+                # Mostrar mensaje según filtro
+                if self.current_filter is not None:
+                    filter_names = {
+                        OrderStatus.PENDING: "pendientes",
+                        OrderStatus.PREPARING: "en preparación", 
+                        OrderStatus.READY: "listos",
+                        OrderStatus.DELIVERED: "entregados",
+                        OrderStatus.PAID: "pagados"
+                    }
+                    message = f"🔍 No hay pedidos {filter_names.get(self.current_filter, '')}"
+                else:
+                    message = "🎉 ¡No hay pedidos pendientes!"
+                
+                no_orders_label = QLabel(message)
+                no_orders_label.setAlignment(Qt.AlignCenter)
+                no_orders_label.setStyleSheet(f"""
+                    font-size: 18px;
+                    color: {ColorPalette.SUCCESS};
+                    font-weight: bold;
+                    padding: 20px;
+                """)
+                
+                self.orders_layout.addWidget(no_orders_label, 0, 0, 1, -1)
+                self.footer_info.setText(f"🏪 Sistema POS - Sin pedidos activos ({current_time})")
+            else:
+                # Mostrar pedidos en grid
+                screen_width = QApplication.primaryScreen().geometry().width()
+                max_cols = 4 if screen_width <= 1366 else 5
+                
+                row, col = 0, 0
+                
+                # Ordenar por prioridad
+                def get_priority(order):
+                    elapsed_minutes = (datetime.now() - order.created_at).total_seconds() / 60
+                    status_priority = {
+                        OrderStatus.DELIVERED: 1,
+                        OrderStatus.READY: 2,
+                        OrderStatus.PREPARING: 3,
+                        OrderStatus.PENDING: 4,
+                        OrderStatus.PAID: 5
+                    }.get(order.status, 6)
+                    
+                    # Solo aplicar factor de urgencia para estados activos de cocina
+                    if order.status in [OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.READY]:
+                        urgency_factor = max(0, elapsed_minutes - 10) * 0.1
+                    else:
+                        # Para entregados y pagados, no aplicar urgencia
+                        urgency_factor = 0
+                    
+                    return (status_priority - urgency_factor, elapsed_minutes)
+                
+                sorted_orders = sorted(orders, key=get_priority)
+                
+                for order in sorted_orders:
+                    card = OrderCard(order)
+                    card.status_changed.connect(self.update_order_status)
+                    card.payment_requested.connect(self.handle_payment_request)
+                    
+                    self.orders_layout.addWidget(card, row, col)
+                    
+                    col += 1
+                    if col >= max_cols:
+                        col = 0
+                        row += 1
+                
+                self.footer_info.setText(f"🏪 Sistema POS - {len(orders)} pedidos mostrados ({current_time})")
+                
+        except Exception as e:
+            # Mostrar error
+            error_label = QLabel(f"❌ Error al cargar pedidos: {str(e)}")
+            error_label.setAlignment(Qt.AlignCenter)
+            error_label.setStyleSheet(f"""
+                font-size: 16px;
+                color: {ColorPalette.ERROR};
+                font-weight: bold;
+            """)
+            
+            self.orders_layout.addWidget(error_label, 0, 0)
+            self.connection_status.setText("🔴 Error de conexión")
+            self.connection_status.setStyleSheet(f"""
+                font-size: 10px;
+                color: {ColorPalette.ERROR};
+                font-weight: bold;
+            """)
+        
+        finally:
+            # Restaurar botón
             self.refresh_btn.setText("🔄 Actualizar")
             self.refresh_btn.setEnabled(True)
     
@@ -913,4 +1122,54 @@ class KitchenOrdersView(QWidget):
             """)
             
             error_msg.exec_()
+    
+    def handle_payment_request(self, order_id):
+        """Manejar solicitud de pago para una orden"""
+        try:
+            # Obtener detalles de la orden
+            order = self.order_controller.get_order_details(order_id)
+            if not order:
+                QMessageBox.warning(self, "Error", f"No se encontró la orden #{order_id}")
+                return
+            
+            # Importar aquí para evitar importación circular
+            from views.pos_window import CustomerInfoDialog
+            
+            # Crear dialog de pago con información de la orden
+            dialog = CustomerInfoDialog(order.total, self, payment_required=True)
+            dialog.name_input.setText(order.customer_name)
+            if order.table_number:
+                dialog.table_input.setValue(order.table_number)
+            
+            # Cambiar título para indicar que es un pago
+            dialog.setWindowTitle(f"Procesar Pago - Orden #{order_id}")
+            
+            if dialog.exec_() == QDialog.Accepted:
+                customer_info = dialog.get_customer_info()
+                
+                # Procesar el pago
+                self.order_controller.complete_payment(order_id, customer_info['payment_method'])
+                
+                # Actualizar la vista
+                self.load_orders()
+                
+                # Mostrar confirmación
+                payment_methods = {
+                    'efectivo': '💵 Efectivo',
+                    'transferencia': '🏦 Transferencia',
+                    'tarjeta': '💳 Tarjeta'
+                }
+                payment_display = payment_methods.get(customer_info['payment_method'], customer_info['payment_method'])
+                
+                QMessageBox.information(
+                    self, 
+                    "✅ Pago Procesado", 
+                    f"Pago de la orden #{order_id} procesado exitosamente.\n"
+                    f"Cliente: {customer_info['name']}\n"
+                    f"Total: ${order.total:.2f}\n"
+                    f"Método: {payment_display}"
+                )
+                
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error al procesar el pago:\n{str(e)}")
 
