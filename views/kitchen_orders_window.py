@@ -20,14 +20,19 @@ class OrderCard(QFrame):
         self.init_ui()
     
     def init_ui(self):
-        # Tamaño responsivo basado en resolución de pantalla - optimizado para aprovechar mejor el espacio
+        # Tamaño fijo para mantener apariencia consistente
         screen = QApplication.primaryScreen().geometry()
-        if screen.width() <= 1366:  # Resoluciones pequeñas (laptops) - 4 columnas
-            self.setFixedSize(315, 360)  # Aumentado ancho para aprovechar el 10% de espacio sobrante
-            self.font_sizes = {'header': 15, 'customer': 13, 'items': 11, 'status': 13, 'total': 14}
+        if screen.width() <= 1366:  # Resoluciones pequeñas (laptops)
+            card_width = 300
+            card_height = 370
+            self.font_sizes = {'header': 14, 'customer': 12, 'items': 10, 'status': 12, 'total': 13}
         else:  # Resoluciones más grandes
-            self.setFixedSize(320, 420)  # Mantener tamaño para pantallas grandes
-            self.font_sizes = {'header': 18, 'customer': 15, 'items': 13, 'status': 15, 'total': 16}
+            card_width = 300
+            card_height = 370
+            self.font_sizes = {'header': 16, 'customer': 14, 'items': 12, 'status': 14, 'total': 15}
+        
+        # Usar tamaño fijo para mantener consistencia visual
+        self.setFixedSize(card_width, card_height)
         
         self.setFrameStyle(QFrame.Box)
         self.setAttribute(Qt.WA_StyledBackground)
@@ -108,14 +113,14 @@ class OrderCard(QFrame):
         line.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE};")
         layout.addWidget(line)
         
-        # Items del pedido - diseño simple y legible con altura optimizada para 4 columnas
+        # Items del pedido - diseño compacto para layout vertical
         items_scroll = QScrollArea()
         items_scroll.setWidgetResizable(True)
         items_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         items_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        # Altura ajustada para resolución 1366x768 con 4 columnas
-        items_scroll.setMaximumHeight(140 if screen.width() <= 1366 else 160)  
-        items_scroll.setMinimumHeight(120 if screen.width() <= 1366 else 140)  
+        # Área de scroll para las cards con altura ajustada para tarjetas fijas
+        items_scroll.setMaximumHeight(120 if screen.width() <= 1366 else 140)  
+        items_scroll.setMinimumHeight(100 if screen.width() <= 1366 else 120)  
         items_scroll.setStyleSheet(f"""
             QScrollArea {{
                 border: 2px solid {ColorPalette.SILVER_LAKE_BLUE};
@@ -630,15 +635,19 @@ class KitchenOrdersView(QWidget):
             }}
         """)
         
-        # Widget contenedor de las cards con espaciado optimizado para tarjetas más grandes
+        # Widget contenedor de las cards con layout de grid para aprovechar el espacio
         self.orders_container = QWidget()
         self.orders_layout = QGridLayout(self.orders_container)
-        # Espaciado ajustado para las tarjetas de 305px de ancho
-        spacing = 8 if self.is_small_screen else 8  
+        # Espaciado entre tarjetas
+        spacing = 6 if self.is_small_screen else 10  
         self.orders_layout.setSpacing(spacing)  
-        self.orders_layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        margins = 10 if self.is_small_screen else 10
+        self.orders_layout.setAlignment(Qt.AlignTop)
+        margins = 10 if self.is_small_screen else 20
         self.orders_layout.setContentsMargins(margins, margins, margins, margins)
+        
+        # El número de columnas se calculará dinámicamente en load_orders()
+        # según el ancho real de la ventana, no de la pantalla
+        self.columns = 1  # Valor inicial
         
         scroll_area.setWidget(self.orders_container)
         main_layout.addWidget(scroll_area)
@@ -701,6 +710,34 @@ class KitchenOrdersView(QWidget):
         
         # Recargar con filtro
         self.load_orders()
+    
+    def calculate_columns(self):
+        """Calcular número de columnas según el ancho disponible de la ventana"""
+        # Obtener el ancho actual de la ventana
+        window_width = self.width()
+        
+        # Determinar tamaño de tarjeta según resolución - SINCRONIZADO con OrderCard
+        screen = QApplication.primaryScreen().geometry()
+        card_width = 270 if screen.width() <= 1366 else 260  # Usar 260px para ambas resoluciones
+        
+        # Espaciado y márgenes - REDUCIDOS para permitir más columnas
+        spacing = 6 if self.is_small_screen else 10
+        margins = 10 if self.is_small_screen else 20
+        
+        # Calcular ancho disponible restando márgenes, scroll bar y espacios extras
+        scroll_bar_width = 15  # Reducido de 20 a 15
+        extra_margins = 25     # Reducido de 50 a 25
+        
+        available_width = window_width - (margins * 2) - scroll_bar_width - extra_margins
+        
+        # Calcular número de columnas que caben
+        columns = max(1, available_width // (card_width + spacing))
+        
+        # Limitar máximo de columnas para evitar que se vean muy dispersas
+        max_columns = 6 if screen.width() > 1366 else 5  # Aumentado a 5 para pantallas pequeñas
+        columns = min(columns, max_columns)
+        
+        return columns
         
     def update_statistics(self, orders):
         """Actualizar estadísticas simplificadas"""
@@ -718,170 +755,6 @@ class KitchenOrdersView(QWidget):
         self.stats_label.setText(
             f"Total: {len(orders)} | Pendientes: {pending} | Preparando: {preparing} | Listos: {ready} | Entregados: {delivered} | Pagados: {paid}"
         )
-    
-    def load_orders(self):
-        """Cargar y mostrar pedidos activos con mejoras visuales"""
-        # Actualizar indicador de carga
-        self.refresh_btn.setText("🔄 Cargando...")
-        self.refresh_btn.setEnabled(False)
-        
-        # Limpiar cards existentes
-        for i in reversed(range(self.orders_layout.count())):
-            child = self.orders_layout.itemAt(i).widget()
-            if child:
-                child.setParent(None)
-        
-        # Obtener pedidos activos
-        try:
-            all_orders = self.order_controller.get_active_orders()
-            
-            # Aplicar filtro si está activo
-            if self.current_filter is not None:
-                orders = [order for order in all_orders if order.status == self.current_filter]
-            else:
-                orders = all_orders
-            
-            # Actualizar estadísticas
-            self.update_statistics(all_orders)
-            
-            # Actualizar información del footer
-            current_time = datetime.now().strftime("%H:%M:%S")
-            self.last_update_label.setText(f"Última actualización: {current_time}")
-            
-            if not orders:
-                # Mostrar mensaje apropiado según el filtro
-                if self.current_filter is not None:
-                    filter_names = {
-                        OrderStatus.PENDING: "pendientes",
-                        OrderStatus.PREPARING: "en preparación",
-                        OrderStatus.READY: "listos",
-                        OrderStatus.DELIVERED: "entregados",
-                        OrderStatus.PAID: "pagados"
-                    }
-                    message = f"🔍 No hay pedidos {filter_names.get(self.current_filter, '')}"
-                else:
-                    message = "🎉 ¡No hay pedidos pendientes!"
-                
-                no_orders_container = QFrame()
-                no_orders_container.setStyleSheet(f"""
-                    QFrame {{
-                        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                                   stop:0 {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.1)},
-                                   stop:1 {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.1)});
-                        border-radius: 12px;
-                        border: 3px dashed {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.4)};
-                        padding: 60px;
-                    }}
-                """)
-                no_orders_layout = QVBoxLayout(no_orders_container)
-                
-                no_orders_label = QLabel(message)
-                no_orders_label.setAlignment(Qt.AlignCenter)
-                font_size = 20 if self.is_small_screen else 24
-                no_orders_label.setStyleSheet(f"""
-                    font-size: {font_size}px;
-                    color: {ColorPalette.SUCCESS};
-                    font-weight: bold;
-                    padding: 20px;
-                """)
-                no_orders_layout.addWidget(no_orders_label)
-                
-                # Sugerencia según el filtro
-                if self.current_filter is not None:
-                    suggestion = QLabel("💡 Prueba cambiar el filtro para ver otros pedidos")
-                    suggestion.setAlignment(Qt.AlignCenter)
-                    suggestion.setStyleSheet(f"""
-                        font-size: {font_size - 6}px;
-                        color: {ColorPalette.SILVER_LAKE_BLUE};
-                        font-style: italic;
-                        padding: 10px 0px 0px 0px;
-                    """)
-                    no_orders_layout.addWidget(suggestion)
-                
-                self.orders_layout.addWidget(no_orders_container, 0, 0, 1, -1)
-                self.footer_info.setText(f"🏪 Sistema POS - Sin pedidos activos ({current_time})")
-            else:
-                # Mostrar pedidos en grid responsivo optimizado
-                screen_width = QApplication.primaryScreen().geometry().width()
-                if screen_width <= 1366:  # Laptop pequeño - 4 columnas para mejor aprovechamiento
-                    max_cols = 4  # Aumentado de 3 a 4 para aprovechar el espacio disponible
-                elif screen_width <= 1920:  # Laptop/Desktop estándar
-                    max_cols = 4
-                else:  # Pantallas grandes
-                    max_cols = 5
-                
-                row, col = 0, 0
-                
-                # Ordenar por prioridad: urgencia -> estado -> tiempo
-                def get_priority(order):
-                    elapsed_minutes = (datetime.now() - order.created_at).total_seconds() / 60
-                    status_priority = {
-                        OrderStatus.DELIVERED: 1,  # Más prioritario - esperando pago
-                        OrderStatus.READY: 2,      # Listos para entregar
-                        OrderStatus.PREPARING: 3,  # En preparación
-                        OrderStatus.PENDING: 4,    # Pendientes de iniciar
-                        OrderStatus.PAID: 5        # Menos prioritario - ya pagados
-                    }.get(order.status, 6)
-                    
-                    # Solo aplicar factor de urgencia para estados activos de cocina
-                    if order.status in [OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.READY]:
-                        urgency_factor = max(0, elapsed_minutes - 10) * 0.1  # Factor de urgencia
-                    else:
-                        # Para entregados y pagados, no aplicar urgencia
-                        urgency_factor = 0
-                    
-                    return (status_priority - urgency_factor, elapsed_minutes)
-                
-                sorted_orders = sorted(orders, key=get_priority)
-                
-                for order in sorted_orders:
-                    card = OrderCard(order)
-                    card.status_changed.connect(self.update_order_status)
-                    card.payment_requested.connect(self.handle_payment_request)
-                    
-                    self.orders_layout.addWidget(card, row, col)
-                    
-                    col += 1
-                    if col >= max_cols:
-                        col = 0
-                        row += 1
-                
-                self.footer_info.setText(f"🏪 Sistema POS - {len(orders)} pedidos mostrados ({current_time})")
-                
-        except Exception as e:
-            # Manejar errores de conexión
-            error_container = QFrame()
-            error_container.setStyleSheet(f"""
-                QFrame {{
-                    background-color: {ColorPalette.with_alpha(ColorPalette.ERROR, 0.1)};
-                    border-radius: 12px;
-                    border: 3px solid {ColorPalette.ERROR};
-                    padding: 50px;
-                }}
-            """)
-            error_layout = QVBoxLayout(error_container)
-            
-            error_label = QLabel(f"❌ Error al cargar pedidos: {str(e)}")
-            error_label.setAlignment(Qt.AlignCenter)
-            error_label.setStyleSheet(f"""
-                font-size: 16px;
-                color: {ColorPalette.ERROR};
-                font-weight: bold;
-            """)
-            error_layout.addWidget(error_label)
-            
-            self.orders_layout.addWidget(error_container, 0, 0)
-            self.connection_status.setText("🔴 Error de conexión")
-            self.connection_status.setStyleSheet(f"""
-                font-size: 10px;
-                color: {ColorPalette.ERROR};
-                font-weight: bold;
-            """)
-        
-        finally:
-            # Restaurar botón de actualizar
-            self.refresh_btn.setText("🔄 Actualizar")
-            self.refresh_btn.setEnabled(True)
 
     def update_statistics_summary(self):
         """Actualizar estadísticas en tiempo real"""
@@ -901,6 +774,9 @@ class KitchenOrdersView(QWidget):
             # Mostrar indicador de carga
             self.refresh_btn.setText("⏳ Cargando...")
             self.refresh_btn.setEnabled(False)
+            
+            # Recalcular número de columnas según el ancho actual de la ventana
+            self.columns = self.calculate_columns()
             
             # Limpiar layout actual
             for i in reversed(range(self.orders_layout.count())):
@@ -956,15 +832,10 @@ class KitchenOrdersView(QWidget):
                     padding: 20px;
                 """)
                 
-                self.orders_layout.addWidget(no_orders_label, 0, 0, 1, -1)
+                self.orders_layout.addWidget(no_orders_label, 0, 0, 1, self.columns)  # Span across all columns
                 self.footer_info.setText(f"🏪 Sistema POS - Sin pedidos activos ({current_time})")
             else:
-                # Mostrar pedidos en grid
-                screen_width = QApplication.primaryScreen().geometry().width()
-                max_cols = 4 if screen_width <= 1366 else 5
-                
-                row, col = 0, 0
-                
+                # Mostrar pedidos en grid layout aprovechando el espacio horizontal
                 # Ordenar por prioridad
                 def get_priority(order):
                     elapsed_minutes = (datetime.now() - order.created_at).total_seconds() / 60
@@ -987,6 +858,8 @@ class KitchenOrdersView(QWidget):
                 
                 sorted_orders = sorted(orders, key=get_priority)
                 
+                # Agregar tarjetas en grid layout
+                row, col = 0, 0
                 for order in sorted_orders:
                     card = OrderCard(order)
                     card.status_changed.connect(self.update_order_status)
@@ -994,8 +867,9 @@ class KitchenOrdersView(QWidget):
                     
                     self.orders_layout.addWidget(card, row, col)
                     
+                    # Avanzar a la siguiente posición
                     col += 1
-                    if col >= max_cols:
+                    if col >= self.columns:
                         col = 0
                         row += 1
                 
@@ -1011,7 +885,7 @@ class KitchenOrdersView(QWidget):
                 font-weight: bold;
             """)
             
-            self.orders_layout.addWidget(error_label, 0, 0)
+            self.orders_layout.addWidget(error_label)
             self.connection_status.setText("🔴 Error de conexión")
             self.connection_status.setStyleSheet(f"""
                 font-size: 10px;
@@ -1172,4 +1046,18 @@ class KitchenOrdersView(QWidget):
                 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error al procesar el pago:\n{str(e)}")
+    
+    def resizeEvent(self, event):
+        """Manejar redimensionamiento de la ventana para recalcular columnas"""
+        super().resizeEvent(event)
+        # Solo recalcular si ya se ha inicializado la vista
+        if hasattr(self, 'orders_layout'):
+            # Usar un timer para evitar recálculos excesivos durante el redimensionamiento
+            if not hasattr(self, 'resize_timer'):
+                self.resize_timer = QTimer()
+                self.resize_timer.setSingleShot(True)
+                self.resize_timer.timeout.connect(self.load_orders)
+            
+            self.resize_timer.stop()
+            self.resize_timer.start(500)  # Esperar 500ms después del último redimensionamiento
 
