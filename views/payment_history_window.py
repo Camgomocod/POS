@@ -47,7 +47,7 @@ class PaymentDetailDialog(QDialog):
         # Título principal
         title = QLabel(f"🧾 ORDEN #{self.order.id}")
         title.setStyleSheet(f"""
-            font-size: 14px; 
+            font-size: 16px; 
             font-weight: bold; 
             color: {ColorPalette.PLATINUM};
         """)
@@ -61,7 +61,7 @@ class PaymentDetailDialog(QDialog):
         date_label = QLabel(self.order.created_at.strftime('%d/%m/%Y %H:%M'))
         date_label.setStyleSheet(f"""
             color: {ColorPalette.PLATINUM};
-            font-size: 10px;
+            font-size: 12px;
             font-weight: bold;
         """)
         info_layout.addWidget(date_label)
@@ -75,7 +75,7 @@ class PaymentDetailDialog(QDialog):
             padding: 2px;
             border-radius: 4px;
             font-weight: bold;
-            font-size: 9px;
+            font-size: 11px;
         """)
         info_layout.addWidget(status_label)
         
@@ -99,19 +99,19 @@ class PaymentDetailDialog(QDialog):
         # Información en líneas horizontales compactas
         customer_info_layout = QHBoxLayout()
         customer_info = QLabel(f"👤 {self.order.customer_name}")
-        customer_info.setStyleSheet(f"font-size: 11px; color: {ColorPalette.RICH_BLACK}; font-weight: bold;")
+        customer_info.setStyleSheet(f"font-size: 13px; color: {ColorPalette.RICH_BLACK}; font-weight: bold;")
         customer_info_layout.addWidget(customer_info)
         customer_info_layout.addStretch()
         
         table_info = f"Mesa {self.order.table_number}" if self.order.table_number else "Para llevar"
         location_info = QLabel(f"📍 {table_info}")
-        location_info.setStyleSheet(f"font-size: 10px; color: {ColorPalette.SILVER_LAKE_BLUE};")
+        location_info.setStyleSheet(f"font-size: 12px; color: {ColorPalette.SILVER_LAKE_BLUE};")
         customer_info_layout.addWidget(location_info)
         customer_layout.addLayout(customer_info_layout)
         
         # Método de pago
         payment_info = QLabel(f"💳 Pago: {(self.order.payment_method or 'Efectivo').capitalize()}")
-        payment_info.setStyleSheet(f"font-size: 10px; color: {ColorPalette.RICH_BLACK};")
+        payment_info.setStyleSheet(f"font-size: 12px; color: {ColorPalette.RICH_BLACK};")
         customer_layout.addWidget(payment_info)
         
         layout.addWidget(customer_frame)
@@ -119,7 +119,7 @@ class PaymentDetailDialog(QDialog):
         # Productos con diseño muy simplificado
         products_title = QLabel("🛍️ PRODUCTOS")
         products_title.setStyleSheet(f"""
-            font-size: 14px; 
+            font-size: 16px; 
             font-weight: bold; 
             color: {ColorPalette.RICH_BLACK};
             padding: 5px;
@@ -172,18 +172,18 @@ class PaymentDetailDialog(QDialog):
             
             # Nombre del producto (expandible)
             product_info = QLabel(f"{item.product.name}")
-            product_info.setStyleSheet(f"font-size: 10px; color: {ColorPalette.RICH_BLACK}; font-weight: bold;")
+            product_info.setStyleSheet(f"font-size: 14px; color: {ColorPalette.RICH_BLACK}; font-weight: bold;")
             product_info.setWordWrap(True)
             item_layout.addWidget(product_info, 1)  # Factor de expansión
             
             # Cantidad y precio
             qty_price = QLabel(f"{item.quantity}x")
-            qty_price.setStyleSheet(f"font-size: 10px; color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold;")
+            qty_price.setStyleSheet(f"font-size: 14px; color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold;")
             qty_price.setFixedWidth(25)
             item_layout.addWidget(qty_price)
             
             price_label = QLabel(f"${item.unit_price:.0f}")
-            price_label.setStyleSheet(f"font-size: 10px; color: {ColorPalette.SILVER_LAKE_BLUE};")
+            price_label.setStyleSheet(f"font-size: 14px; color: {ColorPalette.SILVER_LAKE_BLUE};")
             price_label.setFixedWidth(40)
             price_label.setAlignment(Qt.AlignRight)
             item_layout.addWidget(price_label)
@@ -193,7 +193,7 @@ class PaymentDetailDialog(QDialog):
             subtotal_label.setStyleSheet(f"""
                 font-weight: bold; 
                 color: {ColorPalette.SUCCESS}; 
-                font-size: 10px;
+                font-size: 12px;
             """)
             subtotal_label.setFixedWidth(50)
             subtotal_label.setAlignment(Qt.AlignRight)
@@ -243,7 +243,7 @@ class PaymentDetailDialog(QDialog):
                 border: none;
                 border-radius: 6px;
                 font-weight: bold;
-                font-size: 11px;
+                font-size: 13px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.OXFORD_BLUE};
@@ -261,7 +261,7 @@ class PaymentDetailDialog(QDialog):
                 border: none;
                 border-radius: 6px;
                 font-weight: bold;
-                font-size: 11px;
+                font-size: 13px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.OXFORD_BLUE};
@@ -307,7 +307,7 @@ class PaymentDetailDialog(QDialog):
                 }}
                 QMessageBox QLabel {{
                     color: {ColorPalette.RICH_BLACK};
-                    font-size: 14px;
+                    font-size: 16px;
                 }}
             """)
             msg.exec_()
@@ -324,7 +324,7 @@ class PaymentDetailDialog(QDialog):
                 }}
                 QMessageBox QLabel {{
                     color: {ColorPalette.RICH_BLACK};
-                    font-size: 14px;
+                    font-size: 16px;
                 }}
             """)
             msg.exec_()
@@ -601,7 +601,7 @@ class PaymentHistoryView(QWidget):
         # Título del panel más compacto
         title = QLabel("🔍 FILTROS")
         title.setStyleSheet(f"""
-            font-size: 12px;
+            font-size: 14px;
             font-weight: bold;
             color: {ColorPalette.RICH_BLACK};
             padding: 4px;
@@ -628,7 +628,7 @@ class PaymentHistoryView(QWidget):
         # Título de sección más compacto
         date_title = QLabel("📅 Fechas")
         date_title.setStyleSheet(f"""
-            font-size: 11px;
+            font-size: 13px;
             font-weight: bold;
             color: {ColorPalette.RICH_BLACK};
             margin-bottom: 2px;
@@ -637,7 +637,7 @@ class PaymentHistoryView(QWidget):
         
         # Fecha desde
         from_label = QLabel("Desde:")
-        from_label.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold; font-size: 10px;")
+        from_label.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold; font-size: 12px;")
         date_layout.addWidget(from_label)
         
         self.start_date = QDateEdit()
@@ -650,7 +650,7 @@ class PaymentHistoryView(QWidget):
                 border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
                 border-radius: 3px;
                 padding: 2px;
-                font-size: 10px;
+                font-size: 12px;
                 color: {ColorPalette.RICH_BLACK};
             }}
             QDateEdit:focus {{
@@ -668,7 +668,7 @@ class PaymentHistoryView(QWidget):
         
         # Fecha hasta
         to_label = QLabel("Hasta:")
-        to_label.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold; font-size: 10px;")
+        to_label.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold; font-size: 12px;")
         date_layout.addWidget(to_label)
         
         self.end_date = QDateEdit()
@@ -681,7 +681,7 @@ class PaymentHistoryView(QWidget):
                 border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
                 border-radius: 3px;
                 padding: 2px;
-                font-size: 10px;
+                font-size: 12px;
                 color: {ColorPalette.RICH_BLACK};
             }}
             QDateEdit:focus {{
