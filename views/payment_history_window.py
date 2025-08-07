@@ -32,7 +32,7 @@ class PaymentDetailDialog(QDialog):
         
         # Header compacto con información principal
         header_frame = QFrame()
-        header_frame.setFixedHeight(60)  # Altura fija para el header
+        header_frame.setFixedHeight(65)  # Altura fija para el header (aumentada +5)
         header_frame.setStyleSheet(f"""
             QFrame {{
                 background-color: {ColorPalette.YINMN_BLUE};
@@ -47,7 +47,7 @@ class PaymentDetailDialog(QDialog):
         # Título principal
         title = QLabel(f"🧾 ORDEN #{self.order.id}")
         title.setStyleSheet(f"""
-            font-size: 16px; 
+            font-size: 18px; 
             font-weight: bold; 
             color: {ColorPalette.PLATINUM};
         """)
@@ -61,7 +61,7 @@ class PaymentDetailDialog(QDialog):
         date_label = QLabel(self.order.created_at.strftime('%d/%m/%Y %H:%M'))
         date_label.setStyleSheet(f"""
             color: {ColorPalette.PLATINUM};
-            font-size: 12px;
+            font-size: 14px;
             font-weight: bold;
         """)
         info_layout.addWidget(date_label)
@@ -75,7 +75,7 @@ class PaymentDetailDialog(QDialog):
             padding: 2px;
             border-radius: 4px;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 13px;
         """)
         info_layout.addWidget(status_label)
         
@@ -84,7 +84,7 @@ class PaymentDetailDialog(QDialog):
         
         # Información del cliente compacta
         customer_frame = QFrame()
-        customer_frame.setFixedHeight(55)  # Altura fija
+        customer_frame.setFixedHeight(60)  # Altura fija (aumentada +5)
         customer_frame.setStyleSheet(f"""
             QFrame {{
                 background-color: {ColorPalette.PLATINUM};
@@ -99,19 +99,19 @@ class PaymentDetailDialog(QDialog):
         # Información en líneas horizontales compactas
         customer_info_layout = QHBoxLayout()
         customer_info = QLabel(f"👤 {self.order.customer_name}")
-        customer_info.setStyleSheet(f"font-size: 13px; color: {ColorPalette.RICH_BLACK}; font-weight: bold;")
+        customer_info.setStyleSheet(f"font-size: 15px; color: {ColorPalette.RICH_BLACK}; font-weight: bold;")
         customer_info_layout.addWidget(customer_info)
         customer_info_layout.addStretch()
         
         table_info = f"Mesa {self.order.table_number}" if self.order.table_number else "Para llevar"
         location_info = QLabel(f"📍 {table_info}")
-        location_info.setStyleSheet(f"font-size: 12px; color: {ColorPalette.SILVER_LAKE_BLUE};")
+        location_info.setStyleSheet(f"font-size: 14px; color: {ColorPalette.SILVER_LAKE_BLUE};")
         customer_info_layout.addWidget(location_info)
         customer_layout.addLayout(customer_info_layout)
         
         # Método de pago
         payment_info = QLabel(f"💳 Pago: {(self.order.payment_method or 'Efectivo').capitalize()}")
-        payment_info.setStyleSheet(f"font-size: 12px; color: {ColorPalette.RICH_BLACK};")
+        payment_info.setStyleSheet(f"font-size: 14px; color: {ColorPalette.RICH_BLACK};")
         customer_layout.addWidget(payment_info)
         
         layout.addWidget(customer_frame)
@@ -119,7 +119,7 @@ class PaymentDetailDialog(QDialog):
         # Productos con diseño muy simplificado
         products_title = QLabel("🛍️ PRODUCTOS")
         products_title.setStyleSheet(f"""
-            font-size: 16px; 
+            font-size: 18px; 
             font-weight: bold; 
             color: {ColorPalette.RICH_BLACK};
             padding: 5px;
@@ -172,18 +172,18 @@ class PaymentDetailDialog(QDialog):
             
             # Nombre del producto (expandible)
             product_info = QLabel(f"{item.product.name}")
-            product_info.setStyleSheet(f"font-size: 14px; color: {ColorPalette.RICH_BLACK}; font-weight: bold;")
+            product_info.setStyleSheet(f"font-size: 16px; color: {ColorPalette.RICH_BLACK}; font-weight: bold;")
             product_info.setWordWrap(True)
             item_layout.addWidget(product_info, 1)  # Factor de expansión
             
             # Cantidad y precio
             qty_price = QLabel(f"{item.quantity}x")
-            qty_price.setStyleSheet(f"font-size: 14px; color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold;")
+            qty_price.setStyleSheet(f"font-size: 16px; color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold;")
             qty_price.setFixedWidth(25)
             item_layout.addWidget(qty_price)
             
             price_label = QLabel(f"${item.unit_price:.0f}")
-            price_label.setStyleSheet(f"font-size: 14px; color: {ColorPalette.SILVER_LAKE_BLUE};")
+            price_label.setStyleSheet(f"font-size: 16px; color: {ColorPalette.SILVER_LAKE_BLUE};")
             price_label.setFixedWidth(40)
             price_label.setAlignment(Qt.AlignRight)
             item_layout.addWidget(price_label)
@@ -193,7 +193,7 @@ class PaymentDetailDialog(QDialog):
             subtotal_label.setStyleSheet(f"""
                 font-weight: bold; 
                 color: {ColorPalette.SUCCESS}; 
-                font-size: 12px;
+                font-size: 14px;
             """)
             subtotal_label.setFixedWidth(50)
             subtotal_label.setAlignment(Qt.AlignRight)
@@ -209,7 +209,7 @@ class PaymentDetailDialog(QDialog):
         
         # Total final
         total_frame = QFrame()
-        total_frame.setFixedHeight(35)  # Altura fija
+        total_frame.setFixedHeight(40)  # Altura fija (aumentada +5)
         total_frame.setStyleSheet(f"""
             QFrame {{
                 background-color: {ColorPalette.SUCCESS};
@@ -221,7 +221,7 @@ class PaymentDetailDialog(QDialog):
         
         total_label = QLabel(f"💰 TOTAL: ${self.order.total:.2f}")
         total_label.setStyleSheet(f"""
-            font-size: 16px; 
+            font-size: 18px; 
             font-weight: bold; 
             color: {ColorPalette.PLATINUM};
         """)
@@ -243,7 +243,7 @@ class PaymentDetailDialog(QDialog):
                 border: none;
                 border-radius: 6px;
                 font-weight: bold;
-                font-size: 13px;
+                font-size: 15px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.OXFORD_BLUE};
@@ -261,7 +261,7 @@ class PaymentDetailDialog(QDialog):
                 border: none;
                 border-radius: 6px;
                 font-weight: bold;
-                font-size: 13px;
+                font-size: 15px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.OXFORD_BLUE};
@@ -486,7 +486,7 @@ class PaymentHistoryView(QWidget):
         
         # Título simple y claro (mismo estilo que kitchen orders)
         title = QLabel("💰 HISTORIAL DE PAGOS")
-        title_font_size = 22 if self.is_small_screen else 26
+        title_font_size = 24 if self.is_small_screen else 28
         title.setStyleSheet(f"""
             font-size: {title_font_size}px;
             font-weight: bold;
@@ -515,7 +515,7 @@ class PaymentHistoryView(QWidget):
         screen = QApplication.primaryScreen().geometry()
         is_small_screen = screen.width() <= 1366
         btn_height = 34 if is_small_screen else 40
-        btn_font_size = 10 if is_small_screen else 12
+        btn_font_size = 12 if is_small_screen else 14
         
         # Botón volver a POS (estilo unificado)
         pos_btn = QPushButton("🍽️ POS")
@@ -607,7 +607,7 @@ class PaymentHistoryView(QWidget):
         # Título del panel más compacto
         title = QLabel("🔍 FILTROS")
         title.setStyleSheet(f"""
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             color: {ColorPalette.RICH_BLACK};
             padding: 4px;
@@ -634,7 +634,7 @@ class PaymentHistoryView(QWidget):
         # Título de sección más compacto
         date_title = QLabel("📅 Fechas")
         date_title.setStyleSheet(f"""
-            font-size: 13px;
+            font-size: 15px;
             font-weight: bold;
             color: {ColorPalette.RICH_BLACK};
             margin-bottom: 2px;
@@ -643,20 +643,20 @@ class PaymentHistoryView(QWidget):
         
         # Fecha desde
         from_label = QLabel("Desde:")
-        from_label.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold; font-size: 12px;")
+        from_label.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold; font-size: 14px;")
         date_layout.addWidget(from_label)
         
         self.start_date = QDateEdit()
         self.start_date.setDate(QDate.currentDate().addDays(-30))
         self.start_date.setCalendarPopup(True)
-        self.start_date.setFixedHeight(22)  # Muy compacto para laptop
+        self.start_date.setFixedHeight(26)  # Aumentado +4 para laptop
         self.start_date.setStyleSheet(f"""
             QDateEdit {{
                 background-color: {ColorPalette.PLATINUM};
                 border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
                 border-radius: 3px;
                 padding: 2px;
-                font-size: 12px;
+                font-size: 14px;
                 color: {ColorPalette.RICH_BLACK};
             }}
             QDateEdit:focus {{
@@ -674,20 +674,20 @@ class PaymentHistoryView(QWidget):
         
         # Fecha hasta
         to_label = QLabel("Hasta:")
-        to_label.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold; font-size: 12px;")
+        to_label.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold; font-size: 14px;")
         date_layout.addWidget(to_label)
         
         self.end_date = QDateEdit()
         self.end_date.setDate(QDate.currentDate())
         self.end_date.setCalendarPopup(True)
-        self.end_date.setFixedHeight(22)  # Muy compacto para laptop
+        self.end_date.setFixedHeight(26)  # Aumentado +4 para laptop
         self.end_date.setStyleSheet(f"""
             QDateEdit {{
                 background-color: {ColorPalette.PLATINUM};
                 border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
                 border-radius: 3px;
                 padding: 2px;
-                font-size: 12px;
+                font-size: 14px;
                 color: {ColorPalette.RICH_BLACK};
             }}
             QDateEdit:focus {{
@@ -721,7 +721,7 @@ class PaymentHistoryView(QWidget):
         # Título de sección
         search_title = QLabel("🔎 Búsqueda")
         search_title.setStyleSheet(f"""
-            font-size: 11px;
+            font-size: 13px;
             font-weight: bold;
             color: {ColorPalette.RICH_BLACK};
             margin-bottom: 2px;
@@ -729,19 +729,19 @@ class PaymentHistoryView(QWidget):
         search_layout.addWidget(search_title)
         
         search_label = QLabel("Orden/Cliente:")
-        search_label.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold; font-size: 10px;")
+        search_label.setStyleSheet(f"color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold; font-size: 12px;")
         search_layout.addWidget(search_label)
         
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Ej: #123 o Juan...")
-        self.search_input.setFixedHeight(22)  # Muy compacto para laptop
+        self.search_input.setFixedHeight(26)  # Aumentado +4 para laptop
         self.search_input.setStyleSheet(f"""
             QLineEdit {{
                 background-color: {ColorPalette.PLATINUM};
                 border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
                 border-radius: 3px;
                 padding: 2px;
-                font-size: 10px;
+                font-size: 12px;
                 color: {ColorPalette.RICH_BLACK};
             }}
             QLineEdit:focus {{
@@ -771,7 +771,7 @@ class PaymentHistoryView(QWidget):
         
         # Botón buscar compacto
         search_btn = QPushButton("🔍 BUSCAR")
-        search_btn.setFixedHeight(24)  # Muy reducido para laptop
+        search_btn.setFixedHeight(28)  # Aumentado +4 para laptop
         search_btn.setStyleSheet(f"""
             QPushButton {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -782,7 +782,7 @@ class PaymentHistoryView(QWidget):
                 padding: 4px;
                 border-radius: 6px;
                 font-weight: bold;
-                font-size: 10px;
+                font-size: 12px;
             }}
             QPushButton:hover {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -795,7 +795,7 @@ class PaymentHistoryView(QWidget):
         
         # Botón limpiar compacto
         clear_btn = QPushButton("🗑️ LIMPIAR")
-        clear_btn.setFixedHeight(22)  # Muy reducido para laptop
+        clear_btn.setFixedHeight(26)  # Aumentado +4 para laptop
         clear_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.2)};
@@ -804,7 +804,7 @@ class PaymentHistoryView(QWidget):
                 padding: 2px;
                 border-radius: 4px;
                 font-weight: bold;
-                font-size: 9px;
+                font-size: 11px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.SILVER_LAKE_BLUE};
@@ -846,7 +846,7 @@ class PaymentHistoryView(QWidget):
         # Título principal más compacto
         table_title = QLabel("📋 TRANSACCIONES")
         table_title.setStyleSheet(f"""
-            font-size: 16px;  # Aumentado +2 según petición
+            font-size: 18px;  # Aumentado +4 según nueva petición
             font-weight: bold;
             color: {ColorPalette.RICH_BLACK};
             padding: 2px;
@@ -859,7 +859,7 @@ class PaymentHistoryView(QWidget):
         self.table_status = QLabel("Datos actualizados")
         self.table_status.setStyleSheet(f"""
             color: {ColorPalette.SUCCESS};
-            font-size: 11px;  # Aumentado +2 según petición
+            font-size: 13px;  # Aumentado +4 según nueva petición
             font-weight: bold;
             padding: 2px;
             background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.1)};
@@ -870,7 +870,7 @@ class PaymentHistoryView(QWidget):
         
         # Botón exportar más compacto
         export_btn = QPushButton("📤 Excel")
-        export_btn.setFixedSize(70, 24)  # Muy compacto para laptop
+        export_btn.setFixedSize(75, 28)  # Aumentado para acomodar texto más grande
         export_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ColorPalette.SUCCESS};
@@ -879,7 +879,7 @@ class PaymentHistoryView(QWidget):
                 padding: 2px 4px;
                 border-radius: 4px;
                 font-weight: bold;
-                font-size: 11px;  # Aumentado +2 según petición
+                font-size: 13px;  # Aumentado +4 según nueva petición
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.8)};
@@ -934,7 +934,7 @@ class PaymentHistoryView(QWidget):
                 background-color: {ColorPalette.PLATINUM};
                 gridline-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
                 selection-background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.2)};
-                font-size: 11px;  /* Aumentado +2 según petición */
+                font-size: 13px;  /* Aumentado +4 según nueva petición */
             }}
             QTableWidget::item {{
                 padding: 3px 2px;  /* Padding aumentado para mejor legibilidad */
@@ -955,10 +955,10 @@ class PaymentHistoryView(QWidget):
                 color: {ColorPalette.PLATINUM};
                 padding: 6px 4px;  /* Padding aumentado para mostrar texto completo */
                 font-weight: bold;
-                font-size: 10px;  /* Aumentado +2 según petición */
+                font-size: 12px;  /* Aumentado +4 según nueva petición */
                 border: none;
                 border-right: 1px solid {ColorPalette.OXFORD_BLUE};
-                height: 32px;  /* Altura aumentada para mostrar texto completo */
+                height: 36px;  /* Altura aumentada para acomodar texto más grande */
             }}
             QHeaderView::section:first {{
                 border-top-left-radius: 6px;
@@ -1144,7 +1144,7 @@ class PaymentHistoryView(QWidget):
         self.table_status.setText("🔄")
         self.table_status.setStyleSheet(f"""
             color: {ColorPalette.WARNING};
-            font-size: 11px;  # Aumentado +2 según petición
+            font-size: 13px;  # Aumentado +4 según nueva petición
             font-weight: bold;
             padding: 2px 4px;
             background-color: {ColorPalette.with_alpha(ColorPalette.WARNING, 0.1)};
@@ -1180,7 +1180,7 @@ class PaymentHistoryView(QWidget):
             self.table_status.setText("✅ OK")
             self.table_status.setStyleSheet(f"""
                 color: {ColorPalette.SUCCESS};
-                font-size: 11px;  # Aumentado +2 según petición
+                font-size: 13px;  # Aumentado +4 según nueva petición
                 font-weight: bold;
                 padding: 2px 4px;  # Mínimo padding
                 background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.1)};
@@ -1193,7 +1193,7 @@ class PaymentHistoryView(QWidget):
             self.table_status.setText("❌")
             self.table_status.setStyleSheet(f"""
                 color: {ColorPalette.ERROR};
-                font-size: 11px;  # Aumentado +2 según petición
+                font-size: 13px;  # Aumentado +4 según nueva petición
                 font-weight: bold;
                 padding: 2px 4px;
                 background-color: {ColorPalette.with_alpha(ColorPalette.ERROR, 0.1)};
@@ -1212,13 +1212,13 @@ class PaymentHistoryView(QWidget):
             date_str = order.created_at.strftime('%d/%m/%y')  # Formato más corto
             date_item = QTableWidgetItem(date_str)
             date_item.setTextAlignment(Qt.AlignCenter)
-            date_item.setFont(QFont("Arial", 9))  # Aumentado +2 según petición
+            date_item.setFont(QFont("Arial", 11))  # Aumentado +4 según nueva petición
             self.payment_table.setItem(row, 0, date_item)
             
             # Orden # compacto
             order_item = QTableWidgetItem(f"#{order.id}")
             order_item.setTextAlignment(Qt.AlignCenter)
-            order_item.setFont(QFont("Arial", 9, QFont.Bold))  # Aumentado +2 según petición
+            order_item.setFont(QFont("Arial", 11, QFont.Bold))  # Aumentado +4 según nueva petición
             order_item.setForeground(QColor(ColorPalette.YINMN_BLUE))
             self.payment_table.setItem(row, 1, order_item)
             
@@ -1228,14 +1228,14 @@ class PaymentHistoryView(QWidget):
                 customer_name = customer_name[:12] + "..."
             customer_item = QTableWidgetItem(customer_name)
             customer_item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-            customer_item.setFont(QFont("Arial", 9))  # Aumentado +2 según petición
+            customer_item.setFont(QFont("Arial", 11))  # Aumentado +4 según nueva petición
             customer_item.setToolTip(order.customer_name)  # Tooltip con nombre completo
             self.payment_table.setItem(row, 2, customer_item)
             
             # Total con formato compacto
             total_item = QTableWidgetItem(f"${order.total:.0f}")  # Sin decimales para ahorrar espacio
             total_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            total_item.setFont(QFont("Arial", 9, QFont.Bold))  # Aumentado +2 según petición
+            total_item.setFont(QFont("Arial", 11, QFont.Bold))  # Aumentado +4 según nueva petición
             total_item.setForeground(QColor(ColorPalette.SUCCESS))
             total_item.setToolTip(f"${order.total:.2f}")  # Tooltip con decimales
             self.payment_table.setItem(row, 3, total_item)
@@ -1253,20 +1253,20 @@ class PaymentHistoryView(QWidget):
             
             method_item = QTableWidgetItem(method)
             method_item.setTextAlignment(Qt.AlignCenter)
-            method_item.setFont(QFont("Arial", 9))  # Aumentado +2 según petición
+            method_item.setFont(QFont("Arial", 11))  # Aumentado +4 según nueva petición
             method_item.setToolTip(order.payment_method or 'Efectivo')  # Tooltip completo
             self.payment_table.setItem(row, 4, method_item)
             
             # Botón de acción muy compacto sin texto
             action_btn = QPushButton("👁")
-            action_btn.setFixedSize(20, 20)  # Aumentado +2 para mejor legibilidad
+            action_btn.setFixedSize(24, 24)  # Aumentado +4 para acomodar texto más grande
             action_btn.setStyleSheet(f"""
                 QPushButton {{
                     background-color: {ColorPalette.YINMN_BLUE};
                     color: {ColorPalette.PLATINUM};
                     border: none;
                     border-radius: 2px;
-                    font-size: 9px;  # Aumentado +2 según petición
+                    font-size: 11px;  # Aumentado +4 según nueva petición
                     font-weight: bold;
                     
                 }}
