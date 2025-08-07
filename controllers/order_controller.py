@@ -66,17 +66,19 @@ class OrderController:
         ).order_by(Order.created_at.asc()).all()
     
     def get_all_orders_for_kitchen(self):
-        """Obtener todos los pedidos para la vista de cocina (incluyendo pagados del día actual)"""
-        from datetime import date
+        """Obtener todos los pedidos para la vista de cocina (incluyendo pagados de los últimos días)"""
+        from datetime import date, timedelta
         today = date.today()
+        # Incluir pedidos de los últimos 3 días para mostrar pagados recientes
+        start_date = today - timedelta(days=3)
         
         return self.db.query(Order).filter(
             Order.status.in_([
                 OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.READY, 
                 OrderStatus.DELIVERED, OrderStatus.PAID
             ]),
-            Order.created_at >= today  # Solo pedidos del día actual
-        ).order_by(Order.created_at.asc()).all()
+            Order.created_at >= start_date  # Últimos 3 días
+        ).order_by(Order.created_at.desc()).all()  # Más recientes primero
     
     def get_order_details(self, order_id):
         """Obtener detalles completos del pedido"""

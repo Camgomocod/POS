@@ -415,6 +415,8 @@ class PaymentHistoryView(QWidget):
     
     def refresh_data(self):
         """Refrescar datos del historial - método público para llamar desde fuera"""
+        # Refrescar controlador para obtener datos más recientes de la BD
+        self.payment_controller = PaymentController()
         self.current_page = 1  # Resetear a primera página
         self.load_payment_history()
     
@@ -428,6 +430,10 @@ class PaymentHistoryView(QWidget):
         # Refrescar datos cada vez que se muestra la vista
         # Solo si ya se ha inicializado completamente
         if hasattr(self, 'payment_controller'):
+            # Refrescar controlador para obtener datos más recientes
+            self.payment_controller = PaymentController()
+            # Resetear a primera página y refrescar
+            self.current_page = 1
             self.refresh_data()
     
     def init_ui(self):
@@ -1295,6 +1301,8 @@ class PaymentHistoryView(QWidget):
     
     def search_payments(self):
         """Buscar pagos con filtros actuales"""
+        # Refrescar controlador para obtener datos más recientes
+        self.payment_controller = PaymentController()
         self.current_page = 1  # Resetear a primera página
         self.load_payment_history()
     

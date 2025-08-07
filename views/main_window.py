@@ -301,6 +301,10 @@ class MainWindow(QMainWindow):
         """Abrir ventana POS"""
         if not self.pos_window:
             self.pos_window = EnhancedPOSWindow()
+        else:
+            # Si ya existe, refrescar datos
+            if hasattr(self.pos_window, 'refresh_data'):
+                self.pos_window.refresh_data()
         self.pos_window.show()
         self.pos_window.raise_()
     
@@ -308,6 +312,13 @@ class MainWindow(QMainWindow):
         """Abrir ventana de cocina"""
         if not self.kitchen_window:
             self.kitchen_window = KitchenOrdersWindow()
+        else:
+            # Si ya existe, refrescar datos forzando nueva instancia del controlador
+            if hasattr(self.kitchen_window, 'order_controller'):
+                from controllers.order_controller import OrderController
+                self.kitchen_window.order_controller = OrderController()
+                if hasattr(self.kitchen_window, 'load_orders'):
+                    self.kitchen_window.load_orders()
         self.kitchen_window.show()
         self.kitchen_window.raise_()
     
