@@ -683,8 +683,8 @@ class MenuManagementWidget(QWidget):
     def init_ui(self):
         """Configurar interfaz"""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(10)
         
         # Header
         header = self.create_header()
@@ -699,15 +699,16 @@ class MenuManagementWidget(QWidget):
                 border-radius: 8px;
             }}
             QTabBar::tab {{
-                font-size: 13px;
+                font-size: 12px;
                 background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
                 color: {ColorPalette.RICH_BLACK};
-                padding: 12px 20px;
+                padding: 6px 13px;
                 margin-right: 2px;
                 border-top-left-radius: 8px;
                 border-top-right-radius: 8px;
                 font-weight: bold;
-                min-width: 120px;
+                min-width: 100px
+                min-height: 10px;
             }}
             QTabBar::tab:selected {{
                 background-color: {ColorPalette.YINMN_BLUE};
@@ -779,11 +780,11 @@ class MenuManagementWidget(QWidget):
         
         # Botones de acción rápida
         buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(10)
+        buttons_layout.setSpacing(5)
         
         # Botón nueva categoría
         new_category_btn = QPushButton("📁 Nueva Categoría")
-        new_category_btn.setFixedHeight(40)
+        new_category_btn.setFixedHeight(35)
         new_category_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ColorPalette.SUCCESS};
@@ -792,7 +793,7 @@ class MenuManagementWidget(QWidget):
                 padding: 8px 15px;
                 border-radius: 8px;
                 font-weight: bold;
-                font-size: 13px;
+                font-size: 12px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.8)};
@@ -803,7 +804,7 @@ class MenuManagementWidget(QWidget):
         
         # Botón nuevo producto
         new_product_btn = QPushButton("🍽️ Nuevo Producto")
-        new_product_btn.setFixedHeight(40)
+        new_product_btn.setFixedHeight(35)
         new_product_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ColorPalette.YINMN_BLUE};
@@ -812,7 +813,7 @@ class MenuManagementWidget(QWidget):
                 padding: 8px 15px;
                 border-radius: 8px;
                 font-weight: bold;
-                font-size: 13px;
+                font-size: 12px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.8)};
@@ -850,8 +851,8 @@ class MenuManagementWidget(QWidget):
         """Crear pestaña de dashboard"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(10)
         
         # Estadísticas generales
         stats_frame = self.create_stats_frame()
@@ -914,7 +915,7 @@ class MenuManagementWidget(QWidget):
         # Título
         title = QLabel("🏆 Top 2 Productos Más Vendidos")
         title.setStyleSheet(f"""
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             color: {ColorPalette.RICH_BLACK};
             margin-bottom: 5px;
@@ -936,8 +937,8 @@ class MenuManagementWidget(QWidget):
                 background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.05)};
                 border-radius: 8px;
                 border: 1px solid {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.2)};
-                padding: 5px;
-                max-height: 50px;
+                padding: 2px;
+                min-height: 20px;
             }}
             QFrame:hover {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.08)};
@@ -967,6 +968,7 @@ class MenuManagementWidget(QWidget):
         name_label.setStyleSheet(f"""
             font-size: 13px;
             font-weight: 600;
+            min-height: 20px;
             color: {ColorPalette.RICH_BLACK};
         """)
         info_layout.addWidget(name_label)
@@ -976,6 +978,7 @@ class MenuManagementWidget(QWidget):
         details_label = QLabel(details)
         details_label.setStyleSheet(f"""
             font-size: 11px;
+            min-height: 18px;
             color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.7)};
         """)
         info_layout.addWidget(details_label)
@@ -1031,11 +1034,11 @@ class MenuManagementWidget(QWidget):
         widget.setStyleSheet(f"""
             QFrame {{
                 background-color: {ColorPalette.with_alpha(color, 0.08)};
-                border-left: 3px solid {color};
+                border-left: 2px solid {color};
                 border-radius: 6px;
                 padding: 0px;
-                min-height: 45px;
-                max-height: 45px;
+                min-height: 40px;
+                max-height: 40px;
             }}
             QFrame:hover {{
                 background-color: {ColorPalette.with_alpha(color, 0.12)};
@@ -1043,16 +1046,18 @@ class MenuManagementWidget(QWidget):
         """)
         
         layout = QHBoxLayout(widget)
-        layout.setContentsMargins(8, 0, 8, 0)
+        layout.setContentsMargins(8, 4, 8, 4)
         layout.setSpacing(8)
         
         # Icono
         icon_label = QLabel(icon)
         icon_label.setStyleSheet(f"""
-            font-size: 16px;
+            font-size: 12px;
             color: {color};
+            min-width: 25px;
+            min-height: 25px;
+            position: relative;
         """)
-        icon_label.setFixedSize(20, 20)
         layout.addWidget(icon_label)
         
         # Información en línea
@@ -1061,6 +1066,7 @@ class MenuManagementWidget(QWidget):
         info_label.setStyleSheet(f"""
             font-size: 12px;
             font-weight: 600;
+            min-height: 25px;
             color: {ColorPalette.RICH_BLACK};
         """)
         layout.addWidget(info_label)
@@ -1086,9 +1092,9 @@ class MenuManagementWidget(QWidget):
             # Crear widgets de estadísticas en una sola fila
             stats_data = [
                 ("📁", "Categorías", str(stats['active_categories']), ColorPalette.SUCCESS),
-                ("🍽️", "Productos", str(stats['active_products']), ColorPalette.YINMN_BLUE),
-                ("⭐", "Destacados", str(stats['featured_products']), ColorPalette.WARNING),
-                ("💰", "Precio Mayor", f"€{stats['highest_price']:.2f}", ColorPalette.SILVER_LAKE_BLUE)
+                ("⭐", "Productos", str(stats['active_products']), ColorPalette.YINMN_BLUE),
+                ("📁", "Destacados", str(stats['featured_products']), ColorPalette.WARNING),
+                ("⭐", "Precio Mayor", f"€{stats['highest_price']:.2f}", ColorPalette.SILVER_LAKE_BLUE)
             ]
             
             for i, (icon, title, value, color) in enumerate(stats_data):
