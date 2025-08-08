@@ -135,7 +135,7 @@ class MenuController:
             return None
     
     def create_product(self, name, price, category_id, description=None, cost=None, 
-                      preparation_time=None, is_featured=False):
+                      preparation_time=None, stock=0):
         """Crear nuevo producto"""
         try:
             # Verificar que la categoría existe
@@ -157,7 +157,7 @@ class MenuController:
                 cost=float(cost) if cost else None,
                 category_id=category_id,
                 preparation_time=int(preparation_time) if preparation_time else None,
-                is_featured=is_featured
+                stock=int(stock) if stock else 0
             )
             
             self.db.add(product)
@@ -174,7 +174,7 @@ class MenuController:
     
     def update_product(self, product_id, name=None, description=None, price=None, 
                       cost=None, category_id=None, preparation_time=None, 
-                      is_active=None, is_featured=None):
+                      stock=None, is_active=None):
         """Actualizar producto"""
         try:
             product = self.get_product_by_id(product_id)
@@ -209,10 +209,10 @@ class MenuController:
                 product.category_id = category_id
             if preparation_time is not None:
                 product.preparation_time = int(preparation_time) if preparation_time else None
+            if stock is not None:
+                product.stock = int(stock) if stock else 0
             if is_active is not None:
                 product.is_active = is_active
-            if is_featured is not None:
-                product.is_featured = is_featured
             
             self.db.commit()
             return True, f"Producto '{product.name}' actualizado exitosamente"
@@ -285,7 +285,6 @@ class MenuController:
             
             total_products = self.db.query(Product).count()
             active_products = self.db.query(Product).filter(Product.is_active == True).count()
-            featured_products = self.db.query(Product).filter(Product.is_featured == True).count()
             
             # Producto más caro
             most_expensive = self.db.query(Product).filter(Product.is_active == True)\
@@ -296,7 +295,6 @@ class MenuController:
                 'active_categories': active_categories,
                 'total_products': total_products,
                 'active_products': active_products,
-                'featured_products': featured_products,
                 'most_expensive_product': most_expensive.name if most_expensive else None,
                 'highest_price': float(most_expensive.price) if most_expensive else 0.0
             }
@@ -308,7 +306,6 @@ class MenuController:
                 'active_categories': 0,
                 'total_products': 0,
                 'active_products': 0,
-                'featured_products': 0,
                 'most_expensive_product': None,
                 'highest_price': 0.0
             }

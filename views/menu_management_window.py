@@ -1,24 +1,25 @@
-import sys
-import os
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
+from views.products_management_view import ProductsManagementView
+from views.categories_management_view import CategoriesManagementView
+from models.product import Product
+from models.category import Category
+from controllers.menu_controller import MenuController
+from utils.colors import ColorPalette, CommonStyles
+from PyQt5.QtGui import QFont, QIcon, QPixmap, QColor
+from PyQt5.QtCore import Qt, pyqtSignal, QTimer
+from models.product import Product
+from models.category import Category
+from controllers.menu_controller import MenuController
+from utils.colors import ColorPalette
+from PyQt5.QtGui import QPixmap, QFont
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QTableWidget, QTableWidgetItem, QTabWidget, QMessageBox,
                              QDialog, QFormLayout, QLineEdit, QTextEdit, QComboBox,
                              QCheckBox, QDialogButtonBox, QDoubleSpinBox, QSpinBox,
                              QFileDialog, QLabel, QGridLayout, QFrame, QHeaderView,
                              QAbstractItemView)
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QPixmap, QFont
-from utils.colors import ColorPalette
-from controllers.menu_controller import MenuController
-from models.category import Category
-from models.product import Product
-from PyQt5.QtCore import Qt, pyqtSignal, QTimer
-from PyQt5.QtGui import QFont, QIcon, QPixmap, QColor
-from utils.colors import ColorPalette, CommonStyles
-from controllers.menu_controller import MenuController
-from models.category import Category
-from models.product import Product
 import os
+import sys
 
 class CategoryFormDialog(QDialog):
     """Diálogo para crear/editar categorías"""
@@ -34,12 +35,12 @@ class CategoryFormDialog(QDialog):
         """Configurar interfaz del diálogo"""
         title = "Editar Categoría" if self.is_edit else "Nueva Categoría"
         self.setWindowTitle(title)
-        self.setFixedSize(400, 300)
+        self.setMinimumSize(400, 350)
         self.setModal(True)
         
         layout = QVBoxLayout(self)
-        layout.setSpacing(20)
-        layout.setContentsMargins(25, 25, 25, 25)
+        layout.setSpacing(15)
+        layout.setContentsMargins(20, 20, 20, 20)
         
         # Header
         header = self.create_header()
@@ -103,26 +104,26 @@ class CategoryFormDialog(QDialog):
         form_frame.setStyleSheet(f"""
             QFrame {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.95)};
-                padding: 10px;
+                padding: 15px;
                 border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-                border-radius: 4px;
+                border-radius: 8px;
             }}
         """)
         
         layout = QFormLayout(form_frame)
-        layout.setSpacing(15)
-        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(12)
+        layout.setContentsMargins(10, 10, 10, 10)
         
         # Nombre
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("Nombre de la categoría")
+        self.name_input.setPlaceholderText("E.g., Bebidas, Postres, etc.")
         self.style_input(self.name_input)
         layout.addRow("📁 Nombre:", self.name_input)
         
         # Descripción
         self.description_input = QTextEdit()
-        self.description_input.setPlaceholderText("Descripción opcional...")
-        self.description_input.setMaximumHeight(80)
+        self.description_input.setPlaceholderText("Añade una descripción (opcional)")
+        self.description_input.setFixedHeight(80)
         self.style_text_edit(self.description_input)
         layout.addRow("📝 Descripción:", self.description_input)
         
@@ -142,11 +143,11 @@ class CategoryFormDialog(QDialog):
         """Aplicar estilo a inputs"""
         widget.setStyleSheet(f"""
             QLineEdit {{
-                padding: 10px 15px;
-                border: 2px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-                border-radius: 8px;
-                font-size: 14px;
-                background-color: {ColorPalette.PLATINUM};
+                padding: 8px 12px;
+                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.5)};
+                border-radius: 6px;
+                font-size: 13px;
+                background-color: white;
                 color: {ColorPalette.RICH_BLACK};
             }}
             QLineEdit:focus {{
@@ -159,11 +160,11 @@ class CategoryFormDialog(QDialog):
         """Aplicar estilo a text edit"""
         widget.setStyleSheet(f"""
             QTextEdit {{
-                padding: 10px 15px;
-                border: 2px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-                border-radius: 8px;
-                font-size: 14px;
-                background-color: {ColorPalette.PLATINUM};
+                padding: 8px 12px;
+                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.5)};
+                border-radius: 6px;
+                font-size: 13px;
+                background-color: white;
                 color: {ColorPalette.RICH_BLACK};
             }}
             QTextEdit:focus {{
@@ -178,21 +179,23 @@ class CategoryFormDialog(QDialog):
             QCheckBox {{
                 color: {ColorPalette.RICH_BLACK};
                 font-weight: 500;
-                font-size: 14px;
+                font-size: 13px;
+                spacing: 8px;
             }}
             QCheckBox::indicator {{
-                width: 18px;
-                height: 18px;
+                width: 16px;
+                height: 16px;
             }}
             QCheckBox::indicator:unchecked {{
-                border: 2px solid {ColorPalette.SILVER_LAKE_BLUE};
+                border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
                 border-radius: 4px;
-                background-color: {ColorPalette.PLATINUM};
+                background-color: white;
             }}
             QCheckBox::indicator:checked {{
-                border: 2px solid {ColorPalette.SUCCESS};
+                border: 1px solid {ColorPalette.SUCCESS};
                 border-radius: 4px;
                 background-color: {ColorPalette.SUCCESS};
+                image: url(icons/check.svg); 
             }}
         """)
     
@@ -204,16 +207,16 @@ class CategoryFormDialog(QDialog):
         
         # Botón cancelar
         cancel_btn = QPushButton("❌ Cancelar")
-        cancel_btn.setFixedHeight(40)
+        cancel_btn.setFixedHeight(38)
         cancel_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {ColorPalette.with_alpha(ColorPalette.ERROR, 0.1)};
+                background-color: transparent;
                 color: {ColorPalette.ERROR};
-                border: 2px solid {ColorPalette.ERROR};
-                padding: 8px 20px;
-                border-radius: 8px;
+                border: 1px solid {ColorPalette.ERROR};
+                padding: 8px 18px;
+                border-radius: 6px;
                 font-weight: bold;
-                font-size: 14px;
+                font-size: 13px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.ERROR};
@@ -228,20 +231,20 @@ class CategoryFormDialog(QDialog):
         # Botón guardar
         save_text = "💾 Actualizar" if self.is_edit else "💾 Crear"
         save_btn = QPushButton(save_text)
-        save_btn.setFixedHeight(40)
+        save_btn.setFixedHeight(38)
         save_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ColorPalette.SUCCESS};
                 color: {ColorPalette.PLATINUM};
                 border: none;
-                padding: 8px 20px;
-                border-radius: 8px;
+                padding: 8px 18px;
+                border-radius: 6px;
                 font-weight: bold;
-                font-size: 14px;
-                min-width: 120px;
+                font-size: 13px;
+                min-width: 110px;
             }}
             QPushButton:hover {{
-                background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.8)};
+                background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.85)};
             }}
         """)
         save_btn.clicked.connect(self.save_category)
@@ -297,7 +300,7 @@ class ProductFormDialog(QDialog):
         """Configurar interfaz del diálogo"""
         title = "Editar Producto" if self.is_edit else "Nuevo Producto"
         self.setWindowTitle(title)
-        self.setFixedSize(500, 650)
+        self.setMinimumSize(520, 560)  # reemplaza setFixedSize para permitir mejor auto-ajuste
         self.setModal(True)
         
         layout = QVBoxLayout(self)
@@ -361,93 +364,104 @@ class ProductFormDialog(QDialog):
         return header_frame
     
     def create_form(self):
-        """Crear formulario"""
+        """Crear formulario (layout reorganizado)"""
         form_frame = QFrame()
         form_frame.setStyleSheet(f"""
             QFrame {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.95)};
-                padding: 10px;
+                padding: 12px;
                 border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-                border-radius: 4px;
+                border-radius: 8px;
             }}
         """)
         
-        layout = QFormLayout(form_frame)
-        layout.setSpacing(12)
-        layout.setContentsMargins(15, 15, 15, 15)
+        grid = QGridLayout(form_frame)
+        grid.setContentsMargins(15, 15, 15, 15)
+        grid.setHorizontalSpacing(14)
+        grid.setVerticalSpacing(10)
         
-        # Nombre
+        def make_label(text):
+            lbl = QLabel(text)
+            lbl.setStyleSheet(f"""
+                QLabel {{
+                    font-size: 10px;
+                    font-weight: 600;
+                    color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.85)};
+                    padding-left: 2px;
+                }}
+            """)
+            return lbl
+        
+        # Nombre (fila 0)
+        grid.addWidget(make_label("🍽️ Nombre del Producto"), 0, 0, 1, 4)
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("Nombre del producto")
+        self.name_input.setPlaceholderText("E.g., Lomo Saltado, Torta de Chocolate...")
         self.style_input(self.name_input)
-        layout.addRow("🍽️ Nombre:", self.name_input)
+        grid.addWidget(self.name_input, 1, 0, 1, 4)
         
-        # Categoría
+        # Categoría y Tiempo de preparación (fila 2)
+        grid.addWidget(make_label("📁 Categoría"), 2, 0, 1, 2)
+        grid.addWidget(make_label("⏱️ Tiempo de Preparación (min)"), 2, 2, 1, 2)
+        
         self.category_combo = QComboBox()
         self.load_categories()
         self.style_combo(self.category_combo)
-        layout.addRow("📁 Categoría:", self.category_combo)
+        grid.addWidget(self.category_combo, 3, 0, 1, 2)
         
-        # Precio
-        self.price_input = QDoubleSpinBox()
-        self.price_input.setRange(0.01, 99999.99)
-        self.price_input.setDecimals(2)
-        self.price_input.setSuffix(" €")
-        self.style_spinbox(self.price_input)
-        layout.addRow("💰 Precio:", self.price_input)
-        
-        # Costo (opcional)
-        self.cost_input = QDoubleSpinBox()
-        self.cost_input.setRange(0.00, 99999.99)
-        self.cost_input.setDecimals(2)
-        self.cost_input.setSuffix(" €")
-        self.cost_input.setSpecialValueText("No especificado")
-        self.style_spinbox(self.cost_input)
-        layout.addRow("🏷️ Costo:", self.cost_input)
-        
-        # Tiempo de preparación
         self.prep_time_input = QSpinBox()
         self.prep_time_input.setRange(0, 999)
         self.prep_time_input.setSuffix(" min")
         self.prep_time_input.setSpecialValueText("No especificado")
         self.style_spinbox(self.prep_time_input)
-        layout.addRow("⏱️ Tiempo prep.:", self.prep_time_input)
+        grid.addWidget(self.prep_time_input, 3, 2, 1, 2)
         
-        # Descripción
+        # Precio, Costo y Stock (fila 4)
+        grid.addWidget(make_label("💰 Precio de Venta"), 4, 0)
+        grid.addWidget(make_label("🏷️ Costo"), 4, 1)
+        grid.addWidget(make_label("📦 Stock"), 4, 2, 1, 2)
+
+        self.price_input = QDoubleSpinBox()
+        self.price_input.setRange(0.01, 99999.99)
+        self.price_input.setDecimals(2)
+        self.price_input.setPrefix("S/ ")
+        self.style_spinbox(self.price_input)
+        grid.addWidget(self.price_input, 5, 0)
+        
+        self.cost_input = QDoubleSpinBox()
+        self.cost_input.setRange(0.00, 99999.99)
+        self.cost_input.setDecimals(2)
+        self.cost_input.setPrefix("S/ ")
+        self.cost_input.setSpecialValueText("No especificado")
+        self.style_spinbox(self.cost_input)
+        grid.addWidget(self.cost_input, 5, 1)
+        
+        self.stock_input = QSpinBox()
+        self.stock_input.setRange(0, 9999)
+        self.stock_input.setSuffix(" unidades")
+        self.stock_input.setSpecialValueText("Ilimitado")
+        self.style_spinbox(self.stock_input)
+        grid.addWidget(self.stock_input, 5, 2, 1, 2)
+        
+        # Descripción (fila 6)
+        grid.addWidget(make_label("📝 Descripción"), 6, 0, 1, 4)
         self.description_input = QTextEdit()
-        self.description_input.setPlaceholderText("Descripción del producto...")
-        self.description_input.setMaximumHeight(100)
+        self.description_input.setPlaceholderText("Añade una descripción detallada del producto...")
+        self.description_input.setMinimumHeight(80)
+        self.description_input.setMaximumHeight(120)
         self.style_text_edit(self.description_input)
-        layout.addRow("📝 Descripción:", self.description_input)
+        grid.addWidget(self.description_input, 7, 0, 1, 4)
         
-        # Checkboxes
-        checkboxes_frame = QFrame()
-        checkboxes_layout = QVBoxLayout(checkboxes_frame)
-        checkboxes_layout.setSpacing(8)
-        
-        self.featured_checkbox = QCheckBox("Producto destacado")
-        self.style_checkbox(self.featured_checkbox)
-        checkboxes_layout.addWidget(self.featured_checkbox)
-        
-        if self.is_edit:
-            self.active_checkbox = QCheckBox("Producto activo")
-            self.style_checkbox(self.active_checkbox)
-            checkboxes_layout.addWidget(self.active_checkbox)
-        
-        layout.addRow("⭐ Opciones:", checkboxes_frame)
+        # Ajustes de columnas para mejor proporción
+        grid.setColumnStretch(0, 2) # Precio
+        grid.setColumnStretch(1, 2) # Costo
+        grid.setColumnStretch(2, 1) # Stock
+        grid.setColumnStretch(3, 1) # Stock
         
         # Cargar datos si es edición
         if self.is_edit and self.product:
             self.load_product_data()
         
         return form_frame
-    
-    def load_categories(self):
-        """Cargar categorías en el combo"""
-        categories = self.menu_ctrl.get_all_categories(include_inactive=False)
-        self.category_combo.clear()
-        for category in categories:
-            self.category_combo.addItem(category.name, category.id)
     
     def style_input(self, widget):
         """Aplicar estilo a inputs"""
@@ -593,6 +607,18 @@ class ProductFormDialog(QDialog):
         
         return buttons_frame
     
+    def load_categories(self):
+        """Cargar categorías en el combo"""
+        if not hasattr(self, 'category_combo'):
+            return
+        self.category_combo.clear()
+        try:
+            categories = self.menu_ctrl.get_all_categories(include_inactive=self.is_edit)
+            for category in categories:
+                self.category_combo.addItem(category.name, category.id)
+        except Exception as e:
+            print(f"Error cargando categorías: {e}")
+    
     def load_product_data(self):
         """Cargar datos del producto para edición"""
         self.name_input.setText(self.product.name)
@@ -600,7 +626,7 @@ class ProductFormDialog(QDialog):
         self.price_input.setValue(float(self.product.price))
         self.cost_input.setValue(float(self.product.cost) if self.product.cost else 0.0)
         self.prep_time_input.setValue(self.product.preparation_time or 0)
-        self.featured_checkbox.setChecked(self.product.is_featured)
+        self.stock_input.setValue(self.product.stock or 0)
         
         # Seleccionar categoría
         for i in range(self.category_combo.count()):
@@ -608,6 +634,7 @@ class ProductFormDialog(QDialog):
                 self.category_combo.setCurrentIndex(i)
                 break
         
+        # Solo cargar estado activo si estamos editando
         if hasattr(self, 'active_checkbox'):
             self.active_checkbox.setChecked(self.product.is_active)
     
@@ -618,8 +645,8 @@ class ProductFormDialog(QDialog):
         price = self.price_input.value()
         cost = self.cost_input.value() if self.cost_input.value() > 0 else None
         prep_time = self.prep_time_input.value() if self.prep_time_input.value() > 0 else None
+        stock = self.stock_input.value()
         category_id = self.category_combo.currentData()
-        is_featured = self.featured_checkbox.isChecked()
         
         if not name:
             QMessageBox.warning(self, "Error", "El nombre del producto es obligatorio")
@@ -644,10 +671,12 @@ class ProductFormDialog(QDialog):
                     cost=cost,
                     category_id=category_id,
                     preparation_time=prep_time,
-                    is_featured=is_featured,
+                    stock=stock,
                     is_active=is_active
+                    # Removido is_featured - se maneja automáticamente por el sistema
                 )
             else:
+                # Para productos nuevos, is_featured=False por defecto
                 success, product, message = self.menu_ctrl.create_product(
                     name=name,
                     price=price,
@@ -655,7 +684,8 @@ class ProductFormDialog(QDialog):
                     description=description or None,
                     cost=cost,
                     preparation_time=prep_time,
-                    is_featured=is_featured
+                    stock=stock
+                    # Removido is_featured - el algoritmo decidirá después
                 )
             
             if success:
@@ -677,6 +707,11 @@ class MenuManagementWidget(QWidget):
         super().__init__()
         self.current_user = user
         self.menu_ctrl = MenuController()
+        
+        # Referencias a las vistas para poder actualizarlas
+        self.categories_view = None
+        self.products_view = None
+        
         self.init_ui()
         self.load_data()
     
@@ -990,43 +1025,31 @@ class MenuManagementWidget(QWidget):
     
     def create_categories_tab(self):
         """Crear pestaña de categorías"""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        from views.categories_management_view import CategoriesManagementView
         
-        # Aquí implementaremos la tabla de categorías
-        # Por ahora un placeholder
-        placeholder = QLabel("🚧 Gestión de categorías en desarrollo")
-        placeholder.setAlignment(Qt.AlignCenter)
-        placeholder.setStyleSheet(f"""
-            font-size: 16px;
-            color: {ColorPalette.SILVER_LAKE_BLUE};
-            padding: 50px;
-        """)
-        layout.addWidget(placeholder)
+        # Crear la vista de gestión de categorías y almacenar referencia
+        self.categories_view = CategoriesManagementView(self)
         
-        return widget
-    
+        # Conectar señales para actualizar el dashboard cuando se modifiquen categorías
+        self.categories_view.category_updated.connect(self.load_data)
+        self.categories_view.category_updated.connect(self.menu_updated.emit)
+        
+        # Conectar señal para actualizar vista de productos cuando cambien categorías
+        self.categories_view.category_updated.connect(self.update_products_view_from_categories)
+        
+        return self.categories_view
+
     def create_products_tab(self):
-        """Crear pestaña de productos"""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        """Crear pestaña de gestión de productos"""
+        # Crear la vista de gestión de productos y almacenar referencia
+        self.products_view = ProductsManagementView(self)
+        self.products_view.product_updated.connect(self.load_data)
+        self.products_view.product_updated.connect(self.menu_updated.emit)
         
-        # Aquí implementaremos la tabla de productos
-        # Por ahora un placeholder
-        placeholder = QLabel("🚧 Gestión de productos en desarrollo")
-        placeholder.setAlignment(Qt.AlignCenter)
-        placeholder.setStyleSheet(f"""
-            font-size: 16px;
-            color: {ColorPalette.SILVER_LAKE_BLUE};
-            padding: 50px;
-        """)
-        layout.addWidget(placeholder)
+        # Conectar señal para actualizar vista de categorías cuando cambien productos
+        self.products_view.product_updated.connect(self.update_categories_view_from_products)
         
-        return widget
+        return self.products_view
     
     def create_stat_widget(self, icon, title, value, color):
         """Crear widget individual de estadística compacto"""
@@ -1093,7 +1116,6 @@ class MenuManagementWidget(QWidget):
             stats_data = [
                 ("📁", "Categorías", str(stats['active_categories']), ColorPalette.SUCCESS),
                 ("⭐", "Productos", str(stats['active_products']), ColorPalette.YINMN_BLUE),
-                ("📁", "Destacados", str(stats['featured_products']), ColorPalette.WARNING),
                 ("⭐", "Precio Mayor", f"€{stats['highest_price']:.2f}", ColorPalette.SILVER_LAKE_BLUE)
             ]
             
@@ -1141,6 +1163,14 @@ class MenuManagementWidget(QWidget):
         if dialog.exec_() == QDialog.Accepted:
             self.load_data()
             self.menu_updated.emit()
+            
+            # Actualizar la tabla de categorías si está disponible
+            if self.categories_view:
+                self.categories_view.load_categories()
+                
+            # También actualizar la vista de productos para refrescar el filtro de categorías
+            if self.products_view:
+                self.products_view.load_filter_categories()
     
     def create_product(self):
         """Crear nuevo producto"""
@@ -1148,3 +1178,21 @@ class MenuManagementWidget(QWidget):
         if dialog.exec_() == QDialog.Accepted:
             self.load_data()
             self.menu_updated.emit()
+            
+            # Actualizar la tabla de productos si está disponible
+            if self.products_view:
+                self.products_view.load_products()
+                
+            # También actualizar la vista de categorías para refrescar el conteo de productos
+            if self.categories_view:
+                self.categories_view.load_categories()
+    
+    def update_categories_view_from_products(self):
+        """Actualizar vista de categorías cuando cambien productos (para conteo de productos)"""
+        if self.categories_view:
+            self.categories_view.load_categories()
+    
+    def update_products_view_from_categories(self):
+        """Actualizar vista de productos cuando cambien categorías (para filtro de categorías)"""
+        if self.products_view:
+            self.products_view.load_filter_categories()
