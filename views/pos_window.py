@@ -605,17 +605,50 @@ class POSWindow(QMainWindow):
         
         layout.addLayout(header_layout)
         
-        # Botones de categorías (horizontal)
+        # Área de categorías con scroll horizontal
+        categories_scroll = QScrollArea()
+        categories_scroll.setWidgetResizable(True)
+        categories_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        categories_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        categories_scroll.setFixedHeight(70)  # Altura fija para el área de categorías
+        categories_scroll.setStyleSheet(f"""
+            QScrollArea {{
+                border: none;
+                background-color: transparent;
+            }}
+            QScrollBar:horizontal {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
+                height: 8px;
+                border-radius: 4px;
+                margin: 2px;
+            }}
+            QScrollBar::handle:horizontal {{
+                background-color: {ColorPalette.YINMN_BLUE};
+                border-radius: 4px;
+                min-width: 20px;
+            }}
+            QScrollBar::handle:horizontal:hover {{
+                background-color: {ColorPalette.OXFORD_BLUE};
+            }}
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+                border: none;
+                background: none;
+            }}
+        """)
+        
+        # Widget contenedor para los botones de categorías
         categories_frame = QFrame()
         categories_frame.setStyleSheet(f"""
             QFrame {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
                 border-radius: 12px;
                 padding: 10px;
+                min-height: 50px;
             }}
         """)
         categories_layout = QHBoxLayout(categories_frame)
         categories_layout.setSpacing(8)
+        categories_layout.setContentsMargins(10, 10, 10, 10)
         
         # Crear botones de categorías
         self.category_buttons = []
@@ -625,11 +658,34 @@ class POSWindow(QMainWindow):
         all_btn = QPushButton("🍽️ Todas")
         all_btn.setCheckable(True)
         all_btn.setChecked(True)  # Por defecto seleccionado
+        all_btn.setMinimumWidth(100)  # Ancho mínimo para evitar botones muy pequeños
+        all_btn.setFixedHeight(40)   # Altura fija para consistencia
+        
+        # Estilo inicial para el botón "Todas"
+        all_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ColorPalette.YINMN_BLUE};
+                color: {ColorPalette.PLATINUM};
+                border: 2px solid {ColorPalette.OXFORD_BLUE};
+                padding: 10px 16px;
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 13px;
+                min-width: 100px;
+                height: 40px;
+            }}
+            QPushButton:hover {{
+                background-color: {ColorPalette.OXFORD_BLUE};
+            }}
+        """)
+        
         all_btn.clicked.connect(lambda: self.select_category(None, all_btn))
         self.category_buttons.append(all_btn)
         categories_layout.addWidget(all_btn)
         
-        layout.addWidget(categories_frame)
+        # Configurar el scroll area
+        categories_scroll.setWidget(categories_frame)
+        layout.addWidget(categories_scroll)
         
         # Área de productos con scroll mejorado
         scroll = QScrollArea()
@@ -845,14 +901,15 @@ class POSWindow(QMainWindow):
             "Postres": "🍰"
         }
         
-        # Buscar el frame de categorías
+        # Buscar el frame de categorías dentro del scroll area
         categories_frame = None
         for i in range(self.pos_view.layout().itemAt(0).widget().layout().count()):
             item = self.pos_view.layout().itemAt(0).widget().layout().itemAt(i)
-            if item and item.widget() and isinstance(item.widget(), QFrame):
-                # Verificar si tiene layout horizontal
-                if isinstance(item.widget().layout(), QHBoxLayout):
-                    categories_frame = item.widget()
+            if item and item.widget() and isinstance(item.widget(), QScrollArea):
+                # Es el scroll area de categorías
+                scroll_widget = item.widget().widget()
+                if scroll_widget and isinstance(scroll_widget, QFrame):
+                    categories_frame = scroll_widget
                     break
         
         if not categories_frame:
@@ -860,9 +917,9 @@ class POSWindow(QMainWindow):
             
         categories_layout = categories_frame.layout()
         
-        # Estilo para botones de categorías con tamaño responsivo
-        padding = "8px 12px" if self.is_small_screen else "12px 16px"
-        font_size = 12 if self.is_small_screen else 14
+        # Estilo para botones de categorías con tamaño responsivo y fijo
+        padding = "8px 12px" if self.is_small_screen else "10px 16px"
+        font_size = 12 if self.is_small_screen else 13
         min_width = 100 if self.is_small_screen else 120
         
         category_button_style = f"""
@@ -875,6 +932,8 @@ class POSWindow(QMainWindow):
                 font-weight: bold;
                 font-size: {font_size}px;
                 min-width: {min_width}px;
+                max-width: {min_width + 50}px;
+                height: 40px;
             }}
             QPushButton:checked {{
                 background-color: {ColorPalette.YINMN_BLUE};
@@ -890,8 +949,10 @@ class POSWindow(QMainWindow):
             }}
         """
         
-        # Aplicar estilo al botón "Todas"
+        # Aplicar estilo al botón "Todas" existente
         self.category_buttons[0].setStyleSheet(category_button_style)
+        self.category_buttons[0].setMinimumWidth(min_width)
+        self.category_buttons[0].setFixedHeight(40)
         
         # Agregar botones de categorías específicas
         for category in categories:
@@ -901,12 +962,15 @@ class POSWindow(QMainWindow):
             btn = QPushButton(btn_text)
             btn.setCheckable(True)
             btn.setStyleSheet(category_button_style)
+            btn.setMinimumWidth(min_width)
+            btn.setFixedHeight(40)
             btn.clicked.connect(lambda checked, cat_id=category.id, button=btn: self.select_category(cat_id, button))
             
             self.category_buttons.append(btn)
             categories_layout.addWidget(btn)
         
-        categories_layout.addStretch()  # Espaciador al final
+        # NO agregar stretch al final para permitir scroll horizontal
+        # categories_layout.addStretch()  # Comentado para permitir scroll
         
         # Cargar todos los productos por defecto
         self.load_products()
