@@ -1,10 +1,11 @@
 # controllers/reports_controller.py
-from models.order import Order
+from models.order import Order, OrderStatus
 from models.order_item import OrderItem
 from models.product import Product
 from models.category import Category
 from models.base import get_db
-from datetime import datetime, timedelta
+from sqlalchemy import func, and_, desc
+from datetime import datetime, date, timedelta
 from sqlalchemy import func, text, distinct
 from sqlalchemy.orm import sessionmaker
 
@@ -18,23 +19,39 @@ class ReportsController:
         """Obtener sesión de base de datos"""
         return get_db()
     
+    def _ensure_datetime(self, date_obj):
+        """Convertir date a datetime para consultas de base de datos"""
+        if isinstance(date_obj, date) and not isinstance(date_obj, datetime):
+            return datetime.combine(date_obj, datetime.min.time())
+        return date_obj
+    
+    def _ensure_end_of_day(self, date_obj):
+        """Convertir date a datetime al final del día"""
+        if isinstance(date_obj, date) and not isinstance(date_obj, datetime):
+            return datetime.combine(date_obj, datetime.max.time())
+        return date_obj
+    
     def get_sales_summary(self, start_date, end_date):
         """Obtener resumen de ventas para un período"""
         try:
             db = self.get_session()
             
+            # Convertir fechas a datetime
+            start_datetime = self._ensure_datetime(start_date)
+            end_datetime = self._ensure_end_of_day(end_date)
+            
             # Ventas totales
             total_sales = db.query(func.sum(Order.total)).filter(
-                Order.created_at >= start_date,
-                Order.created_at <= end_date,
-                Order.status.in_(['completed', 'paid'])
+                Order.created_at >= start_datetime,
+                Order.created_at <= end_datetime,
+                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value])
             ).scalar() or 0
             
             # Total de órdenes
             total_orders = db.query(func.count(Order.id)).filter(
-                Order.created_at >= start_date,
-                Order.created_at <= end_date,
-                Order.status.in_(['completed', 'paid'])
+                Order.created_at >= start_datetime,
+                Order.created_at <= end_datetime,
+                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value])
             ).scalar() or 0
             
             # Ticket promedio
@@ -56,15 +73,19 @@ class ReportsController:
         try:
             db = self.get_session()
             
+            # Convertir fechas a datetime
+            start_datetime = self._ensure_datetime(start_date)
+            end_datetime = self._ensure_end_of_day(end_date)
+            
             # Query para ventas por día
             daily_sales = db.query(
                 func.date(Order.created_at).label('date'),
                 func.sum(Order.total).label('total_sales'),
                 func.count(Order.id).label('order_count')
             ).filter(
-                Order.created_at >= start_date,
-                Order.created_at <= end_date,
-                Order.status.in_(['completed', 'paid'])
+                Order.created_at >= start_datetime,
+                Order.created_at <= end_datetime,
+                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value])
             ).group_by(func.date(Order.created_at)).all()
             
             # Convertir a diccionario
@@ -88,26 +109,52 @@ class ReportsController:
         try:
             db = self.get_session()
             
+            # Convertir fechas a datetime
+            start_datetime = self._ensure_datetime(start_date)
+            end_datetime = self._ensure_end_of_day(end_date)
+            
             top_products = db.query(
                 Product.name,
+                Product.cost,
+                Product.price,
                 func.sum(OrderItem.quantity).label('total_quantity'),
                 func.sum(OrderItem.quantity * OrderItem.unit_price).label('total_revenue'),
-                func.avg(OrderItem.unit_price).label('avg_price')
-            ).join(OrderItem).join(Order).filter(
-                Order.created_at >= start_date,
-                Order.created_at <= end_date,
-                Order.status.in_(['completed', 'paid'])
-            ).group_by(Product.id, Product.name).order_by(
+                func.avg(OrderItem.unit_price).label('avg_price'),
+                func.max(Order.created_at).label('last_sale')
+            ).select_from(Product).join(
+                OrderItem, Product.id == OrderItem.product_id
+            ).join(
+                Order, OrderItem.order_id == Order.id
+            ).filter(
+                Order.created_at >= start_datetime,
+                Order.created_at <= end_datetime,
+                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value])
+            ).group_by(Product.id, Product.name, Product.cost, Product.price).order_by(
                 func.sum(OrderItem.quantity).desc()
             ).limit(limit).all()
             
             products_data = []
             for row in top_products:
+                # Calcular margen de ganancia
+                margin = 0.0
+                if row.cost is not None and row.price is not None:
+                    cost_float = float(row.cost)
+                    price_float = float(row.price)
+                    if cost_float > 0 and price_float > 0:
+                        margin = ((price_float - cost_float) / price_float) * 100
+                
+                # Formatear fecha de última venta
+                last_sale_str = 'N/A'
+                if row.last_sale:
+                    last_sale_str = row.last_sale.strftime('%Y-%m-%d')
+                
                 products_data.append({
                     'name': row.name,
                     'quantity': row.total_quantity,
                     'revenue': float(row.total_revenue),
-                    'avg_price': float(row.avg_price)
+                    'avg_price': float(row.avg_price),
+                    'margin': margin,
+                    'last_sale': last_sale_str
                 })
             
             db.close()
@@ -139,7 +186,7 @@ class ReportsController:
             ).filter(
                 Order.created_at >= start_date,
                 Order.created_at <= end_date,
-                Order.status.in_(['completed', 'paid'])
+                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value])
             ).group_by(
                 Category.id, Category.name
             ).order_by(
@@ -176,6 +223,10 @@ class ReportsController:
         try:
             db = self.get_session()
             
+            # Convertir fechas a datetime
+            start_datetime = self._ensure_datetime(start_date)
+            end_datetime = self._ensure_end_of_day(end_date)
+            
             # Query para ventas por hora
             hourly_sales = db.query(
                 func.extract('hour', Order.created_at).label('hour'),
@@ -183,9 +234,9 @@ class ReportsController:
                 func.sum(Order.total).label('total_sales'),
                 func.avg(Order.total).label('avg_ticket')
             ).filter(
-                Order.created_at >= start_date,
-                Order.created_at <= end_date,
-                Order.status.in_(['completed', 'paid'])
+                Order.created_at >= start_datetime,
+                Order.created_at <= end_datetime,
+                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value])
             ).group_by(func.extract('hour', Order.created_at)).order_by('hour').all()
             
             # Calcular total del día para porcentajes
@@ -220,6 +271,10 @@ class ReportsController:
         try:
             db = self.get_session()
             
+            # Convertir fechas a datetime
+            start_datetime = self._ensure_datetime(start_date)
+            end_datetime = self._ensure_end_of_day(end_date)
+            
             # Obtener productos con sus costos y precios
             margin_analysis = db.query(
                 Product.name,
@@ -228,9 +283,9 @@ class ReportsController:
                 func.sum(OrderItem.quantity).label('total_sold'),
                 func.sum(OrderItem.quantity * OrderItem.unit_price).label('total_revenue')
             ).join(OrderItem).join(Order).filter(
-                Order.created_at >= start_date,
-                Order.created_at <= end_date,
-                Order.status.in_(['completed', 'paid']),
+                Order.created_at >= start_datetime,
+                Order.created_at <= end_datetime,
+                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value]),
                 Product.cost.is_not(None),
                 Product.cost > 0
             ).group_by(Product.id, Product.name, Product.price, Product.cost).all()
@@ -311,7 +366,7 @@ class ReportsController:
                 (Order.id == OrderItem.order_id) & 
                 (Order.created_at >= start_date) & 
                 (Order.created_at <= end_date) & 
-                (Order.status.in_(['completed', 'paid']))
+                (Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value]))
             ).filter(Product.is_active == True).group_by(
                 Product.id, Product.name
             ).order_by(func.coalesce(func.sum(OrderItem.quantity), 0).asc()).limit(limit).all()

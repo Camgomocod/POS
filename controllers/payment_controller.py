@@ -34,7 +34,7 @@ class PaymentController:
             Dict con orders, total_count, total_pages
         """
         query = self.db.query(Order).filter(
-            Order.status == OrderStatus.PAID
+            Order.status == OrderStatus.PAID.value
         )
         
         # Filtro por fechas
@@ -96,7 +96,7 @@ class PaymentController:
         Returns:
             Dict con estadísticas del período
         """
-        query = self.db.query(Order).filter(Order.status == OrderStatus.DELIVERED)
+        query = self.db.query(Order).filter(Order.status == OrderStatus.PAID.value)
         
         # Aplicar filtros de fecha
         if start_date:
@@ -212,7 +212,7 @@ class PaymentController:
         ).join(
             Order, OrderItem.order_id == Order.id
         ).filter(
-            Order.status == OrderStatus.DELIVERED
+            Order.status == OrderStatus.PAID.value
         )
         
         # Aplicar filtros de fecha

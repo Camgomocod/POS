@@ -20,7 +20,7 @@ class Order(Base):
     total = Column(Float, nullable=False)
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
-    status = Column(Enum(OrderStatus), default=OrderStatus.PENDING)
+    status = Column(String(20), default=OrderStatus.PENDING.value)
     customer_name = Column(String(100), default="Cliente")  # Nombre del cliente
     table_number = Column(Integer, nullable=True)  # Número de mesa (opcional)
     payment_method = Column(String(50), nullable=True)  # Método de pago
@@ -31,12 +31,12 @@ class Order(Base):
     def status_display(self):
         """Retorna el estado en español"""
         status_map = {
-            OrderStatus.PENDING: "Pendiente",
-            OrderStatus.PREPARING: "Preparando",
-            OrderStatus.READY: "Listo",
-            OrderStatus.DELIVERED: "Entregado",
-            OrderStatus.CANCELLED: "Cancelado",
-            OrderStatus.PAID: "Pagado"
+            OrderStatus.PENDING.value: "Pendiente",
+            OrderStatus.PREPARING.value: "Preparando",
+            OrderStatus.READY.value: "Listo",
+            OrderStatus.DELIVERED.value: "Entregado",
+            OrderStatus.CANCELLED.value: "Cancelado",
+            OrderStatus.PAID.value: "Pagado"
         }
         return status_map.get(self.status, "Desconocido")
     
@@ -45,11 +45,11 @@ class Order(Base):
         """Retorna el color asociado al estado"""
         from utils.colors import ColorPalette
         color_map = {
-            OrderStatus.PENDING: ColorPalette.WARNING,      
-            OrderStatus.PREPARING: ColorPalette.YINMN_BLUE,    
-            OrderStatus.READY: ColorPalette.SUCCESS,        
-            OrderStatus.DELIVERED: ColorPalette.SILVER_LAKE_BLUE,    
-            OrderStatus.CANCELLED: ColorPalette.ERROR,
-            OrderStatus.PAID: ColorPalette.SUCCESS
+            OrderStatus.PENDING.value: ColorPalette.WARNING,      
+            OrderStatus.PREPARING.value: ColorPalette.YINMN_BLUE,    
+            OrderStatus.READY.value: ColorPalette.SUCCESS,        
+            OrderStatus.DELIVERED.value: ColorPalette.SILVER_LAKE_BLUE,    
+            OrderStatus.CANCELLED.value: ColorPalette.ERROR,
+            OrderStatus.PAID.value: ColorPalette.SUCCESS
         }
         return color_map.get(self.status, ColorPalette.SILVER_LAKE_BLUE)

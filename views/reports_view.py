@@ -244,13 +244,13 @@ class ReportsView(QWidget):
                     products_table.setItem(row, 4, QTableWidgetItem(f"{product.get('margin', 0):.1f}%"))
                     products_table.setItem(row, 5, QTableWidgetItem(str(product.get('last_sale', 'N/A'))))
             else:
-                # Datos de muestra sin headers duplicados
+                # Datos de muestra con cálculos correctos de margen y fecha de última venta
                 sample_data = [
-                    {'name': 'Café Americano', 'quantity': 45, 'revenue': 180.00, 'avg_price': 4.00, 'margin': 75.5, 'last_sale': '2025-08-08'},
-                    {'name': 'Cappuccino', 'quantity': 32, 'revenue': 160.00, 'avg_price': 5.00, 'margin': 80.2, 'last_sale': '2025-08-08'},
-                    {'name': 'Croissant', 'quantity': 28, 'revenue': 84.00, 'avg_price': 3.00, 'margin': 65.8, 'last_sale': '2025-08-07'},
-                    {'name': 'Sandwich Club', 'quantity': 18, 'revenue': 144.00, 'avg_price': 8.00, 'margin': 55.3, 'last_sale': '2025-08-08'},
-                    {'name': 'Latte', 'quantity': 25, 'revenue': 137.50, 'avg_price': 5.50, 'margin': 77.1, 'last_sale': '2025-08-08'},
+                    {'name': 'Café Americano', 'quantity': 45, 'revenue': 180.00, 'avg_price': 4.00, 'margin': 75.0, 'last_sale': '2025-08-08'},
+                    {'name': 'Cappuccino', 'quantity': 32, 'revenue': 160.00, 'avg_price': 5.00, 'margin': 80.0, 'last_sale': '2025-08-08'},
+                    {'name': 'Croissant', 'quantity': 28, 'revenue': 84.00, 'avg_price': 3.00, 'margin': 66.7, 'last_sale': '2025-08-07'},
+                    {'name': 'Sandwich Club', 'quantity': 18, 'revenue': 144.00, 'avg_price': 8.00, 'margin': 62.5, 'last_sale': '2025-08-08'},
+                    {'name': 'Latte', 'quantity': 25, 'revenue': 137.50, 'avg_price': 5.50, 'margin': 72.7, 'last_sale': '2025-08-08'},
                 ]
                 
                 products_table.setRowCount(len(sample_data))
@@ -445,11 +445,6 @@ class ReportsView(QWidget):
                     hours_table.setItem(row, 2, QTableWidgetItem(f"${hour['total_sales']:.2f}"))
                     hours_table.setItem(row, 3, QTableWidgetItem(f"${hour['avg_ticket']:.2f}"))
                     hours_table.setItem(row, 4, QTableWidgetItem(f"{hour['percentage']:.1f}%"))
-                    hours_table.setItem(row, 0, QTableWidgetItem(hour['hour_range']))
-                    hours_table.setItem(row, 1, QTableWidgetItem(str(hour['order_count'])))
-                    hours_table.setItem(row, 2, QTableWidgetItem(f"${hour['total_sales']:.2f}"))
-                    hours_table.setItem(row, 3, QTableWidgetItem(f"${hour['avg_ticket']:.2f}"))
-                    hours_table.setItem(row, 4, QTableWidgetItem(f"{hour['percentage']:.1f}%"))
         except Exception as e:
             print(f"Error cargando datos horarios: {e}")
             hours_table.setRowCount(1)
@@ -494,7 +489,7 @@ class ReportsView(QWidget):
         filters_layout.setSpacing(5)
         
         self.start_date = QDateEdit()
-        self.start_date.setDate(QDate.currentDate().addDays(-7))
+        self.start_date.setDate(QDate.currentDate().addDays(-30))
         self.start_date.setStyleSheet(self.get_date_edit_style())
         self.start_date.dateChanged.connect(self.refresh_data)
         filters_layout.addWidget(self.start_date)
@@ -738,7 +733,7 @@ class ReportsView(QWidget):
             }}
         """)
         charts_layout = QVBoxLayout(charts_frame)
-        charts_layout.setContentsMargins(10, 10, 10, 10)
+        charts_layout.setContentsMargins(5, 5, 5, 5)
         
         # Gráfico de ventas diarias expandido
         self.sales_chart = self.create_sales_chart()
@@ -930,71 +925,137 @@ class ReportsView(QWidget):
             start_date = self.start_date.date().toPyDate()
             end_date = self.end_date.date().toPyDate()
             
-            daily_sales = self.reports_ctrl.get_daily_sales(start_date, end_date)
+            # Verificar si es un solo día para mostrar datos horarios
+            is_single_day = start_date == end_date
             
-            if daily_sales and len(daily_sales) > 0:
-                dates = []
-                sales = []
+            if is_single_day:
+                # Usar datos horarios para un solo día
+                hourly_data = self.reports_ctrl.get_sales_by_hour(start_date, end_date)
                 
-                for item in daily_sales:
-                    if isinstance(item['date'], str):
-                        date_obj = datetime.strptime(item['date'], '%Y-%m-%d').date()
-                    else:
-                        date_obj = item['date']
+                if hourly_data and len(hourly_data) > 0:
+                    hours = [item['hour_range'] for item in hourly_data]
+                    sales = [float(item['total_sales']) for item in hourly_data]
                     
-                    dates.append(date_obj)
-                    sales.append(float(item['total_sales']))
-                
-                # Colores modernos y gradientes
-                line_color = '#2563EB'  # Azul moderno
-                fill_colors = ['#3B82F6', '#60A5FA', '#93C5FD', '#DBEAFE']  # Gradiente azul
-                
-                # Crear gradiente para el área
-                y_max = max(sales) if sales else 100
-                
-                # Línea principal con sombra
-                ax.plot(dates, sales, 
-                       color=line_color, 
-                       linewidth=3, 
-                       marker='o', 
-                       markersize=8, 
-                       markerfacecolor='#1D4ED8',
-                       markeredgecolor='white',
-                       markeredgewidth=2,
-                       alpha=0.9,
-                       zorder=3)
-                
-                # Área sombreada con gradiente
-                ax.fill_between(dates, sales, 0, 
-                               alpha=0.6, 
-                               color='#3B82F6',
-                               zorder=1)
-                
-                # Área adicional para efecto de profundidad
-                ax.fill_between(dates, sales, 0, 
-                               alpha=0.3, 
-                               color='#60A5FA',
-                               zorder=0)
-                
-                # Configurar formato de fechas
-                ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d'))
-                ax.xaxis.set_major_locator(mdates.DayLocator(interval=max(1, len(dates)//7)))
-                plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
-                
-                # Configurar límites
-                max_sales = max(sales) if sales else 0
-                if max_sales > 0:
-                    ax.set_ylim(0, max_sales * 1.1)
-                
-                # Añadir líneas de valor promedio
-                avg_sales = sum(sales) / len(sales) if sales else 0
-                ax.axhline(y=avg_sales, color='#F59E0B', linestyle='--', alpha=0.7, linewidth=2, label=f'Promedio: ${avg_sales:.2f}')
-                
+                    # Colores modernos para vista horaria
+                    line_color = '#DC2626'  # Rojo para distinguir de vista diaria
+                    
+                    # Crear posiciones numéricas para las horas
+                    x_positions = list(range(len(hours)))
+                    
+                    # Línea principal con puntos
+                    ax.plot(x_positions, sales, 
+                           color=line_color, 
+                           linewidth=3, 
+                           marker='o', 
+                           markersize=8, 
+                           markerfacecolor='#B91C1C',
+                           markeredgecolor='white',
+                           markeredgewidth=2,
+                           alpha=0.9,
+                           zorder=3)
+                    
+                    # Área sombreada
+                    ax.fill_between(x_positions, sales, 0, 
+                                   alpha=0.6, 
+                                   color='#EF4444',
+                                   zorder=1)
+                    
+                    # Área adicional para efecto de profundidad
+                    ax.fill_between(x_positions, sales, 0, 
+                                   alpha=0.3, 
+                                   color='#FCA5A5',
+                                   zorder=0)
+                    
+                    # Configurar etiquetas del eje X con horas
+                    ax.set_xticks(x_positions)
+                    ax.set_xticklabels(hours, rotation=45, ha='right')
+                    
+                    # Configurar límites
+                    max_sales = max(sales) if sales else 0
+                    if max_sales > 0:
+                        ax.set_ylim(0, max_sales * 1.1)
+                    
+                    # Añadir líneas de valor promedio
+                    avg_sales = sum(sales) / len(sales) if sales else 0
+                    ax.axhline(y=avg_sales, color='#F59E0B', linestyle='--', alpha=0.7, linewidth=2, label=f'Promedio: ${avg_sales:.2f}')
+                    
+                    # Título específico para vista horaria
+                    ax.text(0.02, 0.98, f'Ventas por Horas - {start_date.strftime("%d/%m/%Y")}', 
+                           transform=ax.transAxes, fontsize=12, fontweight='bold',
+                           verticalalignment='top', color='#374151',
+                           bbox=dict(boxstyle="round,pad=0.3", facecolor='white', alpha=0.8))
+                    
+                else:
+                    ax.text(0.5, 0.5, f'No hay ventas registradas para hoy\n{start_date.strftime("%d/%m/%Y")}\n\nPrueba con otro día', 
+                           ha='center', va='center', transform=ax.transAxes,
+                           fontsize=14, color='#6B7280', 
+                           bbox=dict(boxstyle="round,pad=0.5", facecolor='#F3F4F6', alpha=0.8))
             else:
-                ax.text(0.5, 0.5, 'No hay datos para el período seleccionado\n\nPrueba con otro rango de fechas', 
-                       ha='center', va='center', transform=ax.transAxes,
-                       fontsize=14, color='#6B7280', 
-                       bbox=dict(boxstyle="round,pad=0.5", facecolor='#F3F4F6', alpha=0.8))
+                # Usar datos diarios para períodos más largos
+                daily_sales = self.reports_ctrl.get_daily_sales(start_date, end_date)
+                
+                if daily_sales and len(daily_sales) > 0:
+                    dates = []
+                    sales = []
+                    
+                    for item in daily_sales:
+                        if isinstance(item['date'], str):
+                            date_obj = datetime.strptime(item['date'], '%Y-%m-%d').date()
+                        else:
+                            date_obj = item['date']
+                        
+                        dates.append(date_obj)
+                        sales.append(float(item['total_sales']))
+                    
+                    # Colores modernos y gradientes para vista diaria
+                    line_color = '#2563EB'  # Azul moderno
+                    
+                    # Crear gradiente para el área
+                    y_max = max(sales) if sales else 100
+                    
+                    # Línea principal con sombra
+                    ax.plot(dates, sales, 
+                           color=line_color, 
+                           linewidth=3, 
+                           marker='o', 
+                           markersize=8, 
+                           markerfacecolor='#1D4ED8',
+                           markeredgecolor='white',
+                           markeredgewidth=2,
+                           alpha=0.9,
+                           zorder=3)
+                    
+                    # Área sombreada con gradiente
+                    ax.fill_between(dates, sales, 0, 
+                                   alpha=0.6, 
+                                   color='#3B82F6',
+                                   zorder=1)
+                    
+                    # Área adicional para efecto de profundidad
+                    ax.fill_between(dates, sales, 0, 
+                                   alpha=0.3, 
+                                   color='#60A5FA',
+                                   zorder=0)
+                    
+                    # Configurar formato de fechas
+                    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d'))
+                    ax.xaxis.set_major_locator(mdates.DayLocator(interval=max(1, len(dates)//7)))
+                    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+                    
+                    # Configurar límites
+                    max_sales = max(sales) if sales else 0
+                    if max_sales > 0:
+                        ax.set_ylim(0, max_sales * 1.1)
+                    
+                    # Añadir líneas de valor promedio
+                    avg_sales = sum(sales) / len(sales) if sales else 0
+                    ax.axhline(y=avg_sales, color='#F59E0B', linestyle='--', alpha=0.7, linewidth=2, label=f'Promedio: ${avg_sales:.2f}')
+                    
+                else:
+                    ax.text(0.5, 0.5, 'No hay datos para el período seleccionado\n\nPrueba con otro rango de fechas', 
+                           ha='center', va='center', transform=ax.transAxes,
+                           fontsize=14, color='#6B7280', 
+                           bbox=dict(boxstyle="round,pad=0.5", facecolor='#F3F4F6', alpha=0.8))
             
             # Grid moderno (sin títulos de ejes para máximo espacio)
             ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='#D1D5DB')
@@ -1015,7 +1076,7 @@ class ReportsView(QWidget):
             ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x:,.0f}'))
             
             # Leyenda si hay datos
-            if daily_sales and len(daily_sales) > 0:
+            if (is_single_day and hourly_data and len(hourly_data) > 0) or (not is_single_day and daily_sales and len(daily_sales) > 0):
                 ax.legend(loc='upper left', frameon=True, fancybox=True, shadow=True, 
                          framealpha=0.9, facecolor='white', edgecolor='#D1D5DB')
             

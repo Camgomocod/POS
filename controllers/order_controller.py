@@ -62,22 +62,23 @@ class OrderController:
     def get_active_orders(self):
         """Obtener pedidos activos (no pagados ni cancelados)"""
         return self.db.query(Order).filter(
-            Order.status.in_([OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.READY, OrderStatus.DELIVERED])
+            Order.status.in_([OrderStatus.PENDING.value, OrderStatus.PREPARING.value, OrderStatus.READY.value, OrderStatus.DELIVERED.value])
         ).order_by(Order.created_at.asc()).all()
     
     def get_all_orders_for_kitchen(self):
         """Obtener todos los pedidos para la vista de cocina (incluyendo pagados de los últimos días)"""
-        from datetime import date, timedelta
+        from datetime import date, timedelta, datetime
         today = date.today()
         # Incluir pedidos de los últimos 3 días para mostrar pagados recientes
         start_date = today - timedelta(days=3)
+        start_datetime = datetime.combine(start_date, datetime.min.time())
         
         return self.db.query(Order).filter(
             Order.status.in_([
-                OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.READY, 
-                OrderStatus.DELIVERED, OrderStatus.PAID
+                OrderStatus.PENDING.value, OrderStatus.PREPARING.value, OrderStatus.READY.value, 
+                OrderStatus.DELIVERED.value, OrderStatus.PAID.value
             ]),
-            Order.created_at >= start_date  # Últimos 3 días
+            Order.created_at >= start_datetime  # Últimos 3 días
         ).order_by(Order.created_at.desc()).all()  # Más recientes primero
     
     def get_order_details(self, order_id):
@@ -89,7 +90,7 @@ class OrderController:
         order = self.db.query(Order).filter(Order.id == order_id).first()
         if order:
             # Marcar como PAID para que aparezca en historial de pagos
-            order.status = OrderStatus.PAID
+            order.status = OrderStatus.PAID.value
             order.payment_method = payment_method
             order.updated_at = datetime.now()
             self.db.commit()
