@@ -11,8 +11,10 @@ from utils.colors import ColorPalette, CommonStyles
 from controllers.auth_controller import AuthController
 from views.user_management_window import UserManagementWidget
 from views.menu_management_window import MenuManagementWidget
+from views.reports_view import ReportsView
 from datetime import datetime, timedelta
 import sys
+import time
 import time
 
 class ActivitySparklineWidget(QLabel):
@@ -555,14 +557,14 @@ class AdminWindow(QMainWindow):
         self.menu_widget = MenuManagementWidget(self.user)
         self.content_tabs.addTab(self.menu_widget, "🍽️ Menú")
         
-        # Otras pestañas placeholder
-        placeholder_tabs = [
-            ("📊", "Reportes", "Reportes y estadísticas"),
-            ("⚙️", "Configuración", "Configuración del sistema")
-        ]
-        for icon, title, desc in placeholder_tabs:
-            placeholder = self.create_placeholder_tab(icon, title, desc)
-            self.content_tabs.addTab(placeholder, f"{icon} {title}")
+        # Pestaña Reportes funcional
+        self.reports_widget = ReportsView()
+        self.content_tabs.addTab(self.reports_widget, "📊 Reportes")
+        
+        # Pestaña placeholder para configuración
+        config_placeholder = self.create_placeholder_tab("⚙️", "Configuración", "Configuración del sistema")
+        self.content_tabs.addTab(config_placeholder, "⚙️ Configuración")
+        
         main_layout.addWidget(self.content_tabs)
         
         # Estilo general

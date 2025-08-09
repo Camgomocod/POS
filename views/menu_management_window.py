@@ -782,7 +782,7 @@ class MenuManagementWidget(QWidget):
         header_frame.setStyleSheet(f"""
             QFrame {{
                 background-color: {ColorPalette.PLATINUM};
-                border-radius: 12px;
+                border-radius: 5px;
                 border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
                 padding: 5px;
                 max-height: 100px;
@@ -790,25 +790,18 @@ class MenuManagementWidget(QWidget):
         """)
         
         layout = QHBoxLayout(header_frame)
-        layout.setContentsMargins(20, 15, 20, 15)
+        layout.setContentsMargins(10, 10, 10, 10)
         
         # Título y descripción
         title_layout = QVBoxLayout()
         
         title_label = QLabel("🍽️ Gestión de Menú")
         title_label.setStyleSheet(f"""
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
             color: {ColorPalette.RICH_BLACK};
         """)
         title_layout.addWidget(title_label)
-        
-        desc_label = QLabel("Administra categorías, productos y analiza el rendimiento del menú")
-        desc_label.setStyleSheet(f"""
-            font-size: 13px;
-            color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.7)};
-        """)
-        title_layout.addWidget(desc_label)
         
         layout.addLayout(title_layout)
         layout.addStretch()
@@ -825,7 +818,7 @@ class MenuManagementWidget(QWidget):
                 background-color: {ColorPalette.SUCCESS};
                 color: {ColorPalette.PLATINUM};
                 border: none;
-                padding: 8px 15px;
+                padding: 4px 10px;
                 border-radius: 8px;
                 font-weight: bold;
                 font-size: 12px;
@@ -845,7 +838,7 @@ class MenuManagementWidget(QWidget):
                 background-color: {ColorPalette.YINMN_BLUE};
                 color: {ColorPalette.PLATINUM};
                 border: none;
-                padding: 8px 15px;
+                padding: 8px 20px;
                 border-radius: 8px;
                 font-weight: bold;
                 font-size: 12px;
@@ -865,10 +858,10 @@ class MenuManagementWidget(QWidget):
                 background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
                 color: {ColorPalette.SILVER_LAKE_BLUE};
                 border: 2px solid {ColorPalette.SILVER_LAKE_BLUE};
-                padding: 8px 15px;
+                padding: 8px 20px;
                 border-radius: 8px;
                 font-weight: bold;
-                font-size: 13px;
+                font-size: 12px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.SILVER_LAKE_BLUE};

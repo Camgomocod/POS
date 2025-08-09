@@ -538,8 +538,8 @@ class UserManagementWidget(QWidget):
     def init_ui(self):
         """Configurar interfaz"""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(10)
         
         # Header con título y botones
         header = self.create_header()
@@ -577,18 +577,11 @@ class UserManagementWidget(QWidget):
         
         title_label = QLabel("👥 Gestión de Usuarios")
         title_label.setStyleSheet(f"""
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             color: {ColorPalette.RICH_BLACK};
         """)
         title_layout.addWidget(title_label)
-        
-        desc_label = QLabel("Administra usuarios del sistema, roles y permisos")
-        desc_label.setStyleSheet(f"""
-            font-size: 12px;
-            color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.7)};
-        """)
-        title_layout.addWidget(desc_label)
         
         layout.addLayout(title_layout)
         layout.addStretch()
@@ -599,10 +592,10 @@ class UserManagementWidget(QWidget):
         
         # Botón refrescar
         refresh_btn = QPushButton("🔄 Refrescar")
-        refresh_btn.setFixedHeight(40)
+        refresh_btn.setFixedHeight(35)
         refresh_btn.setStyleSheet(f"""
             QPushButton {{
-                font-size: 13px;
+                font-size: 12px;
                 background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
                 color: {ColorPalette.SILVER_LAKE_BLUE};
                 border: 2px solid {ColorPalette.SILVER_LAKE_BLUE};
@@ -629,8 +622,7 @@ class UserManagementWidget(QWidget):
                 padding: 8px 20px;
                 border-radius: 8px;
                 font-weight: bold;
-                font-size: 14px;
-                wid
+                font-size: 12px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.8)};
