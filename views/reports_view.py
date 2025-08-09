@@ -54,7 +54,7 @@ class ReportsView(QWidget):
         # Configurar proporción del splitter
         splitter.setStretchFactor(0, 1)  # Panel izquierdo
         splitter.setStretchFactor(1, 3)  # Panel derecho (más grande)
-        splitter.setSizes([280, 840])
+        splitter.setSizes([400, 720])
             
         layout.addWidget(splitter)
         
@@ -401,13 +401,13 @@ class ReportsView(QWidget):
     def create_header(self):
         """Crear header con título y controles principales"""
         header_frame = QFrame()
+        header_frame.setFixedHeight(80)
         header_frame.setStyleSheet(f"""
             QFrame {{
                 background-color: {ColorPalette.PLATINUM};
                 border-radius: 5px;
                 border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
                 padding: 5px;
-                max-height: 100px;
             }}
         """)
         
@@ -429,6 +429,7 @@ class ReportsView(QWidget):
         
         # Filtros de fecha
         filters_layout = QHBoxLayout()
+        filters_layout.setSpacing(5)
         
         self.start_date = QDateEdit()
         self.start_date.setDate(QDate.currentDate().addDays(-7))
@@ -438,6 +439,7 @@ class ReportsView(QWidget):
         
         # Fecha fin
         filters_layout.addWidget(QLabel("Hasta:"))
+        
         
         self.end_date = QDateEdit()
         self.end_date.setDate(QDate.currentDate())
@@ -469,7 +471,7 @@ class ReportsView(QWidget):
         return header_frame
 
     def create_left_panel(self):
-        """Crear panel izquierdo con métricas clave"""
+        """Crear panel izquierdo con métricas clave y controles"""
         panel = QFrame()
         panel.setStyleSheet(f"""
             QFrame {{
@@ -491,16 +493,6 @@ class ReportsView(QWidget):
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(12)
         
-        # Título del panel
-        title = QLabel("📈 Métricas Clave")
-        title.setStyleSheet(f"""
-            font-size: 16px;
-            font-weight: bold;
-            color: {ColorPalette.RICH_BLACK};
-            padding-bottom: 10px;
-            border-bottom: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-        """)
-        layout.addWidget(title)
         
         # Métricas principales en grid compacto 2x2
         metrics_frame = QFrame()
@@ -508,13 +500,11 @@ class ReportsView(QWidget):
         metrics_layout.setSpacing(8)
         metrics_layout.setContentsMargins(0, 10, 0, 10)
         
-        # Crear métricas más compactas
         self.sales_metric = self.create_compact_metric_widget("💰", "Ventas", "$0.00", ColorPalette.SUCCESS)
         self.orders_metric = self.create_compact_metric_widget("📋", "Órdenes", "0", ColorPalette.YINMN_BLUE)
         self.avg_ticket_metric = self.create_compact_metric_widget("🎯", "Promedio", "$0.00", ColorPalette.WARNING)
         self.margin_metric = self.create_compact_metric_widget("📊", "Margen", "0%", ColorPalette.ERROR)
         
-        # Distribuir en grid 2x2
         metrics_layout.addWidget(self.sales_metric, 0, 0)
         metrics_layout.addWidget(self.orders_metric, 0, 1)
         metrics_layout.addWidget(self.avg_ticket_metric, 1, 0)
@@ -538,26 +528,21 @@ class ReportsView(QWidget):
         period_title.setStyleSheet("font-weight: bold; font-size: 12px; margin-bottom: 5px;")
         period_layout.addWidget(period_title)
         
-        # Botones de período en grid horizontal para ahorrar espacio
         buttons_layout = QGridLayout()
         buttons_layout.setSpacing(4)
         
-        # Botones más compactos
         today_btn = QPushButton("📅 Hoy")
         week_btn = QPushButton("📆 Semana")
         month_btn = QPushButton("🗓️ Mes")
         
-        # Distribuir en 3 columnas para pantallas pequeñas
         buttons_layout.addWidget(today_btn, 0, 0)
         buttons_layout.addWidget(week_btn, 0, 1)
         buttons_layout.addWidget(month_btn, 0, 2)
         
-        # Conectar eventos
         today_btn.clicked.connect(lambda: self.set_quick_period("today"))
         week_btn.clicked.connect(lambda: self.set_quick_period("week"))
         month_btn.clicked.connect(lambda: self.set_quick_period("month"))
         
-        # Estilo compacto para botones
         button_style = f"""
             QPushButton {{
                 background-color: {ColorPalette.PLATINUM};
@@ -582,34 +567,13 @@ class ReportsView(QWidget):
         period_layout.addLayout(buttons_layout)
         layout.addWidget(period_frame)
         
-        # Sección de análisis detallado
-        analysis_frame = QFrame()
-        analysis_frame.setStyleSheet(f"""
-            QFrame {{
-                background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.1)};
-                border-radius: 8px;
-                padding: 8px;
-            }}
-        """)
-        analysis_layout = QVBoxLayout(analysis_frame)
-        analysis_layout.setSpacing(6)
-        
-        analysis_title = QLabel("🔍 Análisis Detallado")
-        analysis_title.setStyleSheet("font-weight: bold; font-size: 12px; margin-bottom: 5px;")
-        analysis_layout.addWidget(analysis_title)
-        
-        # Descripción de lo que incluye
-        description_label = QLabel("• Productos más vendidos\n• Análisis por categorías\n• Tendencias horarias")
-        description_label.setStyleSheet(f"""
-            font-size: 10px;
-            color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.7)};
-            padding: 5px;
-        """)
-        analysis_layout.addWidget(description_label)
-        
-        layout.addWidget(analysis_frame)
-        
-        # Botón exportar más compacto
+        # Sección de acciones
+        actions_frame = QFrame()
+        actions_frame.setStyleSheet("background-color: transparent; border: none;")
+        actions_layout = QVBoxLayout(actions_frame)
+        actions_layout.setContentsMargins(0, 10, 0, 0)
+        actions_layout.setSpacing(8)
+
         export_btn = QPushButton("📤 Exportar Datos")
         export_btn.setStyleSheet(f"""
             QPushButton {{
@@ -626,12 +590,13 @@ class ReportsView(QWidget):
             }}
         """)
         export_btn.clicked.connect(self.export_data)
-        layout.addWidget(export_btn)
+        actions_layout.addWidget(export_btn)
         
-        # Configurar scroll area
+        layout.addWidget(actions_frame)
+        layout.addStretch()
+        
         scroll_area.setWidget(scroll_content)
         
-        # Layout principal del panel
         panel_layout = QVBoxLayout(panel)
         panel_layout.setContentsMargins(0, 0, 0, 0)
         panel_layout.addWidget(scroll_area)
@@ -729,13 +694,14 @@ class ReportsView(QWidget):
                 border-left: 3px solid {color};
                 border-radius: 6px;
                 padding: 8px;
-                min-height: 50px;
-                max-height: 65px;
+                min-height: 20px;
+                max-height: 90px;
+                margin: 4px 0px 4px 0px;
             }}
         """)
         
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(8, 6, 8, 6)
+        layout.setContentsMargins(6, 4, 6, 4)
         layout.setSpacing(2)
         
         # Header con icono y título en una línea
@@ -744,10 +710,11 @@ class ReportsView(QWidget):
         
         icon_label = QLabel(icon)
         icon_label.setStyleSheet(f"""
-            font-size: 16px;
+            font-size: 12px;
             color: {color};
             min-width: 20px;
-            max-width: 20px;
+            max-height: 20px;
+            
         """)
         header_layout.addWidget(icon_label)
         
@@ -756,6 +723,7 @@ class ReportsView(QWidget):
             font-size: 10px;
             font-weight: bold;
             color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.8)};
+            min-width: 100px;
         """)
         header_layout.addWidget(title_label)
         header_layout.addStretch()
@@ -765,10 +733,12 @@ class ReportsView(QWidget):
         # Valor
         value_label = QLabel(value)
         value_label.setStyleSheet(f"""
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
             color: {color};
             text-align: center;
+            max-height: 250px;
+            margin-top: 4px;
         """)
         value_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(value_label)

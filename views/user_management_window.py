@@ -559,13 +559,13 @@ class UserManagementWidget(QWidget):
     def create_header(self):
         """Crear header con título y botones"""
         header_frame = QFrame()
+        header_frame.setFixedHeight(80)
         header_frame.setStyleSheet(f"""
             QFrame {{
                 background-color: {ColorPalette.PLATINUM};
                 border-radius: 5px;
                 border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
                 padding: 5px;
-                max-height: 100px;
             }}
         """)
         
@@ -588,11 +588,10 @@ class UserManagementWidget(QWidget):
         
         # Botones de acción
         buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(10)
+        buttons_layout.setSpacing(5)
         
         # Botón refrescar
         refresh_btn = QPushButton("🔄 Refrescar")
-        refresh_btn.setFixedHeight(35)
         refresh_btn.setStyleSheet(f"""
             QPushButton {{
                 font-size: 12px;

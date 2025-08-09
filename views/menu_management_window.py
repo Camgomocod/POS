@@ -779,13 +779,13 @@ class MenuManagementWidget(QWidget):
     def create_header(self):
         """Crear header con título y botones"""
         header_frame = QFrame()
+        header_frame.setFixedHeight(80)
         header_frame.setStyleSheet(f"""
             QFrame {{
                 background-color: {ColorPalette.PLATINUM};
                 border-radius: 5px;
                 border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
                 padding: 5px;
-                max-height: 100px;
             }}
         """)
         
