@@ -122,37 +122,43 @@ class ReportsView(QWidget):
             QFrame {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.05)};
                 border-radius: 8px;
-                padding: 10px;
+                padding: 5px;
             }}
         """)
         
         layout = QVBoxLayout(content_frame)
-        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setContentsMargins(5, 5, 5, 5)
         
         # Crear el TabWidget con las tres pestañas
         from PyQt5.QtWidgets import QTabWidget
         tab_widget = QTabWidget()
         tab_widget.setStyleSheet(f"""
             QTabWidget::pane {{
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-                border-radius: 4px;
+                border: 2px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
+                border-radius: 8px;
                 background-color: {ColorPalette.PLATINUM};
+                top: -1px;
             }}
             QTabBar::tab {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-                padding: 8px 16px;
-                margin-right: 2px;
-                border-top-left-radius: 4px;
-                border-top-right-radius: 4px;
+                border: 2px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
+                padding: 10px 20px;
+                margin-right: 3px;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+                font-size: 13px;
+                font-weight: bold;
+                color: {ColorPalette.RICH_BLACK};
+                min-width: 120px;
             }}
             QTabBar::tab:selected {{
                 background-color: {ColorPalette.YINMN_BLUE};
                 color: {ColorPalette.PLATINUM};
+                border-bottom-color: {ColorPalette.YINMN_BLUE};
                 font-weight: bold;
             }}
-            QTabBar::tab:hover {{
-                background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.7)};
+            QTabBar::tab:hover:!selected {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.5)};
                 color: {ColorPalette.PLATINUM};
             }}
         """)
@@ -177,8 +183,10 @@ class ReportsView(QWidget):
         """Crear pestaña de análisis de productos"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(10)
         
-        # Tabla de productos
+        # Tabla de productos con headers simplificados
         products_table = QTableWidget()
         products_table.setColumnCount(6)
         products_table.setHorizontalHeaderLabels([
@@ -186,26 +194,40 @@ class ReportsView(QWidget):
             "Precio Promedio", "Margen (%)", "Última Venta"
         ])
         
-        # Configurar estilo de tabla
+        # Estilo simplificado que GARANTIZA headers visibles
         products_table.setStyleSheet(f"""
             QTableWidget {{
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-                border-radius: 4px;
-                background-color: {ColorPalette.PLATINUM};
-                gridline-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.2)};
-                selection-background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
+                border: 2px solid {ColorPalette.YINMN_BLUE};
+                border-radius: 8px;
+                background-color: white;
+                gridline-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
+                font-size: 12px;
+            }}
+            QTableWidget::item {{
+                padding: 8px;
+                border-bottom: 1px solid {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.2)};
             }}
             QHeaderView::section {{
                 background-color: {ColorPalette.YINMN_BLUE};
-                color: {ColorPalette.PLATINUM};
-                padding: 8px;
-                font-weight: bold;
+                color: white !important;
+                font-weight: bold !important;
+                font-size: 12px !important;
+                padding: 8px !important;
                 border: none;
-                border-right: 1px solid {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.7)};
+                text-align: center;
+                min-height: 25px;
             }}
         """)
         
-        # Cargar datos
+        # FORZAR visibilidad de headers
+        products_table.horizontalHeader().setVisible(True)
+        products_table.horizontalHeader().setDefaultSectionSize(120)
+        products_table.horizontalHeader().setMinimumSectionSize(80)
+        products_table.verticalHeader().setVisible(False)
+        products_table.setAlternatingRowColors(True)
+        products_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        
+        # Cargar datos sin headers duplicados
         try:
             start_date = self.start_date.date().toPyDate()
             end_date = self.end_date.date().toPyDate()
@@ -222,7 +244,7 @@ class ReportsView(QWidget):
                     products_table.setItem(row, 4, QTableWidgetItem(f"{product.get('margin', 0):.1f}%"))
                     products_table.setItem(row, 5, QTableWidgetItem(str(product.get('last_sale', 'N/A'))))
             else:
-                # Datos de muestra
+                # Datos de muestra sin headers duplicados
                 sample_data = [
                     {'name': 'Café Americano', 'quantity': 45, 'revenue': 180.00, 'avg_price': 4.00, 'margin': 75.5, 'last_sale': '2025-08-08'},
                     {'name': 'Cappuccino', 'quantity': 32, 'revenue': 160.00, 'avg_price': 5.00, 'margin': 80.2, 'last_sale': '2025-08-08'},
@@ -230,6 +252,7 @@ class ReportsView(QWidget):
                     {'name': 'Sandwich Club', 'quantity': 18, 'revenue': 144.00, 'avg_price': 8.00, 'margin': 55.3, 'last_sale': '2025-08-08'},
                     {'name': 'Latte', 'quantity': 25, 'revenue': 137.50, 'avg_price': 5.50, 'margin': 77.1, 'last_sale': '2025-08-08'},
                 ]
+                
                 products_table.setRowCount(len(sample_data))
                 for row, product in enumerate(sample_data):
                     products_table.setItem(row, 0, QTableWidgetItem(product['name']))
@@ -252,8 +275,10 @@ class ReportsView(QWidget):
         """Crear pestaña de análisis por categorías"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(10)
         
-        # Tabla de categorías
+        # Tabla de categorías con headers simplificados
         categories_table = QTableWidget()
         categories_table.setColumnCount(5)
         categories_table.setHorizontalHeaderLabels([
@@ -261,26 +286,40 @@ class ReportsView(QWidget):
             "Promedio por Producto", "% del Total"
         ])
         
-        # Configurar estilo de tabla
+        # Estilo simplificado que GARANTIZA headers visibles
         categories_table.setStyleSheet(f"""
             QTableWidget {{
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-                border-radius: 4px;
-                background-color: {ColorPalette.PLATINUM};
-                gridline-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.2)};
-                selection-background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
+                border: 2px solid {ColorPalette.SUCCESS};
+                border-radius: 8px;
+                background-color: white;
+                gridline-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.3)};
+                font-size: 12px;
+            }}
+            QTableWidget::item {{
+                padding: 8px;
+                border-bottom: 1px solid {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.2)};
             }}
             QHeaderView::section {{
-                background-color: {ColorPalette.YINMN_BLUE};
-                color: {ColorPalette.PLATINUM};
-                padding: 8px;
-                font-weight: bold;
+                background-color: {ColorPalette.SUCCESS};
+                color: white !important;
+                font-weight: bold !important;
+                font-size: 12px !important;
+                padding: 8px !important;
                 border: none;
-                border-right: 1px solid {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.7)};
+                text-align: center;
+                min-height: 25px;
             }}
         """)
         
-        # Cargar datos
+        # FORZAR visibilidad de headers
+        categories_table.horizontalHeader().setVisible(True)
+        categories_table.horizontalHeader().setDefaultSectionSize(120)
+        categories_table.horizontalHeader().setMinimumSectionSize(80)
+        categories_table.verticalHeader().setVisible(False)
+        categories_table.setAlternatingRowColors(True)
+        categories_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        
+        # Cargar datos sin headers duplicados
         try:
             start_date = self.start_date.date().toPyDate()
             end_date = self.end_date.date().toPyDate()
@@ -299,13 +338,14 @@ class ReportsView(QWidget):
                     categories_table.setItem(row, 3, QTableWidgetItem(f"${avg_price:.2f}"))
                     categories_table.setItem(row, 4, QTableWidgetItem(f"{category.get('percentage', 0):.1f}%"))
             else:
-                # Datos de muestra
+                # Datos de muestra sin headers duplicados
                 sample_data = [
                     {'name': 'Bebidas Calientes', 'quantity': 102, 'revenue': 477.50, 'avg_price': 4.68, 'percentage': 42.5},
                     {'name': 'Postres', 'quantity': 45, 'revenue': 225.00, 'avg_price': 5.00, 'percentage': 20.1},
                     {'name': 'Comida Rápida', 'quantity': 38, 'revenue': 304.00, 'avg_price': 8.00, 'percentage': 27.1},
                     {'name': 'Bebidas Frías', 'quantity': 22, 'revenue': 115.50, 'avg_price': 5.25, 'percentage': 10.3},
                 ]
+                
                 categories_table.setRowCount(len(sample_data))
                 for row, category in enumerate(sample_data):
                     categories_table.setItem(row, 0, QTableWidgetItem(category['name']))
@@ -327,8 +367,10 @@ class ReportsView(QWidget):
         """Crear pestaña de análisis horario"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(10)
         
-        # Tabla de horas
+        # Tabla de horas con headers simplificados
         hours_table = QTableWidget()
         hours_table.setColumnCount(5)
         hours_table.setHorizontalHeaderLabels([
@@ -336,26 +378,40 @@ class ReportsView(QWidget):
             "% del Total"
         ])
         
-        # Configurar estilo de tabla
+        # Estilo simplificado que GARANTIZA headers visibles
         hours_table.setStyleSheet(f"""
             QTableWidget {{
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-                border-radius: 4px;
-                background-color: {ColorPalette.PLATINUM};
-                gridline-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.2)};
-                selection-background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
+                border: 2px solid {ColorPalette.WARNING};
+                border-radius: 8px;
+                background-color: white;
+                gridline-color: {ColorPalette.with_alpha(ColorPalette.WARNING, 0.3)};
+                font-size: 12px;
+            }}
+            QTableWidget::item {{
+                padding: 8px;
+                border-bottom: 1px solid {ColorPalette.with_alpha(ColorPalette.WARNING, 0.2)};
             }}
             QHeaderView::section {{
-                background-color: {ColorPalette.YINMN_BLUE};
-                color: {ColorPalette.PLATINUM};
-                padding: 8px;
-                font-weight: bold;
+                background-color: {ColorPalette.WARNING};
+                color: white !important;
+                font-weight: bold !important;
+                font-size: 12px !important;
+                padding: 8px !important;
                 border: none;
-                border-right: 1px solid {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.7)};
+                text-align: center;
+                min-height: 25px;
             }}
         """)
         
-        # Cargar datos
+        # FORZAR visibilidad de headers
+        hours_table.horizontalHeader().setVisible(True)
+        hours_table.horizontalHeader().setDefaultSectionSize(120)
+        hours_table.horizontalHeader().setMinimumSectionSize(80)
+        hours_table.verticalHeader().setVisible(False)
+        hours_table.setAlternatingRowColors(True)
+        hours_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        
+        # Cargar datos sin headers duplicados
         try:
             start_date = self.start_date.date().toPyDate()
             end_date = self.end_date.date().toPyDate()
@@ -371,7 +427,7 @@ class ReportsView(QWidget):
                     hours_table.setItem(row, 3, QTableWidgetItem(f"${hour.get('avg_ticket', 0):.2f}"))
                     hours_table.setItem(row, 4, QTableWidgetItem(f"{hour.get('percentage', 0):.1f}%"))
             else:
-                # Datos de muestra
+                # Datos de muestra sin headers duplicados
                 sample_data = [
                     {'hour_range': '08:00-09:00', 'order_count': 12, 'total_sales': 62.50, 'avg_ticket': 5.21, 'percentage': 5.2},
                     {'hour_range': '09:00-10:00', 'order_count': 28, 'total_sales': 142.00, 'avg_ticket': 5.07, 'percentage': 11.8},
@@ -381,8 +437,14 @@ class ReportsView(QWidget):
                     {'hour_range': '13:00-14:00', 'order_count': 41, 'total_sales': 225.50, 'avg_ticket': 5.50, 'percentage': 18.8},
                     {'hour_range': '14:00-15:00', 'order_count': 33, 'total_sales': 171.50, 'avg_ticket': 5.20, 'percentage': 14.3},
                 ]
+                
                 hours_table.setRowCount(len(sample_data))
                 for row, hour in enumerate(sample_data):
+                    hours_table.setItem(row, 0, QTableWidgetItem(hour['hour_range']))
+                    hours_table.setItem(row, 1, QTableWidgetItem(str(hour['order_count'])))
+                    hours_table.setItem(row, 2, QTableWidgetItem(f"${hour['total_sales']:.2f}"))
+                    hours_table.setItem(row, 3, QTableWidgetItem(f"${hour['avg_ticket']:.2f}"))
+                    hours_table.setItem(row, 4, QTableWidgetItem(f"{hour['percentage']:.1f}%"))
                     hours_table.setItem(row, 0, QTableWidgetItem(hour['hour_range']))
                     hours_table.setItem(row, 1, QTableWidgetItem(str(hour['order_count'])))
                     hours_table.setItem(row, 2, QTableWidgetItem(f"${hour['total_sales']:.2f}"))
@@ -751,7 +813,7 @@ class ReportsView(QWidget):
     def create_sales_chart(self):
         """Crear gráfico de ventas diarias expandido"""
         # Crear figura de matplotlib más grande para aprovechar el espacio
-        self.figure = Figure(figsize=(12, 6), dpi=100)
+        self.figure = Figure(figsize=(10, 4), dpi=100, facecolor='#F7F9FC')
         self.canvas = FigureCanvas(self.figure)
         
         # Aplicar estilo
@@ -853,8 +915,17 @@ class ReportsView(QWidget):
     def load_sales_chart(self):
         """Cargar gráfico de ventas"""
         try:
+            import matplotlib.pyplot as plt
+            import matplotlib.dates as mdates
+            from matplotlib.colors import LinearSegmentedColormap
+            import numpy as np
+            
             self.figure.clear()
-            ax = self.figure.add_subplot(111)
+            # Configurar estilo moderno
+            plt.style.use('default')
+            
+            # Crear subplot con fondo personalizado
+            ax = self.figure.add_subplot(111, facecolor='#F7F9FC')
             
             start_date = self.start_date.date().toPyDate()
             end_date = self.end_date.date().toPyDate()
@@ -874,39 +945,93 @@ class ReportsView(QWidget):
                     dates.append(date_obj)
                     sales.append(float(item['total_sales']))
                 
-                ax.plot(dates, sales, marker='o', linewidth=2, markersize=6, color='#2E86AB')
-                ax.fill_between(dates, sales, alpha=0.3, color='#2E86AB')
+                # Colores modernos y gradientes
+                line_color = '#2563EB'  # Azul moderno
+                fill_colors = ['#3B82F6', '#60A5FA', '#93C5FD', '#DBEAFE']  # Gradiente azul
                 
+                # Crear gradiente para el área
+                y_max = max(sales) if sales else 100
+                
+                # Línea principal con sombra
+                ax.plot(dates, sales, 
+                       color=line_color, 
+                       linewidth=3, 
+                       marker='o', 
+                       markersize=8, 
+                       markerfacecolor='#1D4ED8',
+                       markeredgecolor='white',
+                       markeredgewidth=2,
+                       alpha=0.9,
+                       zorder=3)
+                
+                # Área sombreada con gradiente
+                ax.fill_between(dates, sales, 0, 
+                               alpha=0.6, 
+                               color='#3B82F6',
+                               zorder=1)
+                
+                # Área adicional para efecto de profundidad
+                ax.fill_between(dates, sales, 0, 
+                               alpha=0.3, 
+                               color='#60A5FA',
+                               zorder=0)
+                
+                # Configurar formato de fechas
                 ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d'))
                 ax.xaxis.set_major_locator(mdates.DayLocator(interval=max(1, len(dates)//7)))
-                plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+                plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
                 
+                # Configurar límites
                 max_sales = max(sales) if sales else 0
                 if max_sales > 0:
                     ax.set_ylim(0, max_sales * 1.1)
+                
+                # Añadir líneas de valor promedio
+                avg_sales = sum(sales) / len(sales) if sales else 0
+                ax.axhline(y=avg_sales, color='#F59E0B', linestyle='--', alpha=0.7, linewidth=2, label=f'Promedio: ${avg_sales:.2f}')
+                
             else:
-                ax.text(0.5, 0.5, 'No hay datos para el período seleccionado\nPrueba con otro rango de fechas', 
+                ax.text(0.5, 0.5, 'No hay datos para el período seleccionado\n\nPrueba con otro rango de fechas', 
                        ha='center', va='center', transform=ax.transAxes,
-                       fontsize=12, color='#333333')
+                       fontsize=14, color='#6B7280', 
+                       bbox=dict(boxstyle="round,pad=0.5", facecolor='#F3F4F6', alpha=0.8))
             
-            ax.set_title('Ventas Diarias', fontsize=12, fontweight='bold', color='#333333', pad=10)
-            ax.set_xlabel('Fecha', fontweight='bold', fontsize=10)
-            ax.set_ylabel('Ventas ($)', fontweight='bold', fontsize=10)
-            ax.grid(True, alpha=0.3)
+            # Grid moderno (sin títulos de ejes para máximo espacio)
+            ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='#D1D5DB')
+            ax.set_axisbelow(True)
             
-            ax.tick_params(axis='both', which='major', labelsize=9)
+            # Estilo de los ejes
+            ax.tick_params(axis='both', which='major', labelsize=10, colors='#4B5563')
+            ax.tick_params(axis='x', which='major', pad=8)
+            ax.tick_params(axis='y', which='major', pad=8)
             
-            self.figure.tight_layout(pad=1.5)
+            # Remover spines superiores y derechos para look más limpio
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_color('#D1D5DB')
+            ax.spines['bottom'].set_color('#D1D5DB')
+            
+            # Formato de números en Y con separadores de miles
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x:,.0f}'))
+            
+            # Leyenda si hay datos
+            if daily_sales and len(daily_sales) > 0:
+                ax.legend(loc='upper left', frameon=True, fancybox=True, shadow=True, 
+                         framealpha=0.9, facecolor='white', edgecolor='#D1D5DB')
+            
+            # Ajuste automático del layout
+            self.figure.tight_layout(pad=2.0)
             self.canvas.draw()
             
         except Exception as e:
             print(f"Error cargando gráfico de ventas: {e}")
             self.figure.clear()
-            ax = self.figure.add_subplot(111)
-            ax.text(0.5, 0.5, f'Error cargando datos:\n{str(e)}', 
+            ax = self.figure.add_subplot(111, facecolor='#FEF2F2')
+            ax.text(0.5, 0.5, f'Error cargando datos:\n\n{str(e)}', 
                    ha='center', va='center', transform=ax.transAxes,
-                   fontsize=12, color='red')
-            ax.set_title('Error en Gráfico', fontsize=14, fontweight='bold')
+                   fontsize=12, color='#DC2626',
+                   bbox=dict(boxstyle="round,pad=0.5", facecolor='#FECACA', alpha=0.8))
+            ax.axis('off')
             self.canvas.draw()
 
     def export_data(self):
