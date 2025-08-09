@@ -248,80 +248,150 @@ class ReportsView(QWidget):
         
         return widget
 
-    def create_categories_analysis_tab(self, start_date_widget, end_date_widget):
-        """Crear pestaña de análisis de categorías"""
+    def create_categories_analysis_tab(self):
+        """Crear pestaña de análisis por categorías"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
         
         # Tabla de categorías
         categories_table = QTableWidget()
-        categories_table.setColumnCount(6)
+        categories_table.setColumnCount(5)
         categories_table.setHorizontalHeaderLabels([
             "Categoría", "Productos Vendidos", "Ingresos Totales", 
-            "Participación (%)", "Crecimiento", "Tendencia"
+            "Promedio por Producto", "% del Total"
         ])
         
-        # Datos de muestra para categorías
-        sample_data = [
-            {'name': 'Bebidas Calientes', 'products_sold': 102, 'revenue': 477.50, 'participation': 45.2, 'growth': 12.5, 'trend': '↗️ Creciendo'},
-            {'name': 'Panadería', 'products_sold': 72, 'revenue': 198.00, 'participation': 28.3, 'growth': 8.2, 'trend': '↗️ Creciendo'},
-            {'name': 'Sándwiches', 'products_sold': 18, 'revenue': 144.00, 'participation': 15.1, 'growth': -2.1, 'trend': '↘️ Declinando'},
-            {'name': 'Bebidas Frías', 'products_sold': 15, 'revenue': 45.00, 'participation': 8.8, 'growth': 5.3, 'trend': '➡️ Estable'},
-            {'name': 'Snacks', 'products_sold': 8, 'revenue': 32.00, 'participation': 2.6, 'growth': 15.7, 'trend': '↗️ Creciendo'},
-        ]
+        # Configurar estilo de tabla
+        categories_table.setStyleSheet(f"""
+            QTableWidget {{
+                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
+                border-radius: 4px;
+                background-color: {ColorPalette.PLATINUM};
+                gridline-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.2)};
+                selection-background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
+            }}
+            QHeaderView::section {{
+                background-color: {ColorPalette.YINMN_BLUE};
+                color: {ColorPalette.PLATINUM};
+                padding: 8px;
+                font-weight: bold;
+                border: none;
+                border-right: 1px solid {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.7)};
+            }}
+        """)
         
-        categories_table.setRowCount(len(sample_data))
-        for row, category in enumerate(sample_data):
-            categories_table.setItem(row, 0, QTableWidgetItem(category['name']))
-            categories_table.setItem(row, 1, QTableWidgetItem(str(category['products_sold'])))
-            categories_table.setItem(row, 2, QTableWidgetItem(f"${category['revenue']:.2f}"))
-            categories_table.setItem(row, 3, QTableWidgetItem(f"{category['participation']:.1f}%"))
-            categories_table.setItem(row, 4, QTableWidgetItem(f"{category['growth']:.1f}%"))
-            categories_table.setItem(row, 5, QTableWidgetItem(category['trend']))
+        # Cargar datos
+        try:
+            start_date = self.start_date.date().toPyDate()
+            end_date = self.end_date.date().toPyDate()
+            
+            categories_data = self.reports_ctrl.get_sales_by_category(start_date, end_date)
+            
+            if categories_data and len(categories_data) > 0:
+                categories_table.setRowCount(len(categories_data))
+                for row, category in enumerate(categories_data):
+                    revenue = category.get('revenue', 0)
+                    avg_price = revenue / category.get('total_items', 1) if category.get('total_items', 0) > 0 else 0
+                    
+                    categories_table.setItem(row, 0, QTableWidgetItem(str(category.get('name', 'N/A'))))
+                    categories_table.setItem(row, 1, QTableWidgetItem(str(category.get('total_items', 0))))
+                    categories_table.setItem(row, 2, QTableWidgetItem(f"${revenue:.2f}"))
+                    categories_table.setItem(row, 3, QTableWidgetItem(f"${avg_price:.2f}"))
+                    categories_table.setItem(row, 4, QTableWidgetItem(f"{category.get('percentage', 0):.1f}%"))
+            else:
+                # Datos de muestra
+                sample_data = [
+                    {'name': 'Bebidas Calientes', 'quantity': 102, 'revenue': 477.50, 'avg_price': 4.68, 'percentage': 42.5},
+                    {'name': 'Postres', 'quantity': 45, 'revenue': 225.00, 'avg_price': 5.00, 'percentage': 20.1},
+                    {'name': 'Comida Rápida', 'quantity': 38, 'revenue': 304.00, 'avg_price': 8.00, 'percentage': 27.1},
+                    {'name': 'Bebidas Frías', 'quantity': 22, 'revenue': 115.50, 'avg_price': 5.25, 'percentage': 10.3},
+                ]
+                categories_table.setRowCount(len(sample_data))
+                for row, category in enumerate(sample_data):
+                    categories_table.setItem(row, 0, QTableWidgetItem(category['name']))
+                    categories_table.setItem(row, 1, QTableWidgetItem(str(category['quantity'])))
+                    categories_table.setItem(row, 2, QTableWidgetItem(f"${category['revenue']:.2f}"))
+                    categories_table.setItem(row, 3, QTableWidgetItem(f"${category['avg_price']:.2f}"))
+                    categories_table.setItem(row, 4, QTableWidgetItem(f"{category['percentage']:.1f}%"))
+        except Exception as e:
+            print(f"Error cargando categorías: {e}")
+            categories_table.setRowCount(1)
+            categories_table.setItem(0, 0, QTableWidgetItem(f"Error: {str(e)}"))
         
         categories_table.resizeColumnsToContents()
         layout.addWidget(categories_table)
         
         return widget
 
-    def create_hours_analysis_tab(self, start_date_widget, end_date_widget):
+    def create_hours_analysis_tab(self):
         """Crear pestaña de análisis horario"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
         
         # Tabla de horas
         hours_table = QTableWidget()
-        hours_table.setColumnCount(7)
+        hours_table.setColumnCount(5)
         hours_table.setHorizontalHeaderLabels([
-            "Hora", "Ventas Totales", "Ingresos", "Promedio por Venta", 
-            "Órdenes", "Eficiencia", "Tendencia"
+            "Rango Horario", "Número de Órdenes", "Ingresos Totales", "Ticket Promedio", 
+            "% del Total"
         ])
         
-        # Datos de muestra para horas
-        sample_data = [
-            {'hour': '08:00', 'total_sales': 12, 'revenue': 62.50, 'orders': 12, 'efficiency': 'Baja', 'trend': '➡️ Estable'},
-            {'hour': '09:00', 'total_sales': 28, 'revenue': 142.00, 'orders': 25, 'efficiency': 'Media', 'trend': '↗️ Creciendo'},
-            {'hour': '10:00', 'total_sales': 45, 'revenue': 234.75, 'orders': 42, 'efficiency': 'Alta', 'trend': '↗️ Creciendo'},
-            {'hour': '11:00', 'total_sales': 38, 'revenue': 198.50, 'orders': 35, 'efficiency': 'Alta', 'trend': '➡️ Estable'},
-            {'hour': '12:00', 'total_sales': 52, 'revenue': 287.00, 'orders': 48, 'efficiency': 'Muy Alta', 'trend': '↗️ Creciendo'},
-            {'hour': '13:00', 'total_sales': 44, 'revenue': 245.20, 'orders': 41, 'efficiency': 'Alta', 'trend': '↘️ Declinando'},
-            {'hour': '14:00', 'total_sales': 31, 'revenue': 167.75, 'orders': 28, 'efficiency': 'Media', 'trend': '↘️ Declinando'},
-            {'hour': '15:00', 'total_sales': 22, 'revenue': 118.50, 'orders': 20, 'efficiency': 'Media', 'trend': '↘️ Declinando'},
-            {'hour': '16:00', 'total_sales': 25, 'revenue': 137.25, 'orders': 23, 'efficiency': 'Media', 'trend': '↗️ Creciendo'},
-            {'hour': '17:00', 'total_sales': 19, 'revenue': 98.75, 'orders': 17, 'efficiency': 'Baja', 'trend': '➡️ Estable'},
-            {'hour': '18:00', 'total_sales': 15, 'revenue': 78.00, 'orders': 14, 'efficiency': 'Baja', 'trend': '↘️ Declinando'},
-        ]
+        # Configurar estilo de tabla
+        hours_table.setStyleSheet(f"""
+            QTableWidget {{
+                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
+                border-radius: 4px;
+                background-color: {ColorPalette.PLATINUM};
+                gridline-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.2)};
+                selection-background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
+            }}
+            QHeaderView::section {{
+                background-color: {ColorPalette.YINMN_BLUE};
+                color: {ColorPalette.PLATINUM};
+                padding: 8px;
+                font-weight: bold;
+                border: none;
+                border-right: 1px solid {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.7)};
+            }}
+        """)
         
-        hours_table.setRowCount(len(sample_data))
-        for row, hour_data in enumerate(sample_data):
-            avg_sale = hour_data['revenue'] / hour_data['total_sales'] if hour_data['total_sales'] > 0 else 0
-            hours_table.setItem(row, 0, QTableWidgetItem(hour_data['hour']))
-            hours_table.setItem(row, 1, QTableWidgetItem(str(hour_data['total_sales'])))
-            hours_table.setItem(row, 2, QTableWidgetItem(f"${hour_data['revenue']:.2f}"))
-            hours_table.setItem(row, 3, QTableWidgetItem(f"${avg_sale:.2f}"))
-            hours_table.setItem(row, 4, QTableWidgetItem(str(hour_data['orders'])))
-            hours_table.setItem(row, 5, QTableWidgetItem(hour_data['efficiency']))
-            hours_table.setItem(row, 6, QTableWidgetItem(hour_data['trend']))
+        # Cargar datos
+        try:
+            start_date = self.start_date.date().toPyDate()
+            end_date = self.end_date.date().toPyDate()
+            
+            hours_data = self.reports_ctrl.get_sales_by_hour(start_date, end_date)
+            
+            if hours_data and len(hours_data) > 0:
+                hours_table.setRowCount(len(hours_data))
+                for row, hour in enumerate(hours_data):
+                    hours_table.setItem(row, 0, QTableWidgetItem(hour.get('hour_range', 'N/A')))
+                    hours_table.setItem(row, 1, QTableWidgetItem(str(hour.get('order_count', 0))))
+                    hours_table.setItem(row, 2, QTableWidgetItem(f"${hour.get('total_sales', 0):.2f}"))
+                    hours_table.setItem(row, 3, QTableWidgetItem(f"${hour.get('avg_ticket', 0):.2f}"))
+                    hours_table.setItem(row, 4, QTableWidgetItem(f"{hour.get('percentage', 0):.1f}%"))
+            else:
+                # Datos de muestra
+                sample_data = [
+                    {'hour_range': '08:00-09:00', 'order_count': 12, 'total_sales': 62.50, 'avg_ticket': 5.21, 'percentage': 5.2},
+                    {'hour_range': '09:00-10:00', 'order_count': 28, 'total_sales': 142.00, 'avg_ticket': 5.07, 'percentage': 11.8},
+                    {'hour_range': '10:00-11:00', 'order_count': 45, 'total_sales': 234.75, 'avg_ticket': 5.22, 'percentage': 19.6},
+                    {'hour_range': '11:00-12:00', 'order_count': 38, 'total_sales': 198.50, 'avg_ticket': 5.22, 'percentage': 16.5},
+                    {'hour_range': '12:00-13:00', 'order_count': 52, 'total_sales': 286.00, 'avg_ticket': 5.50, 'percentage': 23.8},
+                    {'hour_range': '13:00-14:00', 'order_count': 41, 'total_sales': 225.50, 'avg_ticket': 5.50, 'percentage': 18.8},
+                    {'hour_range': '14:00-15:00', 'order_count': 33, 'total_sales': 171.50, 'avg_ticket': 5.20, 'percentage': 14.3},
+                ]
+                hours_table.setRowCount(len(sample_data))
+                for row, hour in enumerate(sample_data):
+                    hours_table.setItem(row, 0, QTableWidgetItem(hour['hour_range']))
+                    hours_table.setItem(row, 1, QTableWidgetItem(str(hour['order_count'])))
+                    hours_table.setItem(row, 2, QTableWidgetItem(f"${hour['total_sales']:.2f}"))
+                    hours_table.setItem(row, 3, QTableWidgetItem(f"${hour['avg_ticket']:.2f}"))
+                    hours_table.setItem(row, 4, QTableWidgetItem(f"{hour['percentage']:.1f}%"))
+        except Exception as e:
+            print(f"Error cargando datos horarios: {e}")
+            hours_table.setRowCount(1)
+            hours_table.setItem(0, 0, QTableWidgetItem(f"Error: {str(e)}"))
         
         hours_table.resizeColumnsToContents()
         layout.addWidget(hours_table)
@@ -570,8 +640,8 @@ class ReportsView(QWidget):
 
     def create_right_panel(self):
         """Crear panel derecho con gráficos expandidos"""
-        panel = QFrame()
-        panel.setStyleSheet(f"""
+        self.right_panel = QFrame()
+        self.right_panel.setStyleSheet(f"""
             QFrame {{
                 background-color: {ColorPalette.PLATINUM};
                 border-radius: 10px;
@@ -579,7 +649,7 @@ class ReportsView(QWidget):
             }}
         """)
         
-        layout = QVBoxLayout(panel)
+        layout = QVBoxLayout(self.right_panel)
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(15)
         
@@ -617,7 +687,21 @@ class ReportsView(QWidget):
         
         layout.addLayout(header_layout)
         
-        # Área de gráficos expandida (ocupa todo el espacio disponible)
+        # Contenedor para el contenido que puede cambiar (gráficos o análisis detallado)
+        self.right_content_frame = QFrame()
+        self.right_content_layout = QVBoxLayout(self.right_content_frame)
+        self.right_content_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Crear gráficos iniciales
+        charts_frame = self.create_charts_frame()
+        self.right_content_layout.addWidget(charts_frame)
+        
+        layout.addWidget(self.right_content_frame)
+        
+        return self.right_panel
+
+    def create_charts_frame(self):
+        """Crear frame con gráficos"""
         charts_frame = QFrame()
         charts_frame.setStyleSheet(f"""
             QFrame {{
@@ -633,9 +717,7 @@ class ReportsView(QWidget):
         self.sales_chart = self.create_sales_chart()
         charts_layout.addWidget(self.sales_chart)
         
-        layout.addWidget(charts_frame)
-        
-        return panel
+        return charts_frame
 
     def create_compact_metric_widget(self, icon, title, value, color):
         """Crear widget de métrica compacto para pantallas pequeñas"""
