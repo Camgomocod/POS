@@ -19,14 +19,13 @@ import os
 import traceback
 
 class ReportsView(QWidget):
-    """Vista principal de reportes con análisis detallado integrado"""
+    """Vista principal de reportes simplificada y funcional"""
     
     def __init__(self, parent=None):
         super().__init__(parent)
         self.menu_ctrl = MenuController()
         self.order_ctrl = OrderController()
         self.reports_ctrl = ReportsController()
-        self.current_mode = "main"  # "main" o "detailed"
         self.init_ui()
         self.load_initial_data()
 
@@ -66,114 +65,67 @@ class ReportsView(QWidget):
         """)
 
     def show_detailed_analysis(self):
-        """Alternar entre vista principal y análisis detallado"""
-        if self.current_mode == "main":
-            self.switch_to_detailed_mode()
-        else:
-            self.switch_to_main_mode()
-
-    def switch_to_detailed_mode(self):
-        """Cambiar al modo de análisis detallado"""
-        print("📊 Cambiando a modo detallado...")
-        self.current_mode = "detailed"
+        """Mostrar análisis detallado en ventana separada"""
+        print("📊 Abriendo ventana de análisis detallado...")
         
-        # Limpiar el contenido actual del panel derecho
-        self.clear_right_panel_content()
+        # Crear diálogo para análisis detallado
+        dialog = QDialog(self)
+        dialog.setWindowTitle("📊 Análisis Detallado de Ventas")
+        dialog.setModal(False)  # No modal para permitir interacción con ventana principal
+        dialog.resize(1000, 600)
         
-        # Crear el contenido detallado
-        detailed_content = self.create_detailed_content()
-        self.right_content_layout.addWidget(detailed_content)
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(15, 15, 15, 15)
         
-        # Actualizar el botón
-        self.details_btn.setText("� Volver a Gráficos")
-        print("✅ Modo detallado activado")
-
-    def switch_to_main_mode(self):
-        """Cambiar al modo principal con gráficos"""
-        print("📈 Cambiando a modo principal...")
-        self.current_mode = "main"
+        # Header con filtros de fecha
+        header_frame = QFrame()
+        header_layout = QHBoxLayout(header_frame)
         
-        # Limpiar el contenido actual del panel derecho
-        self.clear_right_panel_content()
+        header_layout.addWidget(QLabel("📅 Desde:"))
+        start_date_copy = QDateEdit()
+        start_date_copy.setDate(self.start_date.date() if hasattr(self, 'start_date') else QDate.currentDate().addDays(-7))
+        header_layout.addWidget(start_date_copy)
         
-        # Recrear el gráfico
-        charts_frame = self.create_charts_frame()
-        self.right_content_layout.addWidget(charts_frame)
+        header_layout.addWidget(QLabel("Hasta:"))
+        end_date_copy = QDateEdit()
+        end_date_copy.setDate(self.end_date.date() if hasattr(self, 'end_date') else QDate.currentDate())
+        header_layout.addWidget(end_date_copy)
         
-        # Actualizar el botón
-        self.details_btn.setText("� Ver Análisis Detallado")
+        header_layout.addStretch()
+        layout.addWidget(header_frame)
         
-        # Recargar el gráfico
-        self.load_sales_chart()
-        print("✅ Modo principal activado")
-
-    def clear_right_panel_content(self):
-        """Limpiar el contenido del panel derecho"""
-        # Eliminar todos los widgets del layout de contenido
-        while self.right_content_layout.count():
-            child = self.right_content_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-
-    def create_detailed_content(self):
-        """Crear el contenido del análisis detallado"""
-        content_frame = QFrame()
-        content_frame.setStyleSheet(f"""
-            QFrame {{
-                background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.05)};
-                border-radius: 8px;
-                padding: 10px;
-            }}
-        """)
-        
-        layout = QVBoxLayout(content_frame)
-        layout.setContentsMargins(10, 10, 10, 10)
-        
-        # Crear el TabWidget con las tres pestañas
-        from PyQt5.QtWidgets import QTabWidget
+        # Pestañas para diferentes análisis
         tab_widget = QTabWidget()
-        tab_widget.setStyleSheet(f"""
-            QTabWidget::pane {{
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-                border-radius: 4px;
-                background-color: {ColorPalette.PLATINUM};
-            }}
-            QTabBar::tab {{
-                background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-                padding: 8px 16px;
-                margin-right: 2px;
-                border-top-left-radius: 4px;
-                border-top-right-radius: 4px;
-            }}
-            QTabBar::tab:selected {{
-                background-color: {ColorPalette.YINMN_BLUE};
-                color: {ColorPalette.PLATINUM};
-                font-weight: bold;
-            }}
-            QTabBar::tab:hover {{
-                background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.7)};
-                color: {ColorPalette.PLATINUM};
-            }}
-        """)
         
         # Pestaña 1: Productos más vendidos
-        products_tab = self.create_products_analysis_tab()
+        products_tab = self.create_products_analysis_tab(start_date_copy, end_date_copy)
         tab_widget.addTab(products_tab, "🍽️ Productos Top")
         
         # Pestaña 2: Análisis por categorías
-        categories_tab = self.create_categories_analysis_tab()
+        categories_tab = self.create_categories_analysis_tab(start_date_copy, end_date_copy)
         tab_widget.addTab(categories_tab, "📁 Categorías")
         
         # Pestaña 3: Análisis horario
-        hours_tab = self.create_hours_analysis_tab()
+        hours_tab = self.create_hours_analysis_tab(start_date_copy, end_date_copy)
         tab_widget.addTab(hours_tab, "⏰ Tendencias Horarias")
         
         layout.addWidget(tab_widget)
         
-        return content_frame
+        # Botones de acción
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addStretch()
+        
+        close_btn = QPushButton("❌ Cerrar")
+        close_btn.clicked.connect(dialog.close)
+        buttons_layout.addWidget(close_btn)
+        
+        layout.addLayout(buttons_layout)
+        
+        # Mostrar diálogo
+        dialog.show()
+        print("✅ Ventana de análisis detallado abierta")
 
-    def create_products_analysis_tab(self):
+    def create_products_analysis_tab(self, start_date_widget, end_date_widget):
         """Crear pestaña de análisis de productos"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
@@ -186,29 +138,10 @@ class ReportsView(QWidget):
             "Precio Promedio", "Margen (%)", "Última Venta"
         ])
         
-        # Configurar estilo de tabla
-        products_table.setStyleSheet(f"""
-            QTableWidget {{
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-                border-radius: 4px;
-                background-color: {ColorPalette.PLATINUM};
-                gridline-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.2)};
-                selection-background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
-            }}
-            QHeaderView::section {{
-                background-color: {ColorPalette.YINMN_BLUE};
-                color: {ColorPalette.PLATINUM};
-                padding: 8px;
-                font-weight: bold;
-                border: none;
-                border-right: 1px solid {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.7)};
-            }}
-        """)
-        
         # Cargar datos
         try:
-            start_date = self.start_date.date().toPyDate()
-            end_date = self.end_date.date().toPyDate()
+            start_date = start_date_widget.date().toPyDate()
+            end_date = end_date_widget.date().toPyDate()
             
             products_data = self.reports_ctrl.get_top_products(start_date, end_date, limit=20)
             

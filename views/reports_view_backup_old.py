@@ -1,8 +1,8 @@
-# views/reports_view_simple.py
+# views/reports_view.py
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                              QLabel, QFrame, QGridLayout, QDateEdit, QComboBox,
                              QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView,
-                             QMessageBox, QFileDialog, QSplitter, QScrollArea, QDialog, QTabWidget)
+                             QMessageBox, QFileDialog, QSplitter, QScrollArea, QTabWidget, QStackedWidget)
 from PyQt5.QtCore import Qt, QDate, pyqtSignal, QTimer
 from PyQt5.QtGui import QFont, QColor, QPainter
 from utils.colors import ColorPalette
@@ -19,26 +19,50 @@ import os
 import traceback
 
 class ReportsView(QWidget):
-    """Vista principal de reportes con análisis detallado integrado"""
+    """Vista principal de reportes con análisis integrado"""
     
     def __init__(self, parent=None):
         super().__init__(parent)
         self.menu_ctrl = MenuController()
         self.order_ctrl = OrderController()
         self.reports_ctrl = ReportsController()
-        self.current_mode = "main"  # "main" o "detailed"
+        self.current_view = "main"  # "main" o "detailed"
         self.init_ui()
         self.load_initial_data()
 
     def init_ui(self):
-        """Configurar interfaz principal de reportes"""
+        """Configurar interfaz principal de reportes con vistas integradas"""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(10)
         
-        # Header con título y filtros
+        # Header con título y filtros (siempre visible)
         header_frame = self.create_header()
         layout.addWidget(header_frame)
+        
+        # Crear QStackedWidget para manejar las diferentes vistas
+        self.stacked_widget = QStackedWidget()
+        
+        # Vista principal: Dashboard con métricas y gráfico
+        main_view = self.create_main_view()
+        self.stacked_widget.addWidget(main_view)
+        
+        # Vista detallada: Análisis con tablas
+        detailed_view = self.create_detailed_view()
+        self.stacked_widget.addWidget(detailed_view)
+        
+        layout.addWidget(self.stacked_widget)
+        
+        # Estilo general
+        self.setStyleSheet(f"""
+            QWidget {{
+                background-color: {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.95)};
+            }}
+        """)
+
+    def create_main_view(self):
+        """Crear vista principal con métricas y gráfico"""
+        main_widget = QWidget()
         
         # Área principal con splitter
         splitter = QSplitter(Qt.Horizontal)
@@ -55,101 +79,62 @@ class ReportsView(QWidget):
         splitter.setStretchFactor(0, 1)  # Panel izquierdo
         splitter.setStretchFactor(1, 3)  # Panel derecho (más grande)
         splitter.setSizes([280, 840])
-            
+        
+        layout = QVBoxLayout(main_widget)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(splitter)
         
-        # Estilo general
-        self.setStyleSheet(f"""
-            QWidget {{
-                background-color: {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.95)};
-            }}
-        """)
+        return main_widget
 
-    def show_detailed_analysis(self):
-        """Alternar entre vista principal y análisis detallado"""
-        if self.current_mode == "main":
-            self.switch_to_detailed_mode()
-        else:
-            self.switch_to_main_mode()
-
-    def switch_to_detailed_mode(self):
-        """Cambiar al modo de análisis detallado"""
-        print("📊 Cambiando a modo detallado...")
-        self.current_mode = "detailed"
-        
-        # Limpiar el contenido actual del panel derecho
-        self.clear_right_panel_content()
-        
-        # Crear el contenido detallado
-        detailed_content = self.create_detailed_content()
-        self.right_content_layout.addWidget(detailed_content)
-        
-        # Actualizar el botón
-        self.details_btn.setText("� Volver a Gráficos")
-        print("✅ Modo detallado activado")
-
-    def switch_to_main_mode(self):
-        """Cambiar al modo principal con gráficos"""
-        print("📈 Cambiando a modo principal...")
-        self.current_mode = "main"
-        
-        # Limpiar el contenido actual del panel derecho
-        self.clear_right_panel_content()
-        
-        # Recrear el gráfico
-        charts_frame = self.create_charts_frame()
-        self.right_content_layout.addWidget(charts_frame)
-        
-        # Actualizar el botón
-        self.details_btn.setText("� Ver Análisis Detallado")
-        
-        # Recargar el gráfico
-        self.load_sales_chart()
-        print("✅ Modo principal activado")
-
-    def clear_right_panel_content(self):
-        """Limpiar el contenido del panel derecho"""
-        # Eliminar todos los widgets del layout de contenido
-        while self.right_content_layout.count():
-            child = self.right_content_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-
-    def create_detailed_content(self):
-        """Crear el contenido del análisis detallado"""
-        content_frame = QFrame()
-        content_frame.setStyleSheet(f"""
-            QFrame {{
-                background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.05)};
-                border-radius: 8px;
-                padding: 10px;
-            }}
-        """)
-        
-        layout = QVBoxLayout(content_frame)
+    def create_detailed_view(self):
+        """Crear vista detallada con análisis de tablas"""
+        detailed_widget = QWidget()
+        layout = QVBoxLayout(detailed_widget)
         layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(15)
         
-        # Crear el TabWidget con las tres pestañas
-        from PyQt5.QtWidgets import QTabWidget
-        tab_widget = QTabWidget()
-        tab_widget.setStyleSheet(f"""
+        # Botón para volver a la vista principal
+        back_layout = QHBoxLayout()
+        back_btn = QPushButton("⬅️ Volver al Dashboard")
+        back_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {ColorPalette.SILVER_LAKE_BLUE};
+                color: {ColorPalette.PLATINUM};
+                border: none;
+                padding: 8px 15px;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 12px;
+            }}
+            QPushButton:hover {{
+                background-color: {ColorPalette.YINMN_BLUE};
+            }}
+        """)
+        back_btn.clicked.connect(self.show_main_view)
+        back_layout.addWidget(back_btn)
+        back_layout.addStretch()
+        layout.addLayout(back_layout)
+        
+        # Pestañas para diferentes análisis
+        self.tab_widget = QTabWidget()
+        self.tab_widget.setStyleSheet(f"""
             QTabWidget::pane {{
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-                border-radius: 4px;
+                border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
                 background-color: {ColorPalette.PLATINUM};
+                border-radius: 8px;
             }}
             QTabBar::tab {{
-                background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-                padding: 8px 16px;
+                background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
+                color: {ColorPalette.RICH_BLACK};
+                padding: 8px 15px;
                 margin-right: 2px;
-                border-top-left-radius: 4px;
-                border-top-right-radius: 4px;
+                border-top-left-radius: 6px;
+                border-top-right-radius: 6px;
+                font-weight: bold;
             }}
             QTabBar::tab:selected {{
                 background-color: {ColorPalette.YINMN_BLUE};
                 color: {ColorPalette.PLATINUM};
-                font-weight: bold;
             }}
             QTabBar::tab:hover {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.7)};
@@ -159,21 +144,49 @@ class ReportsView(QWidget):
         
         # Pestaña 1: Productos más vendidos
         products_tab = self.create_products_analysis_tab()
-        tab_widget.addTab(products_tab, "🍽️ Productos Top")
+        self.tab_widget.addTab(products_tab, "🍽️ Productos Top")
         
         # Pestaña 2: Análisis por categorías
         categories_tab = self.create_categories_analysis_tab()
-        tab_widget.addTab(categories_tab, "📁 Categorías")
+        self.tab_widget.addTab(categories_tab, "📁 Categorías")
         
         # Pestaña 3: Análisis horario
         hours_tab = self.create_hours_analysis_tab()
-        tab_widget.addTab(hours_tab, "⏰ Tendencias Horarias")
+        self.tab_widget.addTab(hours_tab, "⏰ Tendencias Horarias")
         
-        layout.addWidget(tab_widget)
+        layout.addWidget(self.tab_widget)
         
-        return content_frame
+        return detailed_widget
 
-    def create_products_analysis_tab(self):
+    def show_main_view(self):
+        """Mostrar vista principal"""
+        self.current_view = "main"
+        self.stacked_widget.setCurrentIndex(0)
+        print("✅ Cambiado a vista principal")
+
+    def show_detailed_analysis(self):
+        """Mostrar análisis detallado en el mismo placeholder"""
+        print("📊 Cambiando a vista de análisis detallado...")
+        self.current_view = "detailed"
+        self.stacked_widget.setCurrentIndex(1)
+        
+        # Cargar datos en las tablas
+        self.load_detailed_data()
+        print("✅ Vista de análisis detallado cargada")
+
+    def load_detailed_data(self):
+        """Cargar datos para las tablas de análisis detallado"""
+        try:
+            # Cargar datos de productos
+            self.load_products_table()
+            # Cargar datos de categorías  
+            self.load_categories_table()
+            # Cargar datos de horas
+            self.load_hours_table()
+        except Exception as e:
+            print(f"Error cargando datos detallados: {e}")
+
+    def create_products_analysis_tab(self, start_date_widget, end_date_widget):
         """Crear pestaña de análisis de productos"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
@@ -186,29 +199,10 @@ class ReportsView(QWidget):
             "Precio Promedio", "Margen (%)", "Última Venta"
         ])
         
-        # Configurar estilo de tabla
-        products_table.setStyleSheet(f"""
-            QTableWidget {{
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
-                border-radius: 4px;
-                background-color: {ColorPalette.PLATINUM};
-                gridline-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.2)};
-                selection-background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
-            }}
-            QHeaderView::section {{
-                background-color: {ColorPalette.YINMN_BLUE};
-                color: {ColorPalette.PLATINUM};
-                padding: 8px;
-                font-weight: bold;
-                border: none;
-                border-right: 1px solid {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.7)};
-            }}
-        """)
-        
         # Cargar datos
         try:
-            start_date = self.start_date.date().toPyDate()
-            end_date = self.end_date.date().toPyDate()
+            start_date = start_date_widget.date().toPyDate()
+            end_date = end_date_widget.date().toPyDate()
             
             products_data = self.reports_ctrl.get_top_products(start_date, end_date, limit=20)
             
