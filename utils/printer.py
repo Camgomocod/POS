@@ -1,146 +1,528 @@
 # utils/printer.py
 import os
+import sys
+import platform
 import tempfile
 import subprocess
-import platform
 from datetime import datetime
+from typing import List, Dict, Optional, Tuple
+import json
 
-class ReceiptPrinter:
+# Dependencias específicas por plataforma
+try:
+    if platform.system() == "Windows":
+        import win32print
+        import win32api
+    else:
+        import cups
+except ImportError as e:
+    print(f"Warning: Platform-specific printing modules not available: {e}")
+
+class ThermalPrinter:
+    """Clase para manejar impresoras térmicas USB de 57mm con protocolo ESC/POS"""
+    
+    # Comandos ESC/POS básicos
+    ESC = b'\x1b'
+    GS = b'\x1d'
+    
+    # Comandos de control para impresoras térmicas 57mm
+    INIT = ESC + b'@'                    # Inicializar impresora
+    CUT_PAPER = GS + b'V\x41\x03'       # Cortar papel (full cut)
+    CUT_PAPER_PARTIAL = GS + b'V\x42\x03'  # Corte parcial
+    OPEN_DRAWER = ESC + b'p\x00\x19\xff'   # Abrir cajón (si existe)
+    
+    # Comandos de texto
+    BOLD_ON = ESC + b'E\x01'
+    BOLD_OFF = ESC + b'E\x00'
+    UNDERLINE_ON = ESC + b'-\x01'
+    UNDERLINE_OFF = ESC + b'-\x00'
+    ALIGN_LEFT = ESC + b'a\x00'
+    ALIGN_CENTER = ESC + b'a\x01'
+    ALIGN_RIGHT = ESC + b'a\x02'
+    
+    # Tamaños de fuente optimizados para 57mm
+    FONT_NORMAL = GS + b'!\x00'          # Fuente normal
+    FONT_DOUBLE_HEIGHT = GS + b'!\x01'   # Doble altura
+    FONT_DOUBLE_WIDTH = GS + b'!\x10'    # Doble ancho
+    FONT_DOUBLE_BOTH = GS + b'!\x11'     # Doble altura y ancho
+    FONT_SMALL = ESC + b'M\x01'          # Fuente pequeña
+    
+    # Configuración específica para papel de 57mm
+    PAPER_WIDTH_57MM = 42  # Caracteres para papel de 57mm
+    PRINT_WIDTH_48MM = 38  # Área de impresión de 48mm
+    
+    def __init__(self, printer_name: str = None, connection_type: str = "usb"):
+        self.printer_name = printer_name
+        self.connection_type = connection_type
+        self.config_file = "printer_config.json"
+        self.paper_width = self.PAPER_WIDTH_57MM
+        self.auto_cut = True
+        self.load_config()
+    
+    def load_config(self):
+        """Cargar configuración de impresora"""
+        try:
+            if os.path.exists(self.config_file):
+                with open(self.config_file, 'r') as f:
+                    config = json.load(f)
+                    self.printer_name = config.get('printer_name', self.printer_name)
+                    self.connection_type = config.get('connection_type', self.connection_type)
+                    self.paper_width = config.get('paper_width', self.PAPER_WIDTH_57MM)
+                    self.auto_cut = config.get('auto_cut', True)
+        except Exception as e:
+            print(f"Error loading printer config: {e}")
+            self.paper_width = self.PAPER_WIDTH_57MM
+            self.auto_cut = True
+    
+    def save_config(self, printer_name: str, connection_type: str = "usb", 
+                    paper_width: int = None, auto_cut: bool = True):
+        """Guardar configuración de impresora"""
+        if paper_width is None:
+            paper_width = self.PAPER_WIDTH_57MM
+            
+        config = {
+            'printer_name': printer_name,
+            'connection_type': connection_type,
+            'paper_width': paper_width,
+            'auto_cut': auto_cut
+        }
+        try:
+            with open(self.config_file, 'w') as f:
+                json.dump(config, f, indent=2)
+            self.printer_name = printer_name
+            self.connection_type = connection_type
+            self.paper_width = paper_width
+            self.auto_cut = auto_cut
+            return True
+        except Exception as e:
+            print(f"Error saving printer config: {e}")
+            return False
+    
+    @staticmethod
+    def get_available_printers() -> List[Dict[str, str]]:
+        """Obtener lista de impresoras USB disponibles según el SO"""
+        printers = []
+        system = platform.system()
+        
+        try:
+            if system == "Windows":
+                printers = ThermalPrinter._get_windows_printers()
+            elif system == "Linux":
+                printers = ThermalPrinter._get_linux_printers()
+            else:
+                # macOS o otros
+                printers = ThermalPrinter._get_cups_printers()
+        except Exception as e:
+            print(f"Error getting printers: {e}")
+        
+        return printers
+    
+    @staticmethod
+    def _get_windows_printers() -> List[Dict[str, str]]:
+        """Obtener impresoras USB en Windows"""
+        printers = []
+        try:
+            import win32print
+            printer_list = win32print.EnumPrinters(
+                win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS
+            )
+            
+            for printer in printer_list:
+                printer_name = printer[2]
+                
+                # Obtener información adicional de la impresora
+                try:
+                    printer_info = win32print.GetPrinter(
+                        win32print.OpenPrinter(printer_name), 2
+                    )
+                    port_name = printer_info.get('pPortName', '')
+                    
+                    # Filtrar solo impresoras USB
+                    if 'USB' in port_name.upper():
+                        is_thermal = ThermalPrinter._is_thermal_printer(printer_name)
+                        
+                        printers.append({
+                            'name': printer_name,
+                            'type': 'thermal' if is_thermal else 'standard',
+                            'connection': 'usb',
+                            'status': 'available',
+                            'port': port_name
+                        })
+                except Exception as e:
+                    print(f"Error getting printer info for {printer_name}: {e}")
+                    
+        except ImportError:
+            print("win32print not available")
+        except Exception as e:
+            print(f"Error enumerating Windows printers: {e}")
+        
+        return printers
+    
+    @staticmethod
+    def _get_linux_printers() -> List[Dict[str, str]]:
+        """Obtener impresoras USB en Linux usando CUPS"""
+        printers = []
+        try:
+            import cups
+            conn = cups.Connection()
+            printer_dict = conn.getPrinters()
+            
+            for name, attrs in printer_dict.items():
+                device_uri = attrs.get('device-uri', '')
+                
+                # Filtrar solo impresoras USB
+                if 'usb:' in device_uri.lower():
+                    is_thermal = ThermalPrinter._is_thermal_printer(
+                        name, attrs.get('printer-make-and-model', '')
+                    )
+                    
+                    printers.append({
+                        'name': name,
+                        'type': 'thermal' if is_thermal else 'standard',
+                        'connection': 'usb',
+                        'status': 'available' if attrs.get('printer-state') == 3 else 'offline',
+                        'description': attrs.get('printer-info', ''),
+                        'device_uri': device_uri
+                    })
+                    
+        except ImportError:
+            print("pycups not available")
+        except Exception as e:
+            print(f"Error enumerating Linux printers: {e}")
+        
+        return printers
+    
+    @staticmethod
+    def _get_cups_printers() -> List[Dict[str, str]]:
+        """Obtener impresoras usando CUPS (macOS/Unix)"""
+        return ThermalPrinter._get_linux_printers()
+    
+    @staticmethod
+    def _is_thermal_printer(name: str, model: str = "") -> bool:
+        """Detectar si una impresora es térmica basándose en el nombre/modelo"""
+        thermal_keywords = [
+            'thermal', 'receipt', 'pos', 'tm-', 'rp-', 'ct-', 'star',
+            'epson', 'bixolon', 'citizen', 'zebra', 'esc/pos', '57mm',
+            'thermal printer', 'receipt printer', 'pos printer'
+        ]
+        
+        search_text = f"{name} {model}".lower()
+        return any(keyword in search_text for keyword in thermal_keywords)
+    
+    def is_configured(self) -> bool:
+        """Verificar si hay una impresora configurada"""
+        return bool(self.printer_name and self.printer_name.strip())
+    
+    def print_receipt(self, order, payment_method: str = "efectivo") -> bool:
+        """Imprimir recibo de pago (solo si hay impresora configurada)"""
+        if not self.is_configured():
+            print("No thermal printer configured - skipping receipt printing")
+            return False
+            
+        try:
+            receipt_data = self._generate_thermal_receipt_57mm(order, payment_method)
+            return self._send_to_printer(receipt_data)
+        except Exception as e:
+            print(f"Error printing receipt: {e}")
+            return False
+    
+    def _generate_thermal_receipt_57mm(self, order, payment_method: str) -> bytes:
+        """Generar datos del recibo optimizado para papel de 57mm"""
+        data = bytearray()
+        
+        # Inicializar impresora
+        data.extend(self.INIT)
+        
+        # Header centrado con fuente más grande
+        data.extend(self.ALIGN_CENTER)
+        data.extend(self.FONT_DOUBLE_HEIGHT)
+        data.extend(self.BOLD_ON)
+        data.extend("FAST FOOD\n".encode('utf-8'))
+        data.extend("RESTAURANT\n".encode('utf-8'))
+        data.extend(self.BOLD_OFF)
+        data.extend(self.FONT_NORMAL)
+        
+        data.extend("Calle Principal #123\n".encode('utf-8'))
+        data.extend("Tel: (123) 456-7890\n".encode('utf-8'))
+        data.extend(self._line_separator_57mm())
+        
+        # Información de la orden
+        data.extend(self.ALIGN_LEFT)
+        data.extend(self.BOLD_ON)
+        data.extend("RECIBO DE PAGO\n".encode('utf-8'))
+        data.extend(self.BOLD_OFF)
+        
+        data.extend(f"Orden: #{order.id}\n".encode('utf-8'))
+        data.extend(f"Fecha: {order.created_at.strftime('%d/%m/%Y')}\n".encode('utf-8'))
+        data.extend(f"Hora: {order.created_at.strftime('%H:%M')}\n".encode('utf-8'))
+        data.extend(f"Cliente: {order.customer_name}\n".encode('utf-8'))
+        
+        if order.table_number:
+            data.extend(f"Mesa: {order.table_number}\n".encode('utf-8'))
+        else:
+            data.extend("Para llevar\n".encode('utf-8'))
+        
+        data.extend(self._line_separator_57mm(thin=True))
+        
+        # Items - Formato optimizado para 42 caracteres
+        data.extend(self.BOLD_ON)
+        data.extend("PRODUCTOS\n".encode('utf-8'))
+        data.extend(self.BOLD_OFF)
+        data.extend(self._line_separator_57mm(thin=True))
+        
+        total = 0
+        for item in order.items:
+            product = item.product
+            quantity = item.quantity
+            subtotal = float(product.price) * quantity
+            total += subtotal
+            
+            # Nombre del producto (truncar si es muy largo)
+            product_name = product.name
+            if len(product_name) > 38:
+                product_name = product_name[:35] + "..."
+            data.extend(f"{product_name}\n".encode('utf-8'))
+            
+            # Cantidad x precio = subtotal
+            qty_price = f"{quantity} x ${float(product.price):.2f}"
+            subtotal_text = f"${subtotal:.2f}"
+            
+            # Calcular espacios para alineación (máximo 42 caracteres)
+            max_width = 42
+            spacing_needed = max_width - len(qty_price) - len(subtotal_text)
+            spacing = " " * max(1, spacing_needed)
+            
+            line = qty_price + spacing + subtotal_text + "\n"
+            data.extend(line.encode('utf-8'))
+        
+        data.extend(self._line_separator_57mm())
+        
+        # Total con fuente grande
+        data.extend(self.ALIGN_CENTER)
+        data.extend(self.FONT_DOUBLE_HEIGHT)
+        data.extend(self.BOLD_ON)
+        data.extend(f"TOTAL: ${total:.2f}\n".encode('utf-8'))
+        data.extend(self.BOLD_OFF)
+        data.extend(self.FONT_NORMAL)
+        
+        # Método de pago
+        data.extend(self.ALIGN_LEFT)
+        payment_methods = {
+            'efectivo': '💵 EFECTIVO',
+            'transferencia': '🏦 TRANSFERENCIA',
+            'tarjeta': '💳 TARJETA'
+        }
+        payment_display = payment_methods.get(payment_method, payment_method.upper())
+        data.extend(f"Pago: {payment_display}\n".encode('utf-8'))
+        
+        data.extend(self._line_separator_57mm())
+        
+        # Footer
+        data.extend(self.ALIGN_CENTER)
+        data.extend("¡Gracias por su compra!\n".encode('utf-8'))
+        data.extend("Vuelva pronto\n".encode('utf-8'))
+        data.extend(f"\n{datetime.now().strftime('%d/%m/%Y %H:%M')}\n".encode('utf-8'))
+        
+        # Espacios finales
+        data.extend("\n\n".encode('utf-8'))
+        
+        # Corte automático si está habilitado
+        if self.auto_cut:
+            data.extend(self.CUT_PAPER)
+        else:
+            data.extend("\n\n\n".encode('utf-8'))  # Espacios extra para corte manual
+        
+        return bytes(data)
+    
+    def _line_separator_57mm(self, thin: bool = False) -> bytes:
+        """Generar línea separadora optimizada para 57mm"""
+        char = "-" if thin else "="
+        line = char * 42 + "\n"  # 42 caracteres para papel de 57mm
+        return line.encode('utf-8')
+    
+    def _send_to_printer(self, data: bytes) -> bool:
+        """Enviar datos a la impresora USB"""
+        if not self.printer_name:
+            print("No printer configured")
+            return False
+        
+        try:
+            system = platform.system()
+            
+            if system == "Windows":
+                return self._print_windows_usb(data)
+            else:
+                return self._print_linux_usb(data)
+                
+        except Exception as e:
+            print(f"Error sending to printer: {e}")
+            return False
+    
+    def _print_windows_usb(self, data: bytes) -> bool:
+        """Imprimir en Windows via USB"""
+        try:
+            import win32print
+            import win32api
+            
+            # Abrir impresora
+            printer_handle = win32print.OpenPrinter(self.printer_name)
+            
+            try:
+                # Iniciar trabajo de impresión con datos RAW
+                job_info = ("Recibo POS", None, "RAW")
+                job_id = win32print.StartDocPrinter(printer_handle, 1, job_info)
+                
+                try:
+                    win32print.StartPagePrinter(printer_handle)
+                    win32print.WritePrinter(printer_handle, data)
+                    win32print.EndPagePrinter(printer_handle)
+                finally:
+                    win32print.EndDocPrinter(printer_handle)
+                    
+            finally:
+                win32print.ClosePrinter(printer_handle)
+            
+            return True
+            
+        except Exception as e:
+            print(f"Windows USB print error: {e}")
+            return False
+    
+    def _print_linux_usb(self, data: bytes) -> bool:
+        """Imprimir en Linux via USB usando CUPS"""
+        try:
+            # Crear archivo temporal con datos ESC/POS
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.prn') as temp_file:
+                temp_file.write(data)
+                temp_filename = temp_file.name
+            
+            try:
+                # Usar lp command con parámetros específicos para datos RAW
+                cmd = [
+                    'lp', 
+                    '-d', self.printer_name,
+                    '-o', 'raw',
+                    '-o', 'media=Custom.57x297mm',  # Papel de 57mm
+                    temp_filename
+                ]
+                
+                result = subprocess.run(
+                    cmd, 
+                    capture_output=True, 
+                    text=True, 
+                    timeout=30
+                )
+                
+                if result.returncode == 0:
+                    return True
+                else:
+                    print(f"lp command failed: {result.stderr}")
+                    return False
+                    
+            finally:
+                # Limpiar archivo temporal
+                try:
+                    os.unlink(temp_filename)
+                except:
+                    pass
+            
+        except subprocess.TimeoutExpired:
+            print("Print timeout")
+            return False
+        except Exception as e:
+            print(f"Linux USB print error: {e}")
+            return False
+    
+    def test_print(self) -> bool:
+        """Imprimir página de prueba para impresora de 57mm"""
+        if not self.is_configured():
+            return False
+            
+        try:
+            test_data = self._generate_test_page_57mm()
+            return self._send_to_printer(test_data)
+        except Exception as e:
+            print(f"Test print error: {e}")
+            return False
+    
+    def _generate_test_page_57mm(self) -> bytes:
+        """Generar página de prueba optimizada para 57mm"""
+        data = bytearray()
+        
+        data.extend(self.INIT)
+        data.extend(self.ALIGN_CENTER)
+        data.extend(self.FONT_DOUBLE_HEIGHT)
+        data.extend(self.BOLD_ON)
+        data.extend("PRUEBA DE\n".encode('utf-8'))
+        data.extend("IMPRESION\n".encode('utf-8'))
+        data.extend(self.BOLD_OFF)
+        data.extend(self.FONT_NORMAL)
+        
+        data.extend(self._line_separator_57mm())
+        data.extend(self.ALIGN_LEFT)
+        data.extend(f"Impresora: {self.printer_name}\n".encode('utf-8'))
+        data.extend(f"Papel: 57mm\n".encode('utf-8'))
+        data.extend(f"Ancho: {self.paper_width} chars\n".encode('utf-8'))
+        data.extend(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}\n".encode('utf-8'))
+        data.extend(self._line_separator_57mm())
+        
+        data.extend("Si puede leer este texto,\n".encode('utf-8'))
+        data.extend("la impresora funciona\n".encode('utf-8'))
+        data.extend("correctamente.\n".encode('utf-8'))
+        
+        data.extend(self._line_separator_57mm(thin=True))
+        data.extend("Caracteres de prueba:\n".encode('utf-8'))
+        data.extend("áéíóú ñÑ ¿¡ $ €\n".encode('utf-8'))
+        
+        data.extend("\n\n".encode('utf-8'))
+        
+        if self.auto_cut:
+            data.extend(self.CUT_PAPER)
+        else:
+            data.extend("\n\n\n".encode('utf-8'))
+        
+        return bytes(data)
+
+
+# Clase de compatibilidad hacia atrás
+class ReceiptPrinter(ThermalPrinter):
+    """Clase para compatibilidad con código existente"""
+    
     def __init__(self):
+        super().__init__()
         self.restaurant_name = "FAST FOOD RESTAURANT"
         self.restaurant_address = "Calle Principal #123"
         self.restaurant_phone = "Tel: (123) 456-7890"
     
     def print_receipt(self, order, cart_items):
-        """Generar e imprimir recibo"""
-        receipt_content = self.generate_receipt_content(order, cart_items)
-        
-        # Guardar en archivo temporal
-        temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False)
-        temp_file.write(receipt_content)
-        temp_file.close()
-        
-        # Abrir con el programa predeterminado (para imprimir) sin usar terminal
-        try:
-            self._open_file(temp_file.name)
-        except Exception as e:
-            print(f"Error al abrir recibo: {e}")
-        
-        return temp_file.name
-    
-    def _open_file(self, filepath):
-        """Abrir archivo de forma segura según el SO"""
-        system = platform.system()
-        
-        if system == "Windows":
-            os.startfile(filepath)
-        elif system == "Darwin":  # macOS
-            subprocess.run(['open', filepath], check=False)
-        else:  # Linux
-            # Usar subprocess sin shell para evitar problemas de terminal
-            subprocess.run(['xdg-open', filepath], check=False, 
-                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        """Método de compatibilidad - solo imprime si hay impresora configurada"""
+        # Si no hay impresora configurada, no hacer nada (no mostrar txt)
+        if not self.is_configured():
+            return None
+            
+        # Si hay impresora configurada, usar el método térmico
+        if hasattr(order, 'items') and order.items:
+            return super().print_receipt(order)
+        else:
+            # Crear items mock para compatibilidad
+            class MockItem:
+                def __init__(self, product, quantity):
+                    self.product = product
+                    self.quantity = quantity
+            
+            mock_items = [MockItem(item['product'], item['quantity']) for item in cart_items]
+            order.items = mock_items
+            
+            return super().print_receipt(order)
     
     def generate_receipt_content(self, order, cart_items):
-        """Generar contenido del recibo"""
-        content = []
-        
-        # Encabezado
-        content.append("=" * 40)
-        content.append(f"{self.restaurant_name:^40}")
-        content.append(f"{self.restaurant_address:^40}")
-        content.append(f"{self.restaurant_phone:^40}")
-        content.append("=" * 40)
-        content.append("")
-        
-        # Información de la orden
-        content.append(f"Orden #: {order.id}")
-        content.append(f"Fecha: {order.created_at.strftime('%d/%m/%Y %H:%M:%S')}")
-        content.append("")
-        content.append("-" * 40)
-        content.append("PRODUCTOS")
-        content.append("-" * 40)
-        
-        # Items
-        for item in cart_items:
-            product = item['product']
-            quantity = item['quantity']
-            subtotal = product.price * quantity
-            
-            content.append(f"{product.name}")
-            content.append(f"  {quantity} x ${product.price:.2f} = ${subtotal:.2f}")
-            content.append("")
-        
-        # Total
-        content.append("-" * 40)
-        content.append(f"{'TOTAL:':>30} ${order.total:.2f}")
-        content.append("=" * 40)
-        content.append("")
-        content.append("¡Gracias por su compra!")
-        content.append("Vuelva pronto")
-        content.append("")
-        
-        return "\n".join(content)
+        """Método heredado - ya no se usa para archivos txt"""
+        return ""
     
     def print_order_ticket(self, order, cart_items):
-        """Generar e imprimir ticket de orden (sin pago)"""
-        ticket_content = self.generate_order_ticket_content(order, cart_items)
-        
-        # Guardar en archivo temporal
-        temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False)
-        temp_file.write(ticket_content)
-        temp_file.close()
-        
-        # Abrir con el programa predeterminado
-        try:
-            self._open_file(temp_file.name)
-        except Exception as e:
-            print(f"Error al abrir ticket: {e}")
-        
-        return temp_file.name
-    
-    def generate_order_ticket_content(self, order, cart_items):
-        """Generar contenido del ticket de orden"""
-        content = []
-        
-        # Encabezado
-        content.append("=" * 40)
-        content.append(f"{self.restaurant_name:^40}")
-        content.append(f"{self.restaurant_address:^40}")
-        content.append(f"{self.restaurant_phone:^40}")
-        content.append("=" * 40)
-        content.append("")
-        content.append("TICKET DE ORDEN")
-        content.append(f"Orden #: {order.id}")
-        content.append(f"Cliente: {order.customer_name}")
-        if order.table_number:
-            content.append(f"Mesa: {order.table_number}")
-        else:
-            content.append("Para llevar")
-        content.append(f"Fecha: {order.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
-        content.append("")
-        content.append("-" * 40)
-        content.append("ITEMS PEDIDOS:")
-        content.append("-" * 40)
-        
-        # Items
-        for item_data in cart_items:
-            product = item_data['product']
-            quantity = item_data['quantity']
-            subtotal = product.price * quantity
-            content.append(f"{product.name}")
-            content.append(f"  {quantity} x ${product.price:.2f} = ${subtotal:.2f}")
-            content.append("")
-        
-        # Total
-        content.append("-" * 40)
-        content.append(f"{'TOTAL A PAGAR:':>30} ${order.total:.2f}")
-        content.append("=" * 40)
-        content.append("")
-        content.append("ESTADO: PENDIENTE DE PREPARAR")
-        content.append("El pago se realizará al final del servicio")
-        content.append("")
-        content.append("¡Gracias por su pedido!")
-        content.append("")
-        
-        return "\n".join(content)
+        """Imprimir ticket de orden solo si hay impresora configurada"""
+        if not self.is_configured():
+            return None
+            
+        # Para tickets de orden, usar el mismo formato que recibos
+        return self.print_receipt(order, cart_items)

@@ -7,6 +7,7 @@ from controllers.order_controller import OrderController
 from models.order import OrderStatus
 from datetime import datetime
 from utils.colors import ColorPalette, CommonStyles
+from utils.printer import ThermalPrinter
 
 class OrderCard(QFrame):
     """Widget individual para mostrar cada pedido como sticky note mejorado"""
@@ -1032,6 +1033,27 @@ class KitchenOrdersView(QWidget):
                 
                 # Procesar el pago
                 self.order_controller.complete_payment(order_id, customer_info['payment_method'])
+                
+                # Intentar imprimir recibo térmico automáticamente
+                try:
+                    printer = ThermalPrinter()
+                    if printer.is_configured():
+                        # Obtener orden actualizada con todos los items
+                        updated_order = self.order_controller.get_order_details(order_id)
+                        if updated_order and updated_order.items:
+                            print_success = printer.print_receipt(updated_order, customer_info['payment_method'])
+                            
+                            if print_success:
+                                print(f"Recibo térmico impreso para orden #{order_id}")
+                            else:
+                                print(f"Error al imprimir recibo térmico para orden #{order_id}")
+                        else:
+                            print(f"No se pudieron obtener items de la orden #{order_id}")
+                    else:
+                        print("No hay impresora térmica configurada - impresión omitida")
+                except Exception as e:
+                    print(f"Error en impresión térmica: {e}")
+                    # Continuar sin interrumpir el flujo de pago
                 
                 # Actualizar la vista
                 self.load_orders()

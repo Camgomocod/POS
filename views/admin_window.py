@@ -12,6 +12,7 @@ from controllers.auth_controller import AuthController
 from views.user_management_window import UserManagementWidget
 from views.menu_management_window import MenuManagementWidget
 from views.reports_view import ReportsView
+from views.printer_config_view import PrinterConfigView
 from datetime import datetime, timedelta
 import sys
 import time
@@ -561,9 +562,9 @@ class AdminWindow(QMainWindow):
         self.reports_widget = ReportsView()
         self.content_tabs.addTab(self.reports_widget, "📊 Reportes")
         
-        # Pestaña placeholder para configuración
-        config_placeholder = self.create_placeholder_tab("⚙️", "Configuración", "Configuración del sistema")
-        self.content_tabs.addTab(config_placeholder, "⚙️ Configuración")
+        # Pestaña Configuración - Impresoras
+        self.printer_config_widget = PrinterConfigView()
+        self.content_tabs.addTab(self.printer_config_widget, "⚙️ Configuración")
         
         main_layout.addWidget(self.content_tabs)
         
