@@ -2,7 +2,25 @@
 
 ## 📋 Resumen
 
-Se ha implementado soporte completo para impresoras térmicas USB de 57mm con protocolo ESC/POS para generar recibos automáticamente cuando se procesan pagos en el sistema POS.
+Se ha implementado soporte com### 1️⃣ Configuración Inicial
+
+1. **Conectar impresora**: Conecte la impresora térmica USB al sistema
+2. **Instalar drivers**: Asegúrese de que los drivers estén instalados
+3. **Abrir panel de administración**: Ir a "⚙️ Configuración"
+4. **Detectar impresoras**: Hacer clic en "🔄 Buscar" en la columna izquierda
+5. **Seleccionar impresora**: Hacer clic en "📌" en la tabla de la derecha
+6. **Probar impresión**: Usar "🧪 Test" para verificar funcionamiento
+7. **Ajustar configuración**: Modificar ancho y corte en la fila inferior
+8. **Guardar**: Hacer clic en "💾 Guardar Configuración"
+
+### 1️⃣.1 Gestión de Datos (NUEVO)
+
+En la misma pantalla de configuración, ahora disponible:
+
+1. **📊 Información de BD**: Visualizar tamaño actual de la base de datos
+2. **📁 Crear Respaldo**: Generar respaldo automático con timestamp en `data/`
+3. **💾 Exportar Base de Datos**: Exportar BD a ubicación personalizada
+4. **🔍 Verificar Integridad**: Comprobar estado y estadísticas de la BD impresoras térmicas USB de 57mm con protocolo ESC/POS para generar recibos automáticamente cuando se procesan pagos en el sistema POS.
 
 ## 🎯 Características Implementadas
 
@@ -51,6 +69,10 @@ Se ha implementado soporte completo para impresoras térmicas USB de 57mm con pr
 - **Botones compactos**: Iconos más pequeños y texto reducido
 - **Estado visual**: Indicadores de impresora configurada en formato compacto
 - **Configuración en línea**: Parámetros avanzados en una sola fila horizontal
+- **✅ NUEVO**: Gestión de datos integrada con 3 funciones principales:
+  - 📁 **Crear Respaldo**: Genera respaldo automático en directorio `data/`
+  - 💾 **Exportar Base de Datos**: Permite seleccionar ubicación de exportación
+  - 🔍 **Verificar Integridad**: Verifica estado y estadísticas de la BD
 
 #### `views/kitchen_orders_window.py`
 
@@ -224,14 +246,17 @@ pip install pycups
 - Layout en 2 columnas para mejor aprovechamiento del espacio
 - Controles compactos con iconos intuitivos
 - Configuración rápida en una sola pantalla
+- **✅ NUEVO**: Gestión integrada de base de datos con respaldos automáticos
 
 ## 🎯 Próximos Pasos Sugeridos
 
 1. **Prueba con impresora real**: Conectar impresora térmica USB de 57mm
 2. **Configuración inicial**: Seguir pasos de configuración
-3. **Pruebas operativas**: Procesar varios pagos de prueba
-4. **Personalización**: Modificar header del restaurante en `printer.py`
-5. **Capacitación**: Entrenar personal en uso del sistema
+3. **✅ NUEVO - Crear respaldo**: Usar "📁 Crear Respaldo" antes de operaciones
+4. **Pruebas operativas**: Procesar varios pagos de prueba
+5. **Personalización**: Modificar header del restaurante en `printer.py`
+6. **✅ NUEVO - Exportar datos**: Usar "💾 Exportar BD" para respaldos externos
+7. **Capacitación**: Entrenar personal en uso del sistema
 
 ## 📞 Soporte
 

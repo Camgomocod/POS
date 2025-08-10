@@ -300,7 +300,7 @@ class ProductFormDialog(QDialog):
         """Configurar interfaz del diálogo"""
         title = "Editar Producto" if self.is_edit else "Nuevo Producto"
         self.setWindowTitle(title)
-        self.setMinimumSize(520, 560)  # reemplaza setFixedSize para permitir mejor auto-ajuste
+        self.setMinimumSize(520, 650)  # reemplaza setFixedSize para permitir mejor auto-ajuste
         self.setModal(True)
         
         layout = QVBoxLayout(self)
@@ -363,22 +363,23 @@ class ProductFormDialog(QDialog):
         layout.addStretch()
         return header_frame
     
+    # para crear un plato 
     def create_form(self):
         """Crear formulario (layout reorganizado)"""
         form_frame = QFrame()
         form_frame.setStyleSheet(f"""
             QFrame {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.95)};
-                padding: 12px;
+                padding: 10px;
                 border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
                 border-radius: 8px;
             }}
         """)
         
         grid = QGridLayout(form_frame)
-        grid.setContentsMargins(15, 15, 15, 15)
-        grid.setHorizontalSpacing(14)
-        grid.setVerticalSpacing(10)
+        grid.setContentsMargins(5, 5, 5, 5)
+        grid.setHorizontalSpacing(7)
+        grid.setVerticalSpacing(5)
         
         def make_label(text):
             lbl = QLabel(text)
@@ -388,6 +389,7 @@ class ProductFormDialog(QDialog):
                     font-weight: 600;
                     color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.85)};
                     padding-left: 2px;
+                    min-height: 20px;
                 }}
             """)
             return lbl
@@ -467,10 +469,10 @@ class ProductFormDialog(QDialog):
         """Aplicar estilo a inputs"""
         widget.setStyleSheet(f"""
             QLineEdit {{
-                padding: 10px 15px;
+                padding: 5px 7px;
                 border: 2px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
                 border-radius: 8px;
-                font-size: 14px;
+                font-size: 12px;
                 background-color: {ColorPalette.PLATINUM};
                 color: {ColorPalette.RICH_BLACK};
             }}
@@ -484,13 +486,13 @@ class ProductFormDialog(QDialog):
         """Aplicar estilo a combobox"""
         widget.setStyleSheet(f"""
             QComboBox {{
-                padding: 10px 15px;
+                padding: 5px 7px;
                 border: 2px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
                 border-radius: 8px;
-                font-size: 14px;
+                font-size: 12px;
                 background-color: {ColorPalette.PLATINUM};
                 color: {ColorPalette.RICH_BLACK};
-                min-width: 150px;
+                min-width: 100px;
             }}
             QComboBox:focus {{
                 border-color: {ColorPalette.YINMN_BLUE};
@@ -501,10 +503,10 @@ class ProductFormDialog(QDialog):
         """Aplicar estilo a spinbox"""
         widget.setStyleSheet(f"""
             QSpinBox, QDoubleSpinBox {{
-                padding: 10px 15px;
+                padding: 5px 7px;
                 border: 2px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
                 border-radius: 8px;
-                font-size: 14px;
+                font-size: 12px;
                 background-color: {ColorPalette.PLATINUM};
                 color: {ColorPalette.RICH_BLACK};
             }}
@@ -517,10 +519,10 @@ class ProductFormDialog(QDialog):
         """Aplicar estilo a text edit"""
         widget.setStyleSheet(f"""
             QTextEdit {{
-                padding: 10px 15px;
+                padding: 5px 7px;
                 border: 2px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.3)};
                 border-radius: 8px;
-                font-size: 14px;
+                font-size: 12px;
                 background-color: {ColorPalette.PLATINUM};
                 color: {ColorPalette.RICH_BLACK};
             }}
@@ -536,7 +538,7 @@ class ProductFormDialog(QDialog):
             QCheckBox {{
                 color: {ColorPalette.RICH_BLACK};
                 font-weight: 500;
-                font-size: 14px;
+                font-size: 12px;
             }}
             QCheckBox::indicator {{
                 width: 18px;
@@ -568,10 +570,10 @@ class ProductFormDialog(QDialog):
                 background-color: {ColorPalette.with_alpha(ColorPalette.ERROR, 0.1)};
                 color: {ColorPalette.ERROR};
                 border: 2px solid {ColorPalette.ERROR};
-                padding: 8px 20px;
+                padding: 4px 10px;
                 border-radius: 8px;
                 font-weight: bold;
-                font-size: 14px;
+                font-size: 12px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.ERROR};
@@ -592,10 +594,10 @@ class ProductFormDialog(QDialog):
                 background-color: {ColorPalette.YINMN_BLUE};
                 color: {ColorPalette.PLATINUM};
                 border: none;
-                padding: 8px 20px;
+                padding: 4px 10px;
                 border-radius: 8px;
                 font-weight: bold;
-                font-size: 14px;
+                font-size: 12px;
                 min-width: 120px;
             }}
             QPushButton:hover {{

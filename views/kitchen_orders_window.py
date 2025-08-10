@@ -909,7 +909,7 @@ class KitchenOrdersView(QWidget):
             self.refresh_btn.setEnabled(True)
     
     def update_order_status(self, order_id, new_status):
-        """Actualizar estado de un pedido con mejor feedback"""
+        """Actualizar estado de un pedido con feedback visual discreto"""
         try:
             # Mostrar feedback inmediato
             self.connection_status.setText("🟡 Actualizando...")
@@ -922,7 +922,7 @@ class KitchenOrdersView(QWidget):
             self.order_controller.update_order_status(order_id, new_status)
             self.load_orders()  # Recargar vista
             
-            # Feedback de éxito
+            # Feedback de éxito discreto
             self.connection_status.setText("🟢 Conectado")
             self.connection_status.setStyleSheet(f"""
                 font-size: 10px;
@@ -930,44 +930,20 @@ class KitchenOrdersView(QWidget):
                 font-weight: bold;
             """)
             
-            # Mostrar notificación mejorada
+            # Actualizar footer con información de último cambio (feedback discreto)
             status_text = {
                 OrderStatus.PREPARING: "iniciado",
-                OrderStatus.READY: "completado y listo para entregar",
+                OrderStatus.READY: "completado y listo",
                 OrderStatus.DELIVERED: "entregado",
                 OrderStatus.CANCELLED: "cancelado"
             }.get(new_status, "actualizado")
             
-            # Crear diálogo de confirmación personalizado
-            msg = QMessageBox(self)
-            msg.setWindowTitle("✅ Estado Actualizado")
-            msg.setText(f"Pedido #{order_id} {status_text} correctamente")
-            msg.setIcon(QMessageBox.Information)
+            # Mostrar feedback temporal en el footer
+            current_time = datetime.now().strftime("%H:%M")
+            self.footer_info.setText(f"✅ Pedido #{order_id} {status_text} a las {current_time}")
             
-            # Personalizar el estilo del mensaje
-            msg.setStyleSheet(f"""
-                QMessageBox {{
-                    background-color: {ColorPalette.PLATINUM};
-                    color: {ColorPalette.RICH_BLACK};
-                    font-size: 12px;
-                }}
-                QMessageBox QPushButton {{
-                    background-color: {ColorPalette.SUCCESS};
-                    color: #ffffff;
-                    border: none;
-                    padding: 8px 16px;
-                    border-radius: 6px;
-                    font-weight: bold;
-                    min-width: 60px;
-                }}
-                QMessageBox QPushButton:hover {{
-                    background-color: {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.8)};
-                }}
-            """)
-            
-            # Auto-cerrar después de 2 segundos
-            msg.show()
-            QTimer.singleShot(2000, msg.close)
+            # Restaurar texto original del footer después de 5 segundos
+            QTimer.singleShot(5000, lambda: self.footer_info.setText("Sistema POS - Vista de Cocina"))
             
         except Exception as e:
             # Feedback de error
@@ -978,7 +954,7 @@ class KitchenOrdersView(QWidget):
                 font-weight: bold;
             """)
             
-            # Diálogo de error personalizado
+            # Solo mostrar ventana emergente para errores
             error_msg = QMessageBox(self)
             error_msg.setWindowTitle("❌ Error")
             error_msg.setText(f"Error al actualizar estado del pedido #{order_id}")
@@ -1058,7 +1034,7 @@ class KitchenOrdersView(QWidget):
                 # Actualizar la vista
                 self.load_orders()
                 
-                # Mostrar confirmación
+                # Feedback discreto de pago exitoso
                 payment_methods = {
                     'efectivo': '💵 Efectivo',
                     'transferencia': '🏦 Transferencia',
@@ -1066,14 +1042,12 @@ class KitchenOrdersView(QWidget):
                 }
                 payment_display = payment_methods.get(customer_info['payment_method'], customer_info['payment_method'])
                 
-                QMessageBox.information(
-                    self, 
-                    "✅ Pago Procesado", 
-                    f"Pago de la orden #{order_id} procesado exitosamente.\n"
-                    f"Cliente: {customer_info['name']}\n"
-                    f"Total: ${order.total:,.0f}\n"
-                    f"Método: {payment_display}"
-                )
+                # Mostrar feedback temporal en el footer
+                current_time = datetime.now().strftime("%H:%M")
+                self.footer_info.setText(f"💰 Pago procesado - Orden #{order_id} | {payment_display} | ${order.total:,.0f} | {current_time}")
+                
+                # Restaurar texto original del footer después de 7 segundos
+                QTimer.singleShot(7000, lambda: self.footer_info.setText("Sistema POS - Vista de Cocina"))
                 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error al procesar el pago:\n{str(e)}")

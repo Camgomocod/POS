@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame,
     QTableWidget, QTableWidgetItem, QMessageBox, QApplication,
     QAbstractItemView, QHeaderView, QProgressBar, QTextEdit,
-    QGroupBox, QFormLayout, QSpinBox, QComboBox, QCheckBox
+    QGroupBox, QFormLayout, QSpinBox, QComboBox, QCheckBox, QFileDialog
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt5.QtGui import QFont, QColor
@@ -11,6 +11,8 @@ from utils.colors import ColorPalette
 from utils.printer import ThermalPrinter
 import json
 import os
+import shutil
+from datetime import datetime
 
 class PrinterDetectionThread(QThread):
     """Thread para detectar impresoras sin bloquear la UI"""
@@ -90,6 +92,10 @@ class PrinterConfigView(QWidget):
         content_layout.addLayout(right_column, 2)  # 60% del ancho
         
         main_layout.addLayout(content_layout)
+        
+        # Gestión de datos en una fila completa
+        data_management_group = self.create_data_management_section()
+        main_layout.addWidget(data_management_group)
         
         # Configuración avanzada en una fila completa al final
         advanced_group = self.create_advanced_config_section()
@@ -318,6 +324,93 @@ class PrinterConfigView(QWidget):
             }}
         """)
     
+    def create_data_management_section(self):
+        """Crear sección de gestión de datos"""
+        group = QGroupBox("💾 Gestión de Datos")
+        group.setStyleSheet(f"""
+            QGroupBox {{
+                font-size: 13px;
+                font-weight: bold;
+                color: {ColorPalette.RICH_BLACK};
+                border: 1px solid {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
+                border-radius: 6px;
+                margin-top: 8px;
+                padding: 10px;
+                background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.05)};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: 8px;
+                padding: 0 8px 0 8px;
+                background-color: {ColorPalette.PLATINUM};
+                border-radius: 3px;
+            }}
+        """)
+        
+        # Layout horizontal para una sola fila
+        main_layout = QHBoxLayout(group)
+        main_layout.setSpacing(15)
+        
+        # Información de base de datos
+        info_layout = QVBoxLayout()
+        info_layout.setSpacing(3)
+        
+        db_info_label = QLabel("📊 Base de Datos del Sistema")
+        db_info_label.setStyleSheet(f"font-size: 11px; font-weight: bold; color: {ColorPalette.RICH_BLACK};")
+        info_layout.addWidget(db_info_label)
+        
+        # Mostrar información de la BD
+        db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "pos.db")
+        if os.path.exists(db_path):
+            db_size = os.path.getsize(db_path) / (1024 * 1024)  # MB
+            db_size_text = f"Tamaño: {db_size:.1f} MB"
+        else:
+            db_size_text = "Base de datos no encontrada"
+        
+        self.db_info_label = QLabel(db_size_text)
+        self.db_info_label.setStyleSheet(f"""
+            font-size: 10px; 
+            color: {ColorPalette.with_alpha(ColorPalette.RICH_BLACK, 0.6)};
+            padding: 4px;
+            background-color: {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.1)};
+            border-radius: 3px;
+        """)
+        info_layout.addWidget(self.db_info_label)
+        
+        main_layout.addLayout(info_layout)
+        
+        # Espaciador
+        main_layout.addStretch()
+        
+        # Botones de gestión
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(10)
+        
+        # Botón crear respaldo
+        backup_btn = QPushButton("📁 Crear Respaldo")
+        backup_btn.setFixedHeight(32)
+        backup_btn.setStyleSheet(self.get_compact_button_style(ColorPalette.WARNING))
+        backup_btn.clicked.connect(self.create_database_backup)
+        buttons_layout.addWidget(backup_btn)
+        
+        # Botón exportar BD
+        export_btn = QPushButton("💾 Exportar Base de Datos")
+        export_btn.setFixedHeight(32)
+        export_btn.setStyleSheet(self.get_compact_button_style(ColorPalette.YINMN_BLUE))
+        export_btn.clicked.connect(self.export_database)
+        buttons_layout.addWidget(export_btn)
+        
+        # Botón verificar BD
+        verify_btn = QPushButton("🔍 Verificar Integridad")
+        verify_btn.setFixedHeight(32)
+        verify_btn.setStyleSheet(self.get_compact_button_style(ColorPalette.SUCCESS))
+        verify_btn.clicked.connect(self.verify_database)
+        buttons_layout.addWidget(verify_btn)
+        
+        main_layout.addLayout(buttons_layout)
+        
+        return group
+
     def create_advanced_config_section(self):
         """Crear sección de configuración avanzada"""
         group = QGroupBox("⚙️ Configuración")
@@ -830,3 +923,176 @@ class PrinterConfigView(QWidget):
                 "❌ Error",
                 f"Error al guardar configuración:\n{str(e)}"
             )
+
+    def create_database_backup(self):
+        """Crear respaldo de la base de datos en el directorio del proyecto"""
+        try:
+            # Ruta de la base de datos actual
+            project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            db_path = os.path.join(project_dir, "data", "pos.db")
+            
+            if not os.path.exists(db_path):
+                QMessageBox.warning(
+                    self,
+                    "❌ Error",
+                    "No se encontró la base de datos en:\n" + db_path
+                )
+                return
+            
+            # Crear nombre del respaldo con timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_filename = f"pos_backup_{timestamp}.db"
+            backup_path = os.path.join(project_dir, "data", backup_filename)
+            
+            # Copiar archivo
+            shutil.copy2(db_path, backup_path)
+            
+            # Actualizar información de la BD
+            self.update_database_info()
+            
+            QMessageBox.information(
+                self,
+                "✅ Respaldo Creado",
+                f"Respaldo creado exitosamente:\n\n"
+                f"📁 Archivo: {backup_filename}\n"
+                f"📍 Ubicación: {os.path.join('data', backup_filename)}\n"
+                f"📊 Tamaño: {os.path.getsize(backup_path) / (1024 * 1024):.1f} MB"
+            )
+            
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "❌ Error",
+                f"Error al crear respaldo:\n{str(e)}"
+            )
+
+    def export_database(self):
+        """Exportar base de datos a ubicación elegida por el usuario"""
+        try:
+            # Ruta de la base de datos actual
+            project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            db_path = os.path.join(project_dir, "data", "pos.db")
+            
+            if not os.path.exists(db_path):
+                QMessageBox.warning(
+                    self,
+                    "❌ Error",
+                    "No se encontró la base de datos en:\n" + db_path
+                )
+                return
+            
+            # Crear nombre sugerido con timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            suggested_name = f"POS_Database_Export_{timestamp}.db"
+            
+            # Diálogo para elegir ubicación de guardado
+            file_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "💾 Exportar Base de Datos",
+                suggested_name,
+                "Base de Datos SQLite (*.db);;Todos los archivos (*.*)"
+            )
+            
+            if file_path:
+                # Copiar archivo a la ubicación elegida
+                shutil.copy2(db_path, file_path)
+                
+                export_size = os.path.getsize(file_path) / (1024 * 1024)
+                
+                QMessageBox.information(
+                    self,
+                    "✅ Exportación Completa",
+                    f"Base de datos exportada exitosamente:\n\n"
+                    f"📁 Archivo: {os.path.basename(file_path)}\n"
+                    f"📍 Ubicación: {os.path.dirname(file_path)}\n"
+                    f"📊 Tamaño: {export_size:.1f} MB\n\n"
+                    f"💡 Este archivo contiene todos los datos del sistema:\n"
+                    f"   • Productos y categorías\n"
+                    f"   • Órdenes y ventas\n"
+                    f"   • Usuarios y configuración"
+                )
+            
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "❌ Error",
+                f"Error al exportar base de datos:\n{str(e)}"
+            )
+
+    def verify_database(self):
+        """Verificar integridad de la base de datos"""
+        try:
+            # Ruta de la base de datos
+            project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            db_path = os.path.join(project_dir, "data", "pos.db")
+            
+            if not os.path.exists(db_path):
+                QMessageBox.warning(
+                    self,
+                    "❌ Error",
+                    "No se encontró la base de datos en:\n" + db_path
+                )
+                return
+            
+            # Importar y usar el sistema de base de datos
+            import sys
+            sys.path.append(project_dir)
+            
+            from models.base import get_db
+            from models.product import Product
+            from models.order import Order
+            from models.user import User
+            from models.category import Category
+            
+            session = get_db()
+            
+            try:
+                # Verificar tablas principales
+                product_count = session.query(Product).count()
+                order_count = session.query(Order).count()
+                user_count = session.query(User).count()
+                category_count = session.query(Category).count()
+                
+                # Calcular tamaño de BD
+                db_size = os.path.getsize(db_path) / (1024 * 1024)
+                
+                QMessageBox.information(
+                    self,
+                    "✅ Base de Datos Verificada",
+                    f"La base de datos está en buen estado:\n\n"
+                    f"📊 Estadísticas:\n"
+                    f"   • Productos: {product_count}\n"
+                    f"   • Órdenes: {order_count}\n"
+                    f"   • Usuarios: {user_count}\n"
+                    f"   • Categorías: {category_count}\n\n"
+                    f"💾 Tamaño del archivo: {db_size:.1f} MB\n"
+                    f"📍 Ubicación: {db_path}\n\n"
+                    f"✅ Todas las tablas principales son accesibles"
+                )
+                
+            finally:
+                session.close()
+            
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "❌ Error de Verificación",
+                f"Error al verificar la base de datos:\n\n{str(e)}\n\n"
+                f"💡 La base de datos podría estar corrupta o\n"
+                f"en uso por otra aplicación."
+            )
+
+    def update_database_info(self):
+        """Actualizar información de la base de datos mostrada"""
+        try:
+            project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            db_path = os.path.join(project_dir, "data", "pos.db")
+            
+            if os.path.exists(db_path):
+                db_size = os.path.getsize(db_path) / (1024 * 1024)  # MB
+                self.db_info_label.setText(f"Tamaño: {db_size:.1f} MB")
+            else:
+                self.db_info_label.setText("Base de datos no encontrada")
+                
+        except Exception:
+            self.db_info_label.setText("Error al leer información")

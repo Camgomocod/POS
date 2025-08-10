@@ -1218,39 +1218,6 @@ class POSWindow(QMainWindow):
                     customer_info['table']
                 )
                 
-                # Imprimir ticket de orden (no recibo de pago)
-                cart_list = list(self.cart_items.values())
-                self.printer.print_order_ticket(order, cart_list)
-                
-                # Mostrar confirmación
-                table_info = f" - Mesa {customer_info['table']}" if customer_info['table'] else " - Para llevar"
-                
-                message = f"""
-                ✅ ¡Orden creada exitosamente!
-                
-                Orden: #{order.id}
-                Cliente: {customer_info['name']}{table_info}
-                Total: ${order.total:,.0f}
-                Estado: Pendiente para cocina
-                
-                El ticket se ha enviado a impresión.
-                El pago se realizará al final del servicio.
-                """
-                
-                msg_box = QMessageBox(self)
-                msg_box.setWindowTitle("Orden Creada")
-                msg_box.setText(message)
-                msg_box.setStyleSheet(f"""
-                    QMessageBox {{
-                        background-color: {ColorPalette.PLATINUM};
-                    }}
-                    QMessageBox QLabel {{
-                        color: {ColorPalette.RICH_BLACK};
-                        font-size: 14px;
-                    }}
-                """)
-                msg_box.exec_()
-                
                 # Limpiar carrito
                 self.cart_items.clear()
                 self.update_cart_display()
