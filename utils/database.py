@@ -8,13 +8,20 @@ from datetime import datetime, timedelta
 import random
 
 def init_database():
-    """Inicializar base de datos con datos de ejemplo mejorados"""
+    """Inicializar base de datos con datos de ejemplo solo si está vacía"""
     create_tables()
     
     db = get_db()
     
+    # Verificar si ya hay usuarios (no solo categorías)
+    if db.query(User).count() > 0:
+        print("✅ Base de datos ya tiene usuarios, omitiendo inicialización")
+        db.close()
+        return
+    
     # Verificar si ya hay datos
     if db.query(Category).count() > 0:
+        print("✅ Base de datos ya tiene datos, omitiendo inicialización")
         db.close()
         return
     

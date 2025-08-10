@@ -3,7 +3,7 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-from views.pos_window import EnhancedPOSWindow
+from views.pos_window import POSWindow
 from views.kitchen_orders_window import KitchenOrdersWindow
 from controllers.report_controller import ReportController
 
@@ -300,7 +300,7 @@ class MainWindow(QMainWindow):
     def open_pos(self):
         """Abrir ventana POS"""
         if not self.pos_window:
-            self.pos_window = EnhancedPOSWindow()
+            self.pos_window = POSWindow()
         else:
             # Si ya existe, refrescar datos
             if hasattr(self.pos_window, 'refresh_data'):
