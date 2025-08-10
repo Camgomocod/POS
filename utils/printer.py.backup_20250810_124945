@@ -194,7 +194,7 @@ class ThermalPrinter:
     
     @staticmethod
     def _get_cups_printers() -> List[Dict[str, str]]:
-        """Obtener impresoras usando CUPS (macO$Unix)"""
+        """Obtener impresoras usando CUPS (macOS/Unix)"""
         return ThermalPrinter._get_linux_printers()
     
     @staticmethod

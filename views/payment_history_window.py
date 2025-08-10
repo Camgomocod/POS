@@ -182,14 +182,14 @@ class PaymentDetailDialog(QDialog):
             qty_price.setFixedWidth(25)
             item_layout.addWidget(qty_price)
             
-            price_label = QLabel(f"${item.unit_price:.0f}")
+            price_label = QLabel(f"$ {item.unit_price:,.0f}")
             price_label.setStyleSheet(f"font-size: 16px; color: {ColorPalette.SILVER_LAKE_BLUE};")
             price_label.setFixedWidth(40)
             price_label.setAlignment(Qt.AlignRight)
             item_layout.addWidget(price_label)
             
             # Subtotal
-            subtotal_label = QLabel(f"${item.subtotal:.0f}")
+            subtotal_label = QLabel(f"$ {item.subtotal:,.0f}")
             subtotal_label.setStyleSheet(f"""
                 font-weight: bold; 
                 color: {ColorPalette.SUCCESS}; 
@@ -219,7 +219,7 @@ class PaymentDetailDialog(QDialog):
         total_layout = QHBoxLayout(total_frame)
         total_layout.setContentsMargins(10, 5, 10, 5)
         
-        total_label = QLabel(f"💰 TOTAL: ${self.order.total:.2f}")
+        total_label = QLabel(f"💰 TOTAL: ${self.order.total:,.0f}")
         total_label.setStyleSheet(f"""
             font-size: 18px; 
             font-weight: bold; 
@@ -1233,11 +1233,11 @@ class PaymentHistoryView(QWidget):
             self.payment_table.setItem(row, 2, customer_item)
             
             # Total con formato compacto
-            total_item = QTableWidgetItem(f"${order.total:.0f}")  # Sin decimales para ahorrar espacio
+            total_item = QTableWidgetItem(f"$ {order.total:,.0f}")  # Sin decimales para ahorrar espacio
             total_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             total_item.setFont(QFont("Arial", 11, QFont.Bold))  # Aumentado +4 según nueva petición
             total_item.setForeground(QColor(ColorPalette.SUCCESS))
-            total_item.setToolTip(f"${order.total:.2f}")  # Tooltip con decimales
+            total_item.setToolTip(f"${order.total:,.0f}")  # Tooltip con decimales
             self.payment_table.setItem(row, 3, total_item)
             
             # Método de pago muy abreviado

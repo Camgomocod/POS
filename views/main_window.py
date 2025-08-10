@@ -265,7 +265,7 @@ class MainWindow(QMainWindow):
         try:
             # Ventas del día
             daily_sales = self.report_controller.get_daily_sales()
-            self.sales_card.findChild(QLabel).setText(f"${daily_sales:.2f}")
+            self.sales_card.findChild(QLabel).setText(f"$ {daily_sales:,.2f}")
             
             # Pedidos recientes para contar
             recent_orders = self.report_controller.get_recent_orders(50)  # Últimas 50 órdenes

@@ -239,8 +239,8 @@ class ReportsView(QWidget):
                 for row, product in enumerate(products_data):
                     products_table.setItem(row, 0, QTableWidgetItem(str(product.get('name', 'N/A'))))
                     products_table.setItem(row, 1, QTableWidgetItem(str(product.get('quantity', 0))))
-                    products_table.setItem(row, 2, QTableWidgetItem(f"${product.get('revenue', 0):.2f}"))
-                    products_table.setItem(row, 3, QTableWidgetItem(f"${product.get('avg_price', 0):.2f}"))
+                    products_table.setItem(row, 2, QTableWidgetItem(f"${product.get('revenue', 0):,.0f}"))
+                    products_table.setItem(row, 3, QTableWidgetItem(f"${product.get('avg_price', 0):,.0f}"))
                     products_table.setItem(row, 4, QTableWidgetItem(f"{product.get('margin', 0):.1f}%"))
                     products_table.setItem(row, 5, QTableWidgetItem(str(product.get('last_sale', 'N/A'))))
             else:
@@ -257,8 +257,8 @@ class ReportsView(QWidget):
                 for row, product in enumerate(sample_data):
                     products_table.setItem(row, 0, QTableWidgetItem(product['name']))
                     products_table.setItem(row, 1, QTableWidgetItem(str(product['quantity'])))
-                    products_table.setItem(row, 2, QTableWidgetItem(f"${product['revenue']:.2f}"))
-                    products_table.setItem(row, 3, QTableWidgetItem(f"${product['avg_price']:.2f}"))
+                    products_table.setItem(row, 2, QTableWidgetItem(f"${product['revenue']:,.0f}"))
+                    products_table.setItem(row, 3, QTableWidgetItem(f"${product['avg_price']:,.0f}"))
                     products_table.setItem(row, 4, QTableWidgetItem(f"{product['margin']:.1f}%"))
                     products_table.setItem(row, 5, QTableWidgetItem(product['last_sale']))
         except Exception as e:
@@ -334,8 +334,8 @@ class ReportsView(QWidget):
                     
                     categories_table.setItem(row, 0, QTableWidgetItem(str(category.get('name', 'N/A'))))
                     categories_table.setItem(row, 1, QTableWidgetItem(str(category.get('total_items', 0))))
-                    categories_table.setItem(row, 2, QTableWidgetItem(f"${revenue:.2f}"))
-                    categories_table.setItem(row, 3, QTableWidgetItem(f"${avg_price:.2f}"))
+                    categories_table.setItem(row, 2, QTableWidgetItem(f"${revenue:,.0f}"))
+                    categories_table.setItem(row, 3, QTableWidgetItem(f"${avg_price:,.0f}"))
                     categories_table.setItem(row, 4, QTableWidgetItem(f"{category.get('percentage', 0):.1f}%"))
             else:
                 # Datos de muestra sin headers duplicados
@@ -350,8 +350,8 @@ class ReportsView(QWidget):
                 for row, category in enumerate(sample_data):
                     categories_table.setItem(row, 0, QTableWidgetItem(category['name']))
                     categories_table.setItem(row, 1, QTableWidgetItem(str(category['quantity'])))
-                    categories_table.setItem(row, 2, QTableWidgetItem(f"${category['revenue']:.2f}"))
-                    categories_table.setItem(row, 3, QTableWidgetItem(f"${category['avg_price']:.2f}"))
+                    categories_table.setItem(row, 2, QTableWidgetItem(f"${category['revenue']:,.0f}"))
+                    categories_table.setItem(row, 3, QTableWidgetItem(f"${category['avg_price']:,.0f}"))
                     categories_table.setItem(row, 4, QTableWidgetItem(f"{category['percentage']:.1f}%"))
         except Exception as e:
             print(f"Error cargando categorías: {e}")
@@ -423,8 +423,8 @@ class ReportsView(QWidget):
                 for row, hour in enumerate(hours_data):
                     hours_table.setItem(row, 0, QTableWidgetItem(hour.get('hour_range', 'N/A')))
                     hours_table.setItem(row, 1, QTableWidgetItem(str(hour.get('order_count', 0))))
-                    hours_table.setItem(row, 2, QTableWidgetItem(f"${hour.get('total_sales', 0):.2f}"))
-                    hours_table.setItem(row, 3, QTableWidgetItem(f"${hour.get('avg_ticket', 0):.2f}"))
+                    hours_table.setItem(row, 2, QTableWidgetItem(f"${hour.get('total_sales', 0):,.0f}"))
+                    hours_table.setItem(row, 3, QTableWidgetItem(f"${hour.get('avg_ticket', 0):,.0f}"))
                     hours_table.setItem(row, 4, QTableWidgetItem(f"{hour.get('percentage', 0):.1f}%"))
             else:
                 # Datos de muestra sin headers duplicados
@@ -442,8 +442,8 @@ class ReportsView(QWidget):
                 for row, hour in enumerate(sample_data):
                     hours_table.setItem(row, 0, QTableWidgetItem(hour['hour_range']))
                     hours_table.setItem(row, 1, QTableWidgetItem(str(hour['order_count'])))
-                    hours_table.setItem(row, 2, QTableWidgetItem(f"${hour['total_sales']:.2f}"))
-                    hours_table.setItem(row, 3, QTableWidgetItem(f"${hour['avg_ticket']:.2f}"))
+                    hours_table.setItem(row, 2, QTableWidgetItem(f"${hour['total_sales']:,.0f}"))
+                    hours_table.setItem(row, 3, QTableWidgetItem(f"${hour['avg_ticket']:,.0f}"))
                     hours_table.setItem(row, 4, QTableWidgetItem(f"{hour['percentage']:.1f}%"))
         except Exception as e:
             print(f"Error cargando datos horarios: {e}")
@@ -890,9 +890,9 @@ class ReportsView(QWidget):
                 except:
                     overall_margin = 0.0
                 
-                self.sales_metric.value_label.setText(f"${total_sales:.2f}")
+                self.sales_metric.value_label.setText(f"${total_sales:,.0f}")
                 self.orders_metric.value_label.setText(str(total_orders))
-                self.avg_ticket_metric.value_label.setText(f"${avg_ticket:.2f}")
+                self.avg_ticket_metric.value_label.setText(f"${avg_ticket:,.0f}")
                 self.margin_metric.value_label.setText(f"{overall_margin:.1f}%")
             else:
                 self.sales_metric.value_label.setText("$0.00")

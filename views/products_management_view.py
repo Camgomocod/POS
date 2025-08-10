@@ -195,8 +195,8 @@ class ProductsManagementView(QWidget):
         self.products_table.setItem(row, 0, QTableWidgetItem(str(product.id)))
         self.products_table.setItem(row, 1, QTableWidgetItem(product.name))
         self.products_table.setItem(row, 2, QTableWidgetItem(product.category.name if product.category else "N/A"))
-        self.products_table.setItem(row, 3, QTableWidgetItem(f"S/ {product.price:.2f}"))
-        self.products_table.setItem(row, 4, QTableWidgetItem(f"S/ {product.cost:.2f}" if product.cost is not None else "N/A"))
+        self.products_table.setItem(row, 3, QTableWidgetItem(f"$ {product.price:.2f}"))
+        self.products_table.setItem(row, 4, QTableWidgetItem(f"$ {product.cost:.2f}" if product.cost is not None else "N/A"))
         self.products_table.setItem(row, 5, QTableWidgetItem(str(product.stock) if product.stock is not None else "Ilimitado"))
         
         status_text = "Activo" if product.is_active else "Inactivo"

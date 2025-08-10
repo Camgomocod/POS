@@ -109,7 +109,7 @@ class CartItemWidget(QWidget):
         controls_layout.addStretch()
         
         # Precio
-        self.price_label = QLabel(f"${self.product.price * self.quantity:.2f}")
+        self.price_label = QLabel(f"$ {self.product.price * self.quantity:,.0f}")
         self.price_label.setStyleSheet(f"font-weight: bold; color: {ColorPalette.SUCCESS}; font-size: 11px;")
         self.price_label.setFixedWidth(55)
         self.price_label.setAlignment(Qt.AlignCenter)
@@ -156,14 +156,14 @@ class CartItemWidget(QWidget):
     def increase_quantity(self):
         self.quantity += 1
         self.qty_label.setText(str(self.quantity))
-        self.price_label.setText(f"${self.product.price * self.quantity:.2f}")
+        self.price_label.setText(f"$ {self.product.price * self.quantity:,.0f}")
         self.quantity_changed.emit(self.product.id, self.quantity)
     
     def decrease_quantity(self):
         if self.quantity > 1:
             self.quantity -= 1
             self.qty_label.setText(str(self.quantity))
-            self.price_label.setText(f"${self.product.price * self.quantity:.2f}")
+            self.price_label.setText(f"$ {self.product.price * self.quantity:,.0f}")
             self.quantity_changed.emit(self.product.id, self.quantity)
 
 class CustomerInfoDialog(QDialog):
@@ -209,7 +209,7 @@ class CustomerInfoDialog(QDialog):
         total_layout = QVBoxLayout(total_frame)
         total_layout.setContentsMargins(10, 8, 10, 8)
         
-        total_label = QLabel(f"Total: ${self.total_amount:.2f}")
+        total_label = QLabel(f"Total: ${self.total_amount:,.0f}")
         total_label.setAlignment(Qt.AlignCenter)
         total_label.setStyleSheet(f"""
             color: {ColorPalette.PLATINUM}; 
@@ -832,7 +832,7 @@ class POSWindow(QMainWindow):
         """)
         total_layout = QVBoxLayout(total_frame)
         
-        self.total_label = QLabel("Total: $0.00")
+        self.total_label = QLabel("Total: $0")
         self.total_label.setAlignment(Qt.AlignCenter)
         total_font_size = 20 if self.screen_width <= 1366 else 26  # Fuente más pequeña
         self.total_label.setStyleSheet(f"color: {ColorPalette.PLATINUM}; font-size: {total_font_size}px; font-weight: bold;")
@@ -1080,7 +1080,7 @@ class POSWindow(QMainWindow):
         layout.addWidget(name_label)
         
         # Precio
-        price_label = QLabel(f"${product.price:.2f}")
+        price_label = QLabel(f"$ {product.price:,.0f}")
         price_label.setAlignment(Qt.AlignCenter)
         price_label.setStyleSheet(f"""
             font-size: {font_size_price}px;
@@ -1148,7 +1148,7 @@ class POSWindow(QMainWindow):
         
         # Actualizar labels de totales
         self.items_count_label.setText(f"{total_items} producto{'s' if total_items != 1 else ''}")
-        self.total_label.setText(f"Total: ${total:.2f}")
+        self.total_label.setText(f"Total: ${total:,.0f}")
         
         # Mostrar mensaje si carrito vacío
         if not self.cart_items:
@@ -1230,7 +1230,7 @@ class POSWindow(QMainWindow):
                 
                 Orden: #{order.id}
                 Cliente: {customer_info['name']}{table_info}
-                Total: ${order.total:.2f}
+                Total: ${order.total:,.0f}
                 Estado: Pendiente para cocina
                 
                 El ticket se ha enviado a impresión.

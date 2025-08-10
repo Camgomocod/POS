@@ -311,7 +311,7 @@ class OrderCard(QFrame):
             layout.addLayout(buttons_layout)
         
         # Total - simple y visible
-        total_label = QLabel(f"Total: ${self.order.total:.2f}")
+        total_label = QLabel(f"Total: ${self.order.total:,.0f}")
         total_label.setAlignment(Qt.AlignCenter)
         total_label.setStyleSheet(f"""
             font-weight: bold; 
@@ -1071,7 +1071,7 @@ class KitchenOrdersView(QWidget):
                     "✅ Pago Procesado", 
                     f"Pago de la orden #{order_id} procesado exitosamente.\n"
                     f"Cliente: {customer_info['name']}\n"
-                    f"Total: ${order.total:.2f}\n"
+                    f"Total: ${order.total:,.0f}\n"
                     f"Método: {payment_display}"
                 )
                 

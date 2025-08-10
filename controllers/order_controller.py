@@ -32,7 +32,7 @@ class OrderController:
             total=total,
             customer_name=customer_name,
             table_number=table_number,
-            status=OrderStatus.PENDING
+            status=OrderStatus.PENDING.value
         )
         self.db.add(order)
         self.db.commit()
@@ -49,7 +49,11 @@ class OrderController:
         """Actualizar estado del pedido"""
         order = self.db.query(Order).filter(Order.id == order_id).first()
         if order:
-            order.status = new_status
+            # Asegurar que se use el valor string del enum
+            if hasattr(new_status, 'value'):
+                order.status = new_status.value
+            else:
+                order.status = new_status
             order.updated_at = datetime.now()
             self.db.commit()
             return order

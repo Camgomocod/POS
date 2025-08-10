@@ -423,14 +423,14 @@ class ProductFormDialog(QDialog):
         self.price_input = QDoubleSpinBox()
         self.price_input.setRange(0.01, 99999.99)
         self.price_input.setDecimals(2)
-        self.price_input.setPrefix("S/ ")
+        self.price_input.setPrefix("$ ")
         self.style_spinbox(self.price_input)
         grid.addWidget(self.price_input, 5, 0)
         
         self.cost_input = QDoubleSpinBox()
         self.cost_input.setRange(0.00, 99999.99)
         self.cost_input.setDecimals(2)
-        self.cost_input.setPrefix("S/ ")
+        self.cost_input.setPrefix("$ ")
         self.cost_input.setSpecialValueText("No especificado")
         self.style_spinbox(self.cost_input)
         grid.addWidget(self.cost_input, 5, 1)
@@ -1002,7 +1002,7 @@ class MenuManagementWidget(QWidget):
         info_layout.addWidget(name_label)
         
         # Detalles
-        details = f"€{product.price:.2f} • {product.total_sold} vendidos • €{product.total_revenue:.2f} ingresos"
+        details = f"${product.price:.2f} • {product.total_sold} vendidos • ${product.total_revenue:.2f} ingresos"
         details_label = QLabel(details)
         details_label.setStyleSheet(f"""
             font-size: 11px;
@@ -1109,7 +1109,7 @@ class MenuManagementWidget(QWidget):
             stats_data = [
                 ("📁", "Categorías", str(stats['active_categories']), ColorPalette.SUCCESS),
                 ("⭐", "Productos", str(stats['active_products']), ColorPalette.YINMN_BLUE),
-                ("⭐", "Precio Mayor", f"€{stats['highest_price']:.2f}", ColorPalette.SILVER_LAKE_BLUE)
+                ("⭐", "Precio Mayor", f"${stats['highest_price']:,.0f}", ColorPalette.SILVER_LAKE_BLUE)
             ]
             
             for i, (icon, title, value, color) in enumerate(stats_data):
