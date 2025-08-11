@@ -42,12 +42,72 @@ else:
 
 # Crear clases dummy si matplotlib no está disponible
 if not MATPLOTLIB_AVAILABLE:
-    class FigureCanvas:
+    from PyQt5.QtWidgets import QWidget
+    
+    class FigureCanvas(QWidget):
+        """Clase dummy para FigureCanvas cuando matplotlib no está disponible"""
         def __init__(self, *args, **kwargs):
+            super().__init__()
+            self.setMinimumSize(300, 200)
+            self.setStyleSheet("background-color: #f0f0f0; border: 1px solid #ccc;")
+            
+        def draw(self):
             pass
+            
+        def setStyleSheet(self, style):
+            super().setStyleSheet(style)
+            
     class Figure:
+        """Clase dummy para Figure cuando matplotlib no está disponible"""
         def __init__(self, *args, **kwargs):
             pass
+            
+        def add_subplot(self, *args, **kwargs):
+            return DummyAxes()
+            
+        def tight_layout(self):
+            pass
+            
+        def clear(self):
+            pass
+    
+    class DummyAxes:
+        """Clase dummy para ejes de matplotlib"""
+        def __init__(self):
+            pass
+            
+        def plot(self, *args, **kwargs):
+            pass
+            
+        def bar(self, *args, **kwargs):
+            pass
+            
+        def pie(self, *args, **kwargs):
+            return [], []
+            
+        def set_title(self, *args, **kwargs):
+            pass
+            
+        def set_xlabel(self, *args, **kwargs):
+            pass
+            
+        def set_ylabel(self, *args, **kwargs):
+            pass
+            
+        def legend(self, *args, **kwargs):
+            pass
+            
+        def grid(self, *args, **kwargs):
+            pass
+            
+        def clear(self):
+            pass
+            
+        def tick_params(self, *args, **kwargs):
+            pass
+    
+    plt = None
+    mdates = None
 
 from datetime import datetime, timedelta
 import csv
@@ -843,6 +903,22 @@ class ReportsView(QWidget):
 
     def create_sales_chart(self):
         """Crear gráfico de ventas diarias expandido"""
+        if not MATPLOTLIB_AVAILABLE:
+            # Crear widget placeholder cuando matplotlib no está disponible
+            from PyQt5.QtWidgets import QLabel
+            placeholder = QLabel("📊 Gráfico no disponible\n(matplotlib deshabilitado)")
+            placeholder.setAlignment(Qt.AlignCenter)
+            placeholder.setStyleSheet(f"""
+                QLabel {{
+                    background-color: {ColorPalette.PLATINUM};
+                    border-radius: 8px;
+                    min-height: 400px;
+                    font-size: 16px;
+                    color: #666;
+                }}
+            """)
+            return placeholder
+        
         # Crear figura de matplotlib más grande para aprovechar el espacio
         self.figure = Figure(figsize=(10, 4), dpi=100, facecolor='#F7F9FC')
         self.canvas = FigureCanvas(self.figure)
@@ -945,6 +1021,9 @@ class ReportsView(QWidget):
 
     def load_sales_chart(self):
         """Cargar gráfico de ventas"""
+        if not MATPLOTLIB_AVAILABLE:
+            return
+            
         try:
             import matplotlib.pyplot as plt
             import matplotlib.dates as mdates
