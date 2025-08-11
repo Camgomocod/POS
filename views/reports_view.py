@@ -1,5 +1,20 @@
 # views/reports_view_pyqtgraph.py
 import os
+import sys
+
+# Importar configuración de Windows 11 si está disponible
+try:
+    from utils.windows11_config import apply_windows11_config, get_safe_pyqtgraph_config
+    apply_windows11_config()
+    WINDOWS11_CONFIG = get_safe_pyqtgraph_config()
+except ImportError:
+    WINDOWS11_CONFIG = {
+        'background': 'w',
+        'foreground': 'k', 
+        'antialias': True,
+        'useOpenGL': False
+    }
+
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                              QLabel, QFrame, QGridLayout, QDateEdit, QComboBox,
                              QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView,
@@ -14,32 +29,67 @@ from datetime import datetime, timedelta
 import csv
 import traceback
 
-# Importación de PyQtGraph
+# Importación de PyQtGraph con configuración segura para Windows 11
 PYQTGRAPH_AVAILABLE = True
 try:
+    # Configuración previa para Windows 11
+    if os.name == 'nt':  # Windows
+        os.environ['QT_OPENGL'] = 'software'  # Forzar software rendering
+        os.environ['QT_QUICK_BACKEND'] = 'software'
+    
     import pyqtgraph as pg
     from pyqtgraph import PlotWidget, BarGraphItem
     import numpy as np
     print("✅ PyQtGraph cargado correctamente")
     
-    # Configurar PyQtGraph para mejor apariencia
-    pg.setConfigOption('background', 'w')  # Fondo blanco
-    pg.setConfigOption('foreground', 'k')  # Texto negro
-    pg.setConfigOption('antialias', True)  # Antialiasing para mejor calidad
+    # Configurar PyQtGraph para mejor compatibilidad
+    try:
+        pg.setConfigOptions(**WINDOWS11_CONFIG)
+        print("✅ Configuración PyQtGraph aplicada (modo seguro)")
+    except Exception as config_error:
+        print(f"⚠️  Advertencia configurando PyQtGraph: {config_error}")
+        # Configuración básica como respaldo
+        try:
+            pg.setConfigOption('background', 'w')
+            pg.setConfigOption('foreground', 'k')
+            pg.setConfigOption('antialias', True)
+            pg.setConfigOption('useOpenGL', False)
+        except:
+            pass
     
 except ImportError as e:
     print(f"⚠️  PyQtGraph no disponible: {e}")
     PYQTGRAPH_AVAILABLE = False
     
-    # Clases dummy si no está disponible
+    # Clases dummy si no está disponible PyQtGraph
     class PlotWidget(QWidget):
         def __init__(self, parent=None, **kwargs):
             super().__init__(parent)
             self.setMinimumSize(400, 300)
-            self.setStyleSheet("background-color: #f0f0f0; border: 1px solid #ccc;")
+            self.setStyleSheet("""
+                QWidget {
+                    background-color: #f8f9fa;
+                    border: 2px dashed #dee2e6;
+                    border-radius: 8px;
+                }
+            """)
+            
+            # Agregar etiqueta informativa
+            layout = QVBoxLayout(self)
+            label = QLabel("📊 Gráficos PyQtGraph\n\nNo disponible en este sistema\n\nPor favor instalar:\npip install pyqtgraph")
+            label.setAlignment(Qt.AlignCenter)
+            label.setStyleSheet("""
+                QLabel {
+                    color: #6c757d;
+                    font-size: 14px;
+                    border: none;
+                    background: transparent;
+                }
+            """)
+            layout.addWidget(label)
             
         def plot(self, *args, **kwargs):
-            pass
+            return None
             
         def clear(self):
             pass
@@ -55,6 +105,9 @@ except ImportError as e:
             
         def setTitle(self, *args, **kwargs):
             pass
+            
+        def showGrid(self, *args, **kwargs):
+            pass
     
     class BarGraphItem:
         def __init__(self, *args, **kwargs):
@@ -64,6 +117,7 @@ except ImportError as e:
         def setTicks(self, *args, **kwargs):
             pass
     
+    # Variable para numpy dummy
     np = None
 
 class ReportsView(QWidget):
@@ -706,26 +760,49 @@ class ReportsView(QWidget):
 
     def create_pyqtgraph_sales_chart(self):
         """Crear gráfico de ventas con PyQtGraph"""
-        # Crear widget del gráfico
-        sales_plot = PlotWidget(title="📈 Ventas Diarias")
-        sales_plot.setLabel('left', 'Ventas (COP)', units='COP')
-        sales_plot.setLabel('bottom', 'Días')
-        sales_plot.showGrid(x=True, y=True, alpha=0.3)
-        sales_plot.setMinimumHeight(400)  # Hacer más grande al ser el único gráfico
-        
-        # Personalizar apariencia
-        sales_plot.setStyleSheet(f"""
-            PlotWidget {{
-                background-color: white;
-                border-radius: 8px;
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
-            }}
-        """)
-        
-        # Guardar referencia para poder actualizar después
-        self.sales_plot_widget = sales_plot
-        
-        return sales_plot
+        try:
+            # Crear widget del gráfico con manejo de errores para Windows 11
+            sales_plot = PlotWidget(title="📈 Ventas Diarias")
+            sales_plot.setLabel('left', 'Ventas (COP)', units='COP')
+            sales_plot.setLabel('bottom', 'Días')
+            sales_plot.showGrid(x=True, y=True, alpha=0.3)
+            sales_plot.setMinimumHeight(400)  # Hacer más grande al ser el único gráfico
+            
+            # Configuración adicional para Windows 11
+            if hasattr(sales_plot, 'setAntialiasing'):
+                sales_plot.setAntialiasing(True)
+            
+            # Personalizar apariencia
+            sales_plot.setStyleSheet(f"""
+                PlotWidget {{
+                    background-color: white;
+                    border-radius: 8px;
+                    border: 1px solid {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
+                }}
+            """)
+            
+            # Guardar referencia para poder actualizar después
+            self.sales_plot_widget = sales_plot
+            
+            return sales_plot
+            
+        except Exception as e:
+            print(f"⚠️  Error creando gráfico PyQtGraph: {e}")
+            # Crear widget de respaldo
+            fallback_widget = QLabel("📊 Gráfico no disponible\n\nProblema con PyQtGraph en este sistema")
+            fallback_widget.setAlignment(Qt.AlignCenter)
+            fallback_widget.setMinimumHeight(400)
+            fallback_widget.setStyleSheet("""
+                QLabel {
+                    background-color: #f8f9fa;
+                    border: 2px dashed #dee2e6;
+                    border-radius: 8px;
+                    color: #6c757d;
+                    font-size: 14px;
+                }
+            """)
+            self.sales_plot_widget = fallback_widget
+            return fallback_widget
 
     def load_sales_chart(self):
         """Cargar datos en el gráfico de ventas PyQtGraph"""
