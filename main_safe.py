@@ -1,89 +1,106 @@
 #!/usr/bin/env python3
 """
-Versión simplificada del main.py sin matplotlib para evitar Access Violation
+Versión SEGURA del Sistema POS - Sin componentes gráficos problemáticos
+Para usar cuando hay problemas con Access Violation o matplotlib
 """
 
 import sys
 import os
 
-# Configurar PyQt5 para Windows antes de cualquier importación
-os.environ['QT_QPA_PLATFORM'] = 'windows'
-os.environ['QT_AUTO_SCREEN_SCALE_FACTOR'] = '0'
-os.environ['QT_SCALE_FACTOR'] = '1'
-os.environ['QT_DEVICE_PIXEL_RATIO'] = '1'
-os.environ['QT_ENABLE_HIGHDPI_SCALING'] = '0'
-
-try:
-    from PyQt5.QtWidgets import QApplication, QMessageBox
-    from PyQt5.QtCore import Qt
-    import traceback
+def setup_safe_environment():
+    """Configurar entorno seguro para PyQt5"""
+    print("🔧 Configurando entorno seguro...")
     
+    # Variables de entorno ANTES de importar PyQt5
+    os.environ['QT_QPA_PLATFORM'] = 'windows'
+    os.environ['QT_AUTO_SCREEN_SCALE_FACTOR'] = '0'
+    os.environ['QT_SCALE_FACTOR'] = '1'
+    os.environ['QT_DEVICE_PIXEL_RATIO'] = '1'
+    os.environ['QT_SCREEN_SCALE_FACTORS'] = '1'
+    os.environ['QT_ENABLE_HIGHDPI_SCALING'] = '0'
+    os.environ['QT_USE_PHYSICAL_DPI'] = 'false'
+    
+    # Matplotlib backend seguro (sin tkinter)
+    os.environ['MPLBACKEND'] = 'Agg'
+    os.environ['MATPLOTLIB_BACKEND'] = 'Agg'
+    
+def main():
     print("🚀 Iniciando Sistema POS - Modo Seguro")
     print("💡 Gráficos avanzados temporalmente deshabilitados")
-    print()
-    
-    # Crear aplicación PyQt5 con configuración segura
-    app = QApplication(sys.argv)
-    
-    # Configurar aplicación para evitar problemas gráficos
-    app.setAttribute(Qt.AA_EnableHighDpiScaling, False)
-    app.setAttribute(Qt.AA_UseHighDpiPixmaps, False)
-    app.setAttribute(Qt.AA_DisableWindowContextHelpButton, True)
     
     try:
-        # Importar el controlador principal
+        # Configurar entorno ANTES de cualquier import PyQt5
+        setup_safe_environment()
+        
+        # IMPORTANTE: Configurar atributos ANTES de cualquier import PyQt5
+        from PyQt5.QtWidgets import QApplication
+        from PyQt5.QtCore import Qt
+        
+        # Configurar atributos ANTES de crear QApplication
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, False)
+        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, False)
+        QApplication.setAttribute(Qt.AA_DisableWindowContextHelpButton, True)
+        
+        # Crear aplicación DESPUÉS de configurar atributos
+        app = QApplication(sys.argv)
+        
+        print("✅ PyQt5 configurado correctamente")
+        
+        # Importar controlador principal
         from controllers.app_controller import AppController
         
-        # Crear y ejecutar controlador
+        print("✅ Controladores importados")
+        
+        # Inicializar aplicación
         controller = AppController()
-        controller.start()
+        
+        print("✅ Sistema inicializado en modo seguro")
+        print("🎯 Funcionalidades disponibles:")
+        print("   - ✅ Login de usuarios")
+        print("   - ✅ POS (Punto de Venta)")
+        print("   - ✅ Gestión de productos")
+        print("   - ✅ Gestión de órdenes")
+        print("   - ✅ Administración de usuarios")
+        print("   - ⚠️  Reportes gráficos: DESHABILITADOS (modo seguro)")
+        print("")
+        print("💡 Para habilitar gráficos, ejecuta: fix_access_violation.bat")
+        print("📱 Sistema listo para usar!")
         
         # Ejecutar aplicación
+        controller.show_login()
         sys.exit(app.exec_())
         
     except ImportError as e:
-        error_msg = f"Error de importación: {str(e)}"
-        print(f"❌ {error_msg}")
+        print(f"❌ Error importando módulos: {e}")
+        print("")
+        print("🔧 Posibles soluciones:")
+        print("1. pip install -r requirements.txt")
+        print("2. Ejecutar: fix_dependencies.bat")
+        print("3. Verificar que estás en el directorio correcto")
         
-        # Mostrar error en ventana
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Critical)
-        msg.setWindowTitle("Error de Importación")
-        msg.setText(f"Error al importar módulos:\n\n{error_msg}\n\nVerifica que todas las dependencias estén instaladas.")
-        msg.setDetailedText(traceback.format_exc())
-        msg.exec_()
-        
-        sys.exit(1)
+        input("\nPresiona Enter para salir...")
+        return False
         
     except Exception as e:
-        error_msg = f"Error inesperado: {str(e)}"
-        print(f"❌ {error_msg}")
+        print(f"❌ Error inesperado: {e}")
+        print("")
+        print("🔧 Posibles soluciones:")
+        print("1. Ejecutar: fix_access_violation.bat")
+        print("2. Verificar permisos de Windows")
+        print("3. Ejecutar como Administrador")
         
-        # Mostrar error en ventana
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Critical)
-        msg.setWindowTitle("Error del Sistema")
-        msg.setText(f"Error inesperado en el sistema:\n\n{error_msg}")
-        msg.setDetailedText(traceback.format_exc())
-        msg.exec_()
-        
+        input("\nPresiona Enter para salir...")
+        return False
+
+if __name__ == "__main__":
+    # Configurar encoding para Windows
+    try:
+        import locale
+        locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
+    except:
+        pass
+    
+    # Ejecutar aplicación
+    success = main()
+    if not success:
         sys.exit(1)
-
-except ImportError:
-    print("❌ Error crítico: PyQt5 no está instalado o configurado correctamente")
-    print()
-    print("🔧 Soluciones:")
-    print("   1. pip install PyQt5==5.15.9")
-    print("   2. Ejecutar: fix_access_violation.bat")
-    print("   3. Verificar entorno virtual")
-    print()
-    input("Presiona Enter para salir...")
-    sys.exit(1)
-
-except Exception as e:
-    print(f"❌ Error crítico del sistema: {e}")
-    print()
-    print("🔧 Ejecutar: fix_access_violation.bat")
-    print()
-    input("Presiona Enter para salir...")
-    sys.exit(1)
