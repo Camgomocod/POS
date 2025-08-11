@@ -5,9 +5,10 @@
 ### 🔧 Instalación Automática (Recomendado)
 
 1. **Descargar/Clonar** el proyecto en tu computadora
-2. **Ejecutar como Administrador**: `install_pos_w11.bat`
-3. **Seguir** las instrucciones en pantalla
-4. **Usar** el acceso directo creado en el escritorio
+2. **IMPORTANTE**: Extraer en una ruta SIN ESPACIOS (ej: `C:\POS\`)
+3. **Ejecutar como Administrador**: `install_pos_simple.bat`
+4. **Seguir** las instrucciones en pantalla
+5. **Crear acceso directo**: Ejecutar `create_shortcut_simple.bat`
 
 ### ⚡ Instalación Manual
 
@@ -15,22 +16,45 @@
 # 1. Verificar requisitos
 check_requirements.bat
 
-# 2. Instalar dependencias
-install_pos_w11.bat
+# 2. Instalar dependencias (VERSIÓN SIMPLE)
+install_pos_simple.bat
 
 # 3. Crear accesos directos
-PowerShell -ExecutionPolicy Bypass -File create_desktop_shortcut.ps1
+create_shortcut_simple.bat
 ```
+
+### 🚨 Solución al Error de Caracteres Especiales
+
+Si ves errores como "no se reconoce como comando":
+
+1. **Extraer el proyecto** en una ruta SIN ESPACIOS
+
+   - ✅ Correcto: `C:\POS\`
+   - ✅ Correcto: `C:\Proyectos\POS\`
+   - ❌ Incorrecto: `C:\Users\Usuario\Downloads\POS-main\`
+
+2. **Usar la versión simplificada**:
+
+   ```batch
+   install_pos_simple.bat
+   ```
+
+3. **Crear acceso directo separadamente**:
+   ```batch
+   create_shortcut_simple.bat
+   ```
 
 ## 📁 Archivos de Instalación
 
-| Archivo                       | Descripción            | Uso                 |
-| ----------------------------- | ---------------------- | ------------------- |
-| `install_pos_w11.bat`         | Instalador principal   | Primera instalación |
-| `run_pos.bat`                 | Ejecutor principal     | Uso diario          |
-| `quick_start.bat`             | Inicio rápido          | Usuarios avanzados  |
-| `check_requirements.bat`      | Verificar requisitos   | Diagnóstico         |
-| `create_desktop_shortcut.ps1` | Crear accesos directos | Configuración       |
+| Archivo                       | Descripción                    | Uso                  |
+| ----------------------------- | ------------------------------ | -------------------- |
+| `install_pos_simple.bat`      | Instalador principal (NUEVO)   | Primera instalación  |
+| `install_pos_w11.bat`         | Instalador completo            | Instalación avanzada |
+| `run_pos.bat`                 | Ejecutor principal             | Uso diario           |
+| `quick_start.bat`             | Inicio rápido                  | Usuarios avanzados   |
+| `check_requirements.bat`      | Verificar requisitos           | Diagnóstico          |
+| `create_shortcut_simple.bat`  | Crear accesos directos (NUEVO) | Configuración        |
+| `create_desktop_shortcut.ps1` | Crear accesos (PowerShell)     | Configuración        |
 
 ## 🎯 Formas de Ejecutar el Sistema
 
@@ -79,6 +103,16 @@ Acceso: POS y operaciones básicas
 
 ## 🔍 Solución de Problemas
 
+### Error: "Python: can't open file" o "no se reconoce como comando"
+
+```batch
+# CAUSA: Ruta con espacios o caracteres especiales
+# SOLUCIÓN:
+# 1. Mover proyecto a ruta simple: C:\POS\
+# 2. Usar versión simplificada:
+install_pos_simple.bat
+```
+
 ### Error: "Python no encontrado"
 
 ```batch
@@ -106,6 +140,13 @@ python verify_clean_database.py
 ```batch
 # Ejecutar como administrador
 # Clic derecho → "Ejecutar como administrador"
+```
+
+### Error: PowerShell ExecutionPolicy
+
+```batch
+# Usar versión VBS en lugar de PowerShell:
+create_shortcut_simple.bat
 ```
 
 ## 📊 Verificación de Instalación

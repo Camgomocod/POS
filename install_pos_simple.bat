@@ -1,22 +1,14 @@
 @echo off
 chcp 65001 >nul
-title Instalador Sistema POS - Windows 11
+title Instalador Sistema POS - Windows 11 (Versión Simplificada)
 color 0B
 
 echo ╔══════════════════════════════════════════════════════════╗
-echo ║                 INSTALADOR SISTEMA POS                  ║
+echo ║            INSTALADOR SISTEMA POS - SIMPLE              ║
 echo ║               Restaurante Fast Food v1.0                ║
 echo ║                     Windows 11                          ║
 echo ╚══════════════════════════════════════════════════════════╝
 echo.
-
-REM Verificar permisos de administrador
-net session >nul 2>&1
-if %errorLevel% neq 0 (
-    echo ⚠️  NOTA: Se recomienda ejecutar como administrador para evitar problemas
-    echo    Presiona cualquier tecla para continuar sin permisos de admin...
-    pause >nul
-)
 
 echo 🔍 Verificando requisitos del sistema...
 echo.
@@ -160,46 +152,19 @@ if exist "verify_clean_database.py" (
 )
 
 echo.
-echo 🔗 Creando acceso directo en el escritorio...
-
-REM Crear script PowerShell para acceso directo con caracteres escapados
-(
-echo $projectPath = '%PROJECT_DIR%'
-echo $desktopPath = [Environment]::GetFolderPath^("Desktop"^)
-echo $shortcutPath = "$desktopPath\Sistema POS.lnk"
-echo $WshShell = New-Object -comObject WScript.Shell
-echo $Shortcut = $WshShell.CreateShortcut^($shortcutPath^)
-echo $Shortcut.TargetPath = "cmd.exe"
-echo $Shortcut.Arguments = "/k \`"cd /d \`"$projectPath\`" ^&^& run_pos.bat\`""
-echo $Shortcut.WorkingDirectory = $projectPath
-echo $Shortcut.IconLocation = "shell32.dll,137"
-echo $Shortcut.Description = "Sistema POS - Restaurante Fast"
-echo $Shortcut.WindowStyle = 1
-echo $Shortcut.Save^(^)
-echo Write-Host "✅ Acceso directo creado exitosamente" -ForegroundColor Green
-) > temp_create_shortcut.ps1
-
-PowerShell -ExecutionPolicy Bypass -File temp_create_shortcut.ps1 2>nul
-if errorlevel 1 (
-    echo ⚠️  No se pudo crear el acceso directo automáticamente
-    echo 💡 Puedes crear manualmente el acceso directo a: run_pos.bat
-    echo 💡 O ejecutar: create_desktop_shortcut.ps1
-) else (
-    echo ✅ Acceso directo creado en el escritorio
-)
-
-del temp_create_shortcut.ps1 2>nul
-
-echo.
 echo ╔══════════════════════════════════════════════════════════╗
 echo ║               ✅ INSTALACIÓN COMPLETADA                  ║
 echo ╚══════════════════════════════════════════════════════════╝
 echo.
 echo 🎯 Para usar el Sistema POS:
 echo.
-echo    Opción 1: Doble clic en "Sistema POS" en el escritorio
-echo    Opción 2: Ejecutar "run_pos.bat" desde esta carpeta
+echo    Opción 1: Ejecutar "run_pos.bat" desde esta carpeta
+echo    Opción 2: Ejecutar "quick_start.bat" para inicio rápido
 echo    Opción 3: Abrir cmd aquí y ejecutar: run_pos.bat
+echo.
+echo 🔗 Para crear acceso directo en el escritorio:
+echo    Ejecutar: create_desktop_shortcut.ps1
+echo    O usar: setup_master.bat (opción 3)
 echo.
 echo 👤 Credenciales por defecto:
 echo    ┌─────────────────────────────────────────┐
@@ -228,7 +193,7 @@ if /i "%test_now%"=="s" (
     call run_pos.bat
 ) else (
     echo.
-    echo 👋 ¡Instalación completada! Usa el acceso directo cuando estés listo.
+    echo 👋 ¡Instalación completada! Usa run_pos.bat para iniciar el sistema.
 )
 
 echo.
