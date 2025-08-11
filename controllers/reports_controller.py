@@ -418,8 +418,54 @@ class ReportsController:
             return {'total_sales': 0, 'total_orders': 0, 'avg_ticket': 0, 'unique_products': 0}
     
     def get_detailed_products_report(self, start_date, end_date):
-        """Reporte detallado de productos"""
-        return self.get_top_products(start_date, end_date, limit=50)
+        """Reporte detallado de productos mejorado"""
+        try:
+            db = self.get_session()
+            start_datetime = self._ensure_datetime(start_date)
+            end_datetime = self._ensure_end_of_day(end_date)
+            
+            products_data = db.query(
+                Product.name,
+                Product.price,
+                Category.name.label('category_name'),
+                func.sum(OrderItem.quantity).label('total_quantity'),
+                func.sum(OrderItem.quantity * OrderItem.unit_price).label('total_revenue'),
+                func.count(distinct(Order.id)).label('orders_count'),
+                func.avg(OrderItem.unit_price).label('avg_unit_price')
+            ).join(OrderItem, Product.id == OrderItem.product_id
+            ).join(Order, OrderItem.order_id == Order.id
+            ).join(Category, Product.category_id == Category.id
+            ).filter(
+                Order.created_at >= start_datetime,
+                Order.created_at <= end_datetime,
+                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value])
+            ).group_by(
+                Product.id, Product.name, Product.price, Category.name
+            ).order_by(
+                desc(func.sum(OrderItem.quantity))
+            ).all()
+            
+            db.close()
+            
+            result = []
+            for item in products_data:
+                result.append({
+                    'name': item.name,
+                    'category': item.category_name,
+                    'price': float(item.price) if item.price else 0.0,
+                    'total_quantity': item.total_quantity or 0,
+                    'total_revenue': float(item.total_revenue) if item.total_revenue else 0.0,
+                    'orders_count': item.orders_count or 0,
+                    'avg_unit_price': float(item.avg_unit_price) if item.avg_unit_price else 0.0
+                })
+            
+            return result
+            
+        except Exception as e:
+            print(f"Error obteniendo reporte detallado de productos: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
     
     def get_categories_report(self, start_date, end_date):
         """Reporte de categorías"""
@@ -516,49 +562,6 @@ class ReportsController:
                 'unique_products': 0
             }
 
-    def get_detailed_products_report(self, start_date, end_date):
-        """Obtener reporte detallado de productos"""
-        try:
-            db = self.get_session()
-            start_datetime = self._ensure_datetime(start_date)
-            end_datetime = self._ensure_end_of_day(end_date)
-            
-            products_data = db.query(
-                Product.name,
-                Product.price,
-                Category.name.label('category_name'),
-                func.sum(OrderItem.quantity).label('total_quantity'),
-                func.sum(OrderItem.quantity * OrderItem.price).label('total_revenue'),
-                func.count(distinct(Order.id)).label('orders_count')
-            ).join(OrderItem).join(Order).join(Category).filter(
-                Order.created_at >= start_datetime,
-                Order.created_at <= end_datetime,
-                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value])
-            ).group_by(
-                Product.id, Product.name, Product.price, Category.name
-            ).order_by(
-                desc(func.sum(OrderItem.quantity))
-            ).all()
-            
-            db.close()
-            
-            result = []
-            for item in products_data:
-                result.append({
-                    'product_name': item.name,
-                    'category': item.category_name,
-                    'price': float(item.price),
-                    'quantity_sold': item.total_quantity,
-                    'total_revenue': float(item.total_revenue),
-                    'orders_count': item.orders_count
-                })
-            
-            return result
-            
-        except Exception as e:
-            print(f"Error obteniendo reporte detallado de productos: {e}")
-            return []
-
     def get_categories_report(self, start_date, end_date):
         """Obtener reporte de categorías"""
         try:
@@ -569,7 +572,7 @@ class ReportsController:
             categories_data = db.query(
                 Category.name,
                 func.sum(OrderItem.quantity).label('total_quantity'),
-                func.sum(OrderItem.quantity * OrderItem.price).label('total_revenue'),
+                func.sum(OrderItem.quantity * OrderItem.unit_price).label('total_revenue'),
                 func.count(distinct(Product.id)).label('products_count')
             ).join(Product).join(OrderItem).join(Order).filter(
                 Order.created_at >= start_datetime,
@@ -578,7 +581,7 @@ class ReportsController:
             ).group_by(
                 Category.id, Category.name
             ).order_by(
-                desc(func.sum(OrderItem.quantity * OrderItem.price))
+                desc(func.sum(OrderItem.quantity * OrderItem.unit_price))
             ).all()
             
             db.close()

@@ -73,8 +73,9 @@ class AppController(QObject):
             # Conectar señal de logout
             self.pos_window.logout_requested.connect(self.handle_logout)
             
-            self.pos_window.show()
-            print("✅ Ventana POS mostrada")
+            # Mostrar en pantalla completa
+            self.pos_window.showMaximized()
+            print("✅ Ventana POS mostrada en pantalla completa")
             
         except Exception as e:
             print(f"❌ Error al mostrar ventana POS: {e}")
@@ -87,8 +88,10 @@ class AppController(QObject):
             print("⚙️ Iniciando ventana de administración...")
             self.admin_window = AdminWindow(self.current_user)
             self.admin_window.logout_requested.connect(self.handle_logout)
-            self.admin_window.show()
-            print("✅ Ventana de administración mostrada")
+            
+            # Mostrar en pantalla completa
+            self.admin_window.showMaximized()
+            print("✅ Ventana de administración mostrada en pantalla completa")
             
         except Exception as e:
             print(f"❌ Error al mostrar ventana admin: {e}")

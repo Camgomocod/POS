@@ -412,8 +412,9 @@ class ProductFormDialog(QDialog):
         
         self.prep_time_input = QSpinBox()
         self.prep_time_input.setRange(0, 999)
+        self.prep_time_input.setValue(0)  # Empieza en 0
         self.prep_time_input.setSuffix(" min")
-        self.prep_time_input.setSpecialValueText("No especificado")
+        self.prep_time_input.setSpecialValueText("")  # Campo vacío cuando es 0
         self.style_spinbox(self.prep_time_input)
         grid.addWidget(self.prep_time_input, 3, 2, 1, 2)
         
@@ -423,24 +424,28 @@ class ProductFormDialog(QDialog):
         grid.addWidget(make_label("📦 Stock"), 4, 2, 1, 2)
 
         self.price_input = QDoubleSpinBox()
-        self.price_input.setRange(0.01, 99999.99)
-        self.price_input.setDecimals(2)
+        self.price_input.setRange(0, 999999.99)  # Cambiado para permitir 0.00
+        self.price_input.setDecimals(0)
         self.price_input.setPrefix("$ ")
+        self.price_input.setValue(0)  # Empieza en 0.00
+        self.price_input.setSpecialValueText("")  # Campo vacío cuando es 0
         self.style_spinbox(self.price_input)
         grid.addWidget(self.price_input, 5, 0)
         
         self.cost_input = QDoubleSpinBox()
-        self.cost_input.setRange(0.00, 99999.99)
-        self.cost_input.setDecimals(2)
+        self.cost_input.setRange(0, 999999.99)
+        self.cost_input.setDecimals(0)
         self.cost_input.setPrefix("$ ")
-        self.cost_input.setSpecialValueText("No especificado")
+        self.cost_input.setValue(0)  # Empieza en 0.00
+        self.cost_input.setSpecialValueText("")  # Campo vacío cuando es 0
         self.style_spinbox(self.cost_input)
         grid.addWidget(self.cost_input, 5, 1)
         
         self.stock_input = QSpinBox()
         self.stock_input.setRange(0, 9999)
+        self.stock_input.setValue(0)  # Empieza en 0
         self.stock_input.setSuffix(" unidades")
-        self.stock_input.setSpecialValueText("Ilimitado")
+        self.stock_input.setSpecialValueText("")  # Campo vacío cuando es 0
         self.style_spinbox(self.stock_input)
         grid.addWidget(self.stock_input, 5, 2, 1, 2)
         
@@ -555,7 +560,6 @@ class ProductFormDialog(QDialog):
                 background-color: {ColorPalette.YINMN_BLUE};
             }}
         """)
-    
     def create_buttons(self):
         """Crear botones de acción"""
         buttons_frame = QFrame()
@@ -658,8 +662,8 @@ class ProductFormDialog(QDialog):
             QMessageBox.warning(self, "Error", "Debe seleccionar una categoría")
             return
         
-        if price <= 0:
-            QMessageBox.warning(self, "Error", "El precio debe ser mayor a cero")
+        if price < 0:
+            QMessageBox.warning(self, "Error", "El precio no puede ser negativo")
             return
         
         try:
