@@ -1,4 +1,5 @@
 # views/reports_view_simple.py
+import os
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                              QLabel, QFrame, QGridLayout, QDateEdit, QComboBox,
                              QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView,
@@ -12,18 +13,35 @@ from controllers.reports_controller import ReportsController
 
 # Importación opcional de matplotlib para evitar crashes
 MATPLOTLIB_AVAILABLE = True
-try:
-    import matplotlib
-    matplotlib.use('Qt5Agg')  # Configurar backend antes de importar pyplot
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-    from matplotlib.figure import Figure
-    import matplotlib.dates as mdates
-    print("✅ matplotlib cargado correctamente")
-except ImportError as e:
-    print(f"⚠️  matplotlib no disponible: {e}")
+
+# Verificar si matplotlib está deshabilitado por variable de entorno
+if os.environ.get('DISABLE_MATPLOTLIB', '').lower() in ('1', 'true', 'yes'):
+    print("⚠️  matplotlib deshabilitado por variable de entorno")
     MATPLOTLIB_AVAILABLE = False
-    # Crear clases dummy para evitar errores
+else:
+    try:
+        import matplotlib
+        # En Windows, usar backend más seguro
+        import platform
+        if platform.system() == "Windows":
+            matplotlib.use('Agg')  # Backend sin interfaz gráfica para Windows
+        else:
+            matplotlib.use('Qt5Agg')  # Backend original para otros sistemas
+        
+        import matplotlib.pyplot as plt
+        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+        from matplotlib.figure import Figure
+        import matplotlib.dates as mdates
+        print("✅ matplotlib cargado correctamente")
+    except ImportError as e:
+        print(f"⚠️  matplotlib no disponible: {e}")
+        MATPLOTLIB_AVAILABLE = False
+    except Exception as e:
+        print(f"⚠️  Error configurando matplotlib: {e}")
+        MATPLOTLIB_AVAILABLE = False
+
+# Crear clases dummy si matplotlib no está disponible
+if not MATPLOTLIB_AVAILABLE:
     class FigureCanvas:
         def __init__(self, *args, **kwargs):
             pass

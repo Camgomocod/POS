@@ -70,7 +70,8 @@ try:
         
         if result2 == QMessageBox.Yes:
             print("🚀 Ejecutando aplicación en modo limitado...")
-            return app.exec_()
+            exit_code = app.exec_()
+            sys.exit(exit_code)
         
     else:
         print("❌ Aún hay problemas - puede ser LoginWindow o POSWindow")
