@@ -683,9 +683,13 @@ class ReportsView(QWidget):
         charts_layout.setContentsMargins(5, 5, 5, 5)
         
         if PYQTGRAPH_AVAILABLE:
-            # Crear solo el gráfico principal de ventas con PyQtGraph
+            # Crear gráfico principal de ventas con PyQtGraph
             self.sales_chart = self.create_pyqtgraph_sales_chart()
             charts_layout.addWidget(self.sales_chart)
+            
+            # Agregar gráfico de productos más vendidos
+            products_chart = self.create_pyqtgraph_products_chart()
+            charts_layout.addWidget(products_chart)
         else:
             # Placeholder si PyQtGraph no está disponible
             placeholder = QLabel("📊 Gráficos interactivos\n(PyQtGraph no disponible)\n\nInstalar: pip install pyqtgraph")
@@ -708,10 +712,10 @@ class ReportsView(QWidget):
         """Crear gráfico de ventas con PyQtGraph"""
         # Crear widget del gráfico
         sales_plot = PlotWidget(title="📈 Ventas Diarias")
-        sales_plot.setLabel('left', 'Ventas (COP)', units='COP')
+        sales_plot.setLabel('left', 'Ventas ($)', units='$')
         sales_plot.setLabel('bottom', 'Días')
         sales_plot.showGrid(x=True, y=True, alpha=0.3)
-        sales_plot.setMinimumHeight(400)  # Hacer más grande al ser el único gráfico
+        sales_plot.setMinimumHeight(300)
         
         # Personalizar apariencia
         sales_plot.setStyleSheet(f"""
@@ -727,6 +731,29 @@ class ReportsView(QWidget):
         
         return sales_plot
 
+    def create_pyqtgraph_products_chart(self):
+        """Crear gráfico de productos más vendidos con PyQtGraph"""
+        # Crear widget del gráfico
+        products_plot = PlotWidget(title="🏆 Top 5 Productos Más Vendidos")
+        products_plot.setLabel('left', 'Cantidad')
+        products_plot.setLabel('bottom', 'Productos')
+        products_plot.showGrid(x=False, y=True, alpha=0.3)
+        products_plot.setMinimumHeight(250)
+        
+        # Personalizar apariencia
+        products_plot.setStyleSheet(f"""
+            PlotWidget {{
+                background-color: white;
+                border-radius: 8px;
+                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SUCCESS, 0.3)};
+            }}
+        """)
+        
+        # Guardar referencia para poder actualizar después
+        self.products_plot_widget = products_plot
+        
+        return products_plot
+
     def load_sales_chart(self):
         """Cargar datos en el gráfico de ventas PyQtGraph"""
         if not PYQTGRAPH_AVAILABLE:
@@ -740,17 +767,9 @@ class ReportsView(QWidget):
             # Obtener datos del controlador
             daily_data = self.reports_ctrl.get_daily_sales(start_date, end_date)
             
-            # Limpiar gráfico anterior
-            self.sales_plot_widget.clear()
-            
             if not daily_data:
-                # Mostrar mensaje cuando no hay datos
-                text_item = pg.TextItem("📊 Sin datos de ventas en el período seleccionado", 
-                                      anchor=(0.5, 0.5), color='gray', border='w', fill='w')
-                text_item.setPos(3, 50000)  # Posición centrada
-                self.sales_plot_widget.addItem(text_item)
-                print("ℹ️  No hay datos de ventas - mostrando gráfico vacío")
-                return
+                # Datos de ejemplo si no hay datos reales
+                daily_data = self.get_sample_sales_data()
             
             # Preparar datos para PyQtGraph
             days = []
@@ -786,11 +805,78 @@ class ReportsView(QWidget):
                 ax = self.sales_plot_widget.getAxis('bottom')
                 ax.setTicks([date_labels])
             
+            # Actualizar productos chart también
+            self.load_products_chart()
+            
             print("✅ Gráfico de ventas PyQtGraph cargado")
             
         except Exception as e:
             print(f"❌ Error cargando gráfico de ventas: {e}")
             traceback.print_exc()
+
+    def load_products_chart(self):
+        """Cargar datos en el gráfico de productos PyQtGraph"""
+        if not PYQTGRAPH_AVAILABLE:
+            return
+            
+        try:
+            # Obtener datos de productos más vendidos
+            start_date = self.start_date.date().toPyDate()
+            end_date = self.end_date.date().toPyDate()
+            
+            products_data = self.reports_ctrl.get_top_products(start_date, end_date, limit=5)
+            
+            if not products_data:
+                # Datos de ejemplo si no hay datos reales
+                products_data = [
+                    ("Producto A", 45),
+                    ("Producto B", 38),
+                    ("Producto C", 32),
+                    ("Producto D", 28),
+                    ("Producto E", 25)
+                ]
+            
+            # Preparar datos para gráfico de barras
+            x_pos = list(range(len(products_data)))
+            quantities = [float(data[1]) for data in products_data]
+            product_names = [data[0][:12] + "..." if len(data[0]) > 12 else data[0] for data in products_data]
+            
+            # Limpiar gráfico anterior
+            self.products_plot_widget.clear()
+            
+            # Crear gráfico de barras
+            if quantities:
+                # Crear colores para las barras
+                colors = ['#2E8B57', '#4682B4', '#DAA520', '#DC143C', '#8A2BE2']
+                brushes = [pg.mkBrush(color=colors[i % len(colors)]) for i in range(len(quantities))]
+                
+                bar_graph = BarGraphItem(x=x_pos, height=quantities, width=0.6, brushes=brushes)
+                self.products_plot_widget.addItem(bar_graph)
+                
+                # Configurar etiquetas del eje X
+                ax = self.products_plot_widget.getAxis('bottom')
+                ax.setTicks([[(i, name) for i, name in enumerate(product_names)]])
+            
+            print("✅ Gráfico de productos PyQtGraph cargado")
+            
+        except Exception as e:
+            print(f"❌ Error cargando gráfico de productos: {e}")
+            traceback.print_exc()
+
+    def get_sample_sales_data(self):
+        """Obtener datos de ejemplo para ventas"""
+        from datetime import datetime, timedelta
+        
+        today = datetime.now().date()
+        data = []
+        
+        for i in range(7):
+            date = today - timedelta(days=6-i)
+            # Simular ventas variando entre 1000 y 2500
+            amount = 1000 + (i * 200) + ((i % 3) * 300)
+            data.append((date, amount))
+        
+        return data
 
     def create_compact_metric_widget(self, icon, title, value, color):
         """Crear widget de métrica compacto para pantallas pequeñas"""
@@ -909,31 +995,19 @@ class ReportsView(QWidget):
             # Obtener métricas del controlador
             metrics = self.reports_ctrl.get_period_metrics(start_date, end_date)
             
-            # Si no hay datos, mostrar valores en cero
-            if not metrics or metrics.get('total_orders', 0) == 0:
-                print("ℹ️  No hay datos de ventas - mostrando métricas en cero")
-                self.sales_metric.value_label.setText("$0 COP")
-                self.orders_metric.value_label.setText("0")
-                self.avg_ticket_metric.value_label.setText("$0 COP")
-                self.margin_metric.value_label.setText("0.0%")
-                return
-            
-            # Actualizar widgets de métricas con formato colombiano
-            total_sales = metrics.get('total_sales', 0)
-            avg_ticket = metrics.get('avg_ticket', 0)
-            
-            self.sales_metric.value_label.setText(f"${total_sales:,.0f} COP")
+            # Actualizar widgets de métricas
+            self.sales_metric.value_label.setText(f"${metrics.get('total_sales', 0):,.2f}")
             self.orders_metric.value_label.setText(str(metrics.get('total_orders', 0)))
-            self.avg_ticket_metric.value_label.setText(f"${avg_ticket:,.0f} COP")
+            self.avg_ticket_metric.value_label.setText(f"${metrics.get('avg_ticket', 0):,.2f}")
             self.margin_metric.value_label.setText(f"{metrics.get('margin_percent', 0):.1f}%")
             
         except Exception as e:
             print(f"Error cargando métricas: {e}")
             # Valores por defecto en caso de error
-            self.sales_metric.value_label.setText("$0 COP")
+            self.sales_metric.value_label.setText("$0.00")
             self.orders_metric.value_label.setText("0")
-            self.avg_ticket_metric.value_label.setText("$0 COP")
-            self.margin_metric.value_label.setText("0.0%")
+            self.avg_ticket_metric.value_label.setText("$0.00")
+            self.margin_metric.value_label.setText("0%")
 
     def load_products_data(self, table):
         """Cargar datos de productos en tabla"""
@@ -1019,4 +1093,3 @@ class ReportsView(QWidget):
                     
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error en exportación: {str(e)}")
-

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Script para ejecutar POS sin problemas de matplotlib
-Solución temporal que desactiva matplotlib para evitar cuelgues
+Script para ejecutar POS con PyQtGraph
+Ahora usa PyQtGraph en lugar de matplotlib para gráficos
 """
 
 import sys
@@ -10,9 +10,6 @@ import os
 # Configurar entorno
 os.environ['QT_QPA_PLATFORM'] = 'windows'
 os.environ['QT_AUTO_SCREEN_SCALE_FACTOR'] = '1'
-
-# DESHABILITAR matplotlib para evitar cuelgues
-os.environ['DISABLE_MATPLOTLIB'] = '1'
 
 # Agregar directorio del proyecto
 project_dir = os.path.dirname(os.path.abspath(__file__))

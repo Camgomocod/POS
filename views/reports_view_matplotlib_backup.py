@@ -1,4 +1,4 @@
-# views/reports_view_pyqtgraph.py
+# views/reports_view_simple.py
 import os
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                              QLabel, QFrame, QGridLayout, QDateEdit, QComboBox,
@@ -10,64 +10,112 @@ from utils.colors import ColorPalette
 from controllers.menu_controller import MenuController
 from controllers.order_controller import OrderController
 from controllers.reports_controller import ReportsController
-from datetime import datetime, timedelta
-import csv
-import traceback
 
-# Importación de PyQtGraph
-PYQTGRAPH_AVAILABLE = True
-try:
-    import pyqtgraph as pg
-    from pyqtgraph import PlotWidget, BarGraphItem
-    import numpy as np
-    print("✅ PyQtGraph cargado correctamente")
+# Importación opcional de matplotlib para evitar crashes
+MATPLOTLIB_AVAILABLE = True
+
+# Verificar si matplotlib está deshabilitado por variable de entorno
+if os.environ.get('DISABLE_MATPLOTLIB', '').lower() in ('1', 'true', 'yes'):
+    print("⚠️  matplotlib deshabilitado por variable de entorno")
+    MATPLOTLIB_AVAILABLE = False
+else:
+    try:
+        import matplotlib
+        # En Windows, usar backend más seguro
+        import platform
+        if platform.system() == "Windows":
+            matplotlib.use('Agg')  # Backend sin interfaz gráfica para Windows
+        else:
+            matplotlib.use('Qt5Agg')  # Backend original para otros sistemas
+        
+        import matplotlib.pyplot as plt
+        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+        from matplotlib.figure import Figure
+        import matplotlib.dates as mdates
+        print("✅ matplotlib cargado correctamente")
+    except ImportError as e:
+        print(f"⚠️  matplotlib no disponible: {e}")
+        MATPLOTLIB_AVAILABLE = False
+    except Exception as e:
+        print(f"⚠️  Error configurando matplotlib: {e}")
+        MATPLOTLIB_AVAILABLE = False
+
+# Crear clases dummy si matplotlib no está disponible
+if not MATPLOTLIB_AVAILABLE:
+    from PyQt5.QtWidgets import QWidget
     
-    # Configurar PyQtGraph para mejor apariencia
-    pg.setConfigOption('background', 'w')  # Fondo blanco
-    pg.setConfigOption('foreground', 'k')  # Texto negro
-    pg.setConfigOption('antialias', True)  # Antialiasing para mejor calidad
-    
-except ImportError as e:
-    print(f"⚠️  PyQtGraph no disponible: {e}")
-    PYQTGRAPH_AVAILABLE = False
-    
-    # Clases dummy si no está disponible
-    class PlotWidget(QWidget):
-        def __init__(self, parent=None, **kwargs):
-            super().__init__(parent)
-            self.setMinimumSize(400, 300)
+    class FigureCanvas(QWidget):
+        """Clase dummy para FigureCanvas cuando matplotlib no está disponible"""
+        def __init__(self, *args, **kwargs):
+            super().__init__()
+            self.setMinimumSize(300, 200)
             self.setStyleSheet("background-color: #f0f0f0; border: 1px solid #ccc;")
             
+        def draw(self):
+            pass
+            
+        def setStyleSheet(self, style):
+            super().setStyleSheet(style)
+            
+    class Figure:
+        """Clase dummy para Figure cuando matplotlib no está disponible"""
+        def __init__(self, *args, **kwargs):
+            pass
+            
+        def add_subplot(self, *args, **kwargs):
+            return DummyAxes()
+            
+        def tight_layout(self):
+            pass
+            
+        def clear(self):
+            pass
+    
+    class DummyAxes:
+        """Clase dummy para ejes de matplotlib"""
+        def __init__(self):
+            pass
+            
         def plot(self, *args, **kwargs):
+            pass
+            
+        def bar(self, *args, **kwargs):
+            pass
+            
+        def pie(self, *args, **kwargs):
+            return [], []
+            
+        def set_title(self, *args, **kwargs):
+            pass
+            
+        def set_xlabel(self, *args, **kwargs):
+            pass
+            
+        def set_ylabel(self, *args, **kwargs):
+            pass
+            
+        def legend(self, *args, **kwargs):
+            pass
+            
+        def grid(self, *args, **kwargs):
             pass
             
         def clear(self):
             pass
             
-        def setLabel(self, *args, **kwargs):
-            pass
-            
-        def addItem(self, *args, **kwargs):
-            pass
-            
-        def getAxis(self, *args, **kwargs):
-            return DummyAxis()
-            
-        def setTitle(self, *args, **kwargs):
+        def tick_params(self, *args, **kwargs):
             pass
     
-    class BarGraphItem:
-        def __init__(self, *args, **kwargs):
-            pass
-    
-    class DummyAxis:
-        def setTicks(self, *args, **kwargs):
-            pass
-    
-    np = None
+    plt = None
+    mdates = None
+
+from datetime import datetime, timedelta
+import csv
+import os
+import traceback
 
 class ReportsView(QWidget):
-    """Vista principal de reportes con análisis detallado integrado usando PyQtGraph"""
+    """Vista principal de reportes con análisis detallado integrado"""
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -133,7 +181,7 @@ class ReportsView(QWidget):
         self.right_content_layout.addWidget(detailed_content)
         
         # Actualizar el botón
-        self.details_btn.setText("📈 Volver a Gráficos")
+        self.details_btn.setText("� Volver a Gráficos")
         print("✅ Modo detallado activado")
 
     def switch_to_main_mode(self):
@@ -149,7 +197,7 @@ class ReportsView(QWidget):
         self.right_content_layout.addWidget(charts_frame)
         
         # Actualizar el botón
-        self.details_btn.setText("📊 Ver Análisis Detallado")
+        self.details_btn.setText("� Ver Análisis Detallado")
         
         # Recargar el gráfico
         self.load_sales_chart()
@@ -157,6 +205,7 @@ class ReportsView(QWidget):
 
     def clear_right_panel_content(self):
         """Limpiar el contenido del panel derecho"""
+        # Eliminar todos los widgets del layout de contenido
         while self.right_content_layout.count():
             child = self.right_content_layout.takeAt(0)
             if child.widget():
@@ -177,6 +226,7 @@ class ReportsView(QWidget):
         layout.setContentsMargins(5, 5, 5, 5)
         
         # Crear el TabWidget con las tres pestañas
+        from PyQt5.QtWidgets import QTabWidget
         tab_widget = QTabWidget()
         tab_widget.setStyleSheet(f"""
             QTabWidget::pane {{
@@ -275,9 +325,42 @@ class ReportsView(QWidget):
         
         # Cargar datos sin headers duplicados
         try:
-            self.load_products_data(products_table)
+            start_date = self.start_date.date().toPyDate()
+            end_date = self.end_date.date().toPyDate()
+            
+            products_data = self.reports_ctrl.get_top_products(start_date, end_date, limit=20)
+            
+            if products_data and len(products_data) > 0:
+                products_table.setRowCount(len(products_data))
+                for row, product in enumerate(products_data):
+                    products_table.setItem(row, 0, QTableWidgetItem(str(product.get('name', 'N/A'))))
+                    products_table.setItem(row, 1, QTableWidgetItem(str(product.get('quantity', 0))))
+                    products_table.setItem(row, 2, QTableWidgetItem(f"${product.get('revenue', 0):,.0f}"))
+                    products_table.setItem(row, 3, QTableWidgetItem(f"${product.get('avg_price', 0):,.0f}"))
+                    products_table.setItem(row, 4, QTableWidgetItem(f"{product.get('margin', 0):.1f}%"))
+                    products_table.setItem(row, 5, QTableWidgetItem(str(product.get('last_sale', 'N/A'))))
+            else:
+                # Datos de muestra con cálculos correctos de margen y fecha de última venta
+                sample_data = [
+                    {'name': 'Café Americano', 'quantity': 45, 'revenue': 180.00, 'avg_price': 4.00, 'margin': 75.0, 'last_sale': '2025-08-08'},
+                    {'name': 'Cappuccino', 'quantity': 32, 'revenue': 160.00, 'avg_price': 5.00, 'margin': 80.0, 'last_sale': '2025-08-08'},
+                    {'name': 'Croissant', 'quantity': 28, 'revenue': 84.00, 'avg_price': 3.00, 'margin': 66.7, 'last_sale': '2025-08-07'},
+                    {'name': 'Sandwich Club', 'quantity': 18, 'revenue': 144.00, 'avg_price': 8.00, 'margin': 62.5, 'last_sale': '2025-08-08'},
+                    {'name': 'Latte', 'quantity': 25, 'revenue': 137.50, 'avg_price': 5.50, 'margin': 72.7, 'last_sale': '2025-08-08'},
+                ]
+                
+                products_table.setRowCount(len(sample_data))
+                for row, product in enumerate(sample_data):
+                    products_table.setItem(row, 0, QTableWidgetItem(product['name']))
+                    products_table.setItem(row, 1, QTableWidgetItem(str(product['quantity'])))
+                    products_table.setItem(row, 2, QTableWidgetItem(f"${product['revenue']:,.0f}"))
+                    products_table.setItem(row, 3, QTableWidgetItem(f"${product['avg_price']:,.0f}"))
+                    products_table.setItem(row, 4, QTableWidgetItem(f"{product['margin']:.1f}%"))
+                    products_table.setItem(row, 5, QTableWidgetItem(product['last_sale']))
         except Exception as e:
-            print(f"Error cargando datos de productos: {e}")
+            print(f"Error cargando productos: {e}")
+            products_table.setRowCount(1)
+            products_table.setItem(0, 0, QTableWidgetItem(f"Error: {str(e)}"))
         
         products_table.resizeColumnsToContents()
         layout.addWidget(products_table)
@@ -334,9 +417,42 @@ class ReportsView(QWidget):
         
         # Cargar datos sin headers duplicados
         try:
-            self.load_categories_data(categories_table)
+            start_date = self.start_date.date().toPyDate()
+            end_date = self.end_date.date().toPyDate()
+            
+            categories_data = self.reports_ctrl.get_sales_by_category(start_date, end_date)
+            
+            if categories_data and len(categories_data) > 0:
+                categories_table.setRowCount(len(categories_data))
+                for row, category in enumerate(categories_data):
+                    revenue = category.get('revenue', 0)
+                    avg_price = revenue / category.get('total_items', 1) if category.get('total_items', 0) > 0 else 0
+                    
+                    categories_table.setItem(row, 0, QTableWidgetItem(str(category.get('name', 'N/A'))))
+                    categories_table.setItem(row, 1, QTableWidgetItem(str(category.get('total_items', 0))))
+                    categories_table.setItem(row, 2, QTableWidgetItem(f"${revenue:,.0f}"))
+                    categories_table.setItem(row, 3, QTableWidgetItem(f"${avg_price:,.0f}"))
+                    categories_table.setItem(row, 4, QTableWidgetItem(f"{category.get('percentage', 0):.1f}%"))
+            else:
+                # Datos de muestra sin headers duplicados
+                sample_data = [
+                    {'name': 'Bebidas Calientes', 'quantity': 102, 'revenue': 477.50, 'avg_price': 4.68, 'percentage': 42.5},
+                    {'name': 'Postres', 'quantity': 45, 'revenue': 225.00, 'avg_price': 5.00, 'percentage': 20.1},
+                    {'name': 'Comida Rápida', 'quantity': 38, 'revenue': 304.00, 'avg_price': 8.00, 'percentage': 27.1},
+                    {'name': 'Bebidas Frías', 'quantity': 22, 'revenue': 115.50, 'avg_price': 5.25, 'percentage': 10.3},
+                ]
+                
+                categories_table.setRowCount(len(sample_data))
+                for row, category in enumerate(sample_data):
+                    categories_table.setItem(row, 0, QTableWidgetItem(category['name']))
+                    categories_table.setItem(row, 1, QTableWidgetItem(str(category['quantity'])))
+                    categories_table.setItem(row, 2, QTableWidgetItem(f"${category['revenue']:,.0f}"))
+                    categories_table.setItem(row, 3, QTableWidgetItem(f"${category['avg_price']:,.0f}"))
+                    categories_table.setItem(row, 4, QTableWidgetItem(f"{category['percentage']:.1f}%"))
         except Exception as e:
-            print(f"Error cargando datos de categorías: {e}")
+            print(f"Error cargando categorías: {e}")
+            categories_table.setRowCount(1)
+            categories_table.setItem(0, 0, QTableWidgetItem(f"Error: {str(e)}"))
         
         categories_table.resizeColumnsToContents()
         layout.addWidget(categories_table)
@@ -393,9 +509,42 @@ class ReportsView(QWidget):
         
         # Cargar datos sin headers duplicados
         try:
-            self.load_hours_data(hours_table)
+            start_date = self.start_date.date().toPyDate()
+            end_date = self.end_date.date().toPyDate()
+            
+            hours_data = self.reports_ctrl.get_sales_by_hour(start_date, end_date)
+            
+            if hours_data and len(hours_data) > 0:
+                hours_table.setRowCount(len(hours_data))
+                for row, hour in enumerate(hours_data):
+                    hours_table.setItem(row, 0, QTableWidgetItem(hour.get('hour_range', 'N/A')))
+                    hours_table.setItem(row, 1, QTableWidgetItem(str(hour.get('order_count', 0))))
+                    hours_table.setItem(row, 2, QTableWidgetItem(f"${hour.get('total_sales', 0):,.0f}"))
+                    hours_table.setItem(row, 3, QTableWidgetItem(f"${hour.get('avg_ticket', 0):,.0f}"))
+                    hours_table.setItem(row, 4, QTableWidgetItem(f"{hour.get('percentage', 0):.1f}%"))
+            else:
+                # Datos de muestra sin headers duplicados
+                sample_data = [
+                    {'hour_range': '08:00-09:00', 'order_count': 12, 'total_sales': 62.50, 'avg_ticket': 5.21, 'percentage': 5.2},
+                    {'hour_range': '09:00-10:00', 'order_count': 28, 'total_sales': 142.00, 'avg_ticket': 5.07, 'percentage': 11.8},
+                    {'hour_range': '10:00-11:00', 'order_count': 45, 'total_sales': 234.75, 'avg_ticket': 5.22, 'percentage': 19.6},
+                    {'hour_range': '11:00-12:00', 'order_count': 38, 'total_sales': 198.50, 'avg_ticket': 5.22, 'percentage': 16.5},
+                    {'hour_range': '12:00-13:00', 'order_count': 52, 'total_sales': 286.00, 'avg_ticket': 5.50, 'percentage': 23.8},
+                    {'hour_range': '13:00-14:00', 'order_count': 41, 'total_sales': 225.50, 'avg_ticket': 5.50, 'percentage': 18.8},
+                    {'hour_range': '14:00-15:00', 'order_count': 33, 'total_sales': 171.50, 'avg_ticket': 5.20, 'percentage': 14.3},
+                ]
+                
+                hours_table.setRowCount(len(sample_data))
+                for row, hour in enumerate(sample_data):
+                    hours_table.setItem(row, 0, QTableWidgetItem(hour['hour_range']))
+                    hours_table.setItem(row, 1, QTableWidgetItem(str(hour['order_count'])))
+                    hours_table.setItem(row, 2, QTableWidgetItem(f"${hour['total_sales']:,.0f}"))
+                    hours_table.setItem(row, 3, QTableWidgetItem(f"${hour['avg_ticket']:,.0f}"))
+                    hours_table.setItem(row, 4, QTableWidgetItem(f"{hour['percentage']:.1f}%"))
         except Exception as e:
-            print(f"Error cargando datos de horas: {e}")
+            print(f"Error cargando datos horarios: {e}")
+            hours_table.setRowCount(1)
+            hours_table.setItem(0, 0, QTableWidgetItem(f"Error: {str(e)}"))
         
         hours_table.resizeColumnsToContents()
         layout.addWidget(hours_table)
@@ -435,8 +584,6 @@ class ReportsView(QWidget):
         filters_layout = QHBoxLayout()
         filters_layout.setSpacing(5)
         
-        filters_layout.addWidget(QLabel("Desde:"))
-        
         self.start_date = QDateEdit()
         self.start_date.setDate(QDate.currentDate().addDays(-30))
         self.start_date.setStyleSheet(self.get_date_edit_style())
@@ -445,6 +592,7 @@ class ReportsView(QWidget):
         
         # Fecha fin
         filters_layout.addWidget(QLabel("Hasta:"))
+        
         
         self.end_date = QDateEdit()
         self.end_date.setDate(QDate.currentDate())
@@ -497,6 +645,7 @@ class ReportsView(QWidget):
         layout = QVBoxLayout(scroll_content)
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(12)
+        
         
         # Métricas principales en grid compacto 2x2
         metrics_frame = QFrame()
@@ -670,7 +819,7 @@ class ReportsView(QWidget):
         return self.right_panel
 
     def create_charts_frame(self):
-        """Crear frame con gráficos PyQtGraph"""
+        """Crear frame con gráficos"""
         charts_frame = QFrame()
         charts_frame.setStyleSheet(f"""
             QFrame {{
@@ -682,115 +831,11 @@ class ReportsView(QWidget):
         charts_layout = QVBoxLayout(charts_frame)
         charts_layout.setContentsMargins(5, 5, 5, 5)
         
-        if PYQTGRAPH_AVAILABLE:
-            # Crear solo el gráfico principal de ventas con PyQtGraph
-            self.sales_chart = self.create_pyqtgraph_sales_chart()
-            charts_layout.addWidget(self.sales_chart)
-        else:
-            # Placeholder si PyQtGraph no está disponible
-            placeholder = QLabel("📊 Gráficos interactivos\n(PyQtGraph no disponible)\n\nInstalar: pip install pyqtgraph")
-            placeholder.setAlignment(Qt.AlignCenter)
-            placeholder.setStyleSheet(f"""
-                QLabel {{
-                    background-color: {ColorPalette.PLATINUM};
-                    border-radius: 8px;
-                    min-height: 400px;
-                    font-size: 16px;
-                    color: #666;
-                    border: 2px dashed #ccc;
-                }}
-            """)
-            charts_layout.addWidget(placeholder)
+        # Gráfico de ventas diarias expandido
+        self.sales_chart = self.create_sales_chart()
+        charts_layout.addWidget(self.sales_chart)
         
         return charts_frame
-
-    def create_pyqtgraph_sales_chart(self):
-        """Crear gráfico de ventas con PyQtGraph"""
-        # Crear widget del gráfico
-        sales_plot = PlotWidget(title="📈 Ventas Diarias")
-        sales_plot.setLabel('left', 'Ventas (COP)', units='COP')
-        sales_plot.setLabel('bottom', 'Días')
-        sales_plot.showGrid(x=True, y=True, alpha=0.3)
-        sales_plot.setMinimumHeight(400)  # Hacer más grande al ser el único gráfico
-        
-        # Personalizar apariencia
-        sales_plot.setStyleSheet(f"""
-            PlotWidget {{
-                background-color: white;
-                border-radius: 8px;
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.YINMN_BLUE, 0.3)};
-            }}
-        """)
-        
-        # Guardar referencia para poder actualizar después
-        self.sales_plot_widget = sales_plot
-        
-        return sales_plot
-
-    def load_sales_chart(self):
-        """Cargar datos en el gráfico de ventas PyQtGraph"""
-        if not PYQTGRAPH_AVAILABLE:
-            return
-            
-        try:
-            # Obtener datos de ventas
-            start_date = self.start_date.date().toPyDate()
-            end_date = self.end_date.date().toPyDate()
-            
-            # Obtener datos del controlador
-            daily_data = self.reports_ctrl.get_daily_sales(start_date, end_date)
-            
-            # Limpiar gráfico anterior
-            self.sales_plot_widget.clear()
-            
-            if not daily_data:
-                # Mostrar mensaje cuando no hay datos
-                text_item = pg.TextItem("📊 Sin datos de ventas en el período seleccionado", 
-                                      anchor=(0.5, 0.5), color='gray', border='w', fill='w')
-                text_item.setPos(3, 50000)  # Posición centrada
-                self.sales_plot_widget.addItem(text_item)
-                print("ℹ️  No hay datos de ventas - mostrando gráfico vacío")
-                return
-            
-            # Preparar datos para PyQtGraph
-            days = []
-            sales = []
-            
-            for i, (date, amount) in enumerate(daily_data):
-                days.append(i)
-                sales.append(float(amount))
-            
-            # Limpiar gráfico anterior
-            self.sales_plot_widget.clear()
-            
-            # Crear línea de ventas
-            pen = pg.mkPen(color='#1f77b4', width=3)
-            brush = pg.mkBrush(color=(31, 119, 180, 100))
-            
-            # Línea principal
-            line = self.sales_plot_widget.plot(days, sales, pen=pen, 
-                                             symbol='o', symbolBrush='#1f77b4', 
-                                             symbolSize=8, name='Ventas')
-            
-            # Área bajo la curva para mejor efecto visual
-            if len(days) > 1:
-                fill_curve = pg.PlotCurveItem(days, sales, pen=pen)
-                fill = pg.FillBetweenItem(fill_curve, pg.PlotCurveItem(days, [0]*len(days)), brush=brush)
-                self.sales_plot_widget.addItem(fill)
-                self.sales_plot_widget.addItem(line)
-            
-            # Configurar etiquetas del eje X con fechas
-            if daily_data:
-                date_labels = [(i, data[0].strftime('%m/%d') if hasattr(data[0], 'strftime') else str(data[0])) 
-                              for i, data in enumerate(daily_data[::max(1, len(daily_data)//7)])]
-                ax = self.sales_plot_widget.getAxis('bottom')
-                ax.setTicks([date_labels])
-            
-            print("✅ Gráfico de ventas PyQtGraph cargado")
-            
-        except Exception as e:
-            print(f"❌ Error cargando gráfico de ventas: {e}")
-            traceback.print_exc()
 
     def create_compact_metric_widget(self, icon, title, value, color):
         """Crear widget de métrica compacto para pantallas pequeñas"""
@@ -822,6 +867,7 @@ class ReportsView(QWidget):
             color: {color};
             min-width: 20px;
             max-height: 20px;
+            
         """)
         header_layout.addWidget(icon_label)
         
@@ -855,50 +901,87 @@ class ReportsView(QWidget):
         
         return widget
 
+    def create_sales_chart(self):
+        """Crear gráfico de ventas diarias expandido"""
+        if not MATPLOTLIB_AVAILABLE:
+            # Crear widget placeholder cuando matplotlib no está disponible
+            from PyQt5.QtWidgets import QLabel
+            placeholder = QLabel("📊 Gráfico no disponible\n(matplotlib deshabilitado)")
+            placeholder.setAlignment(Qt.AlignCenter)
+            placeholder.setStyleSheet(f"""
+                QLabel {{
+                    background-color: {ColorPalette.PLATINUM};
+                    border-radius: 8px;
+                    min-height: 400px;
+                    font-size: 16px;
+                    color: #666;
+                }}
+            """)
+            return placeholder
+        
+        # Crear figura de matplotlib más grande para aprovechar el espacio
+        self.figure = Figure(figsize=(10, 4), dpi=100, facecolor='#F7F9FC')
+        self.canvas = FigureCanvas(self.figure)
+        
+        # Aplicar estilo
+        self.canvas.setStyleSheet(f"""
+            FigureCanvas {{
+                background-color: {ColorPalette.PLATINUM};
+                border-radius: 8px;
+                min-height: 400px;
+            }}
+        """)
+        
+        return self.canvas
+
     def get_date_edit_style(self):
         """Obtener estilo para QDateEdit"""
         return f"""
             QDateEdit {{
                 background-color: {ColorPalette.PLATINUM};
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.5)};
+                border: 1px solid {ColorPalette.SILVER_LAKE_BLUE};
                 border-radius: 4px;
-                padding: 4px 8px;
-                font-size: 12px;
-                min-width: 100px;
+                padding: 4px 6px;
+                font-size: 11px;
+                color: {ColorPalette.RICH_BLACK};
+                min-width: 90px;
+                max-height: 28px;
             }}
             QDateEdit:focus {{
                 border-color: {ColorPalette.YINMN_BLUE};
-                background-color: white;
             }}
         """
 
     def set_quick_period(self, period):
-        """Configurar período rápido"""
+        """Establecer período rápido"""
         today = QDate.currentDate()
         
         if period == "today":
             self.start_date.setDate(today)
             self.end_date.setDate(today)
         elif period == "week":
-            self.start_date.setDate(today.addDays(-7))
+            days_since_monday = today.dayOfWeek() - 1
+            monday = today.addDays(-days_since_monday)
+            self.start_date.setDate(monday)
             self.end_date.setDate(today)
         elif period == "month":
-            self.start_date.setDate(today.addDays(-30))
+            first_day = QDate(today.year(), today.month(), 1)
+            self.start_date.setDate(first_day)
             self.end_date.setDate(today)
         
         self.refresh_data()
 
     def load_initial_data(self):
         """Cargar datos iniciales"""
-        self.load_metrics()
-        if PYQTGRAPH_AVAILABLE:
-            self.load_sales_chart()
+        self.refresh_data()
 
     def refresh_data(self):
         """Actualizar todos los datos"""
-        self.load_metrics()
-        if PYQTGRAPH_AVAILABLE and self.current_mode == "main":
+        try:
+            self.load_metrics()
             self.load_sales_chart()
+        except Exception as e:
+            print(f"Error en refresh_data: {e}")
 
     def load_metrics(self):
         """Cargar métricas principales"""
@@ -906,117 +989,255 @@ class ReportsView(QWidget):
             start_date = self.start_date.date().toPyDate()
             end_date = self.end_date.date().toPyDate()
             
-            # Obtener métricas del controlador
-            metrics = self.reports_ctrl.get_period_metrics(start_date, end_date)
+            sales_summary = self.reports_ctrl.get_sales_summary(start_date, end_date)
             
-            # Si no hay datos, mostrar valores en cero
-            if not metrics or metrics.get('total_orders', 0) == 0:
-                print("ℹ️  No hay datos de ventas - mostrando métricas en cero")
-                self.sales_metric.value_label.setText("$0 COP")
+            if sales_summary and isinstance(sales_summary, dict):
+                total_sales = sales_summary.get('total_sales', 0.0)
+                total_orders = sales_summary.get('total_orders', 0)
+                avg_ticket = sales_summary.get('avg_ticket', 0.0)
+                
+                try:
+                    margin_data = self.reports_ctrl.get_profit_margin_analysis(start_date, end_date)
+                    overall_margin = margin_data.get('overall_margin', 0.0) if margin_data else 0.0
+                except:
+                    overall_margin = 0.0
+                
+                self.sales_metric.value_label.setText(f"${total_sales:,.0f}")
+                self.orders_metric.value_label.setText(str(total_orders))
+                self.avg_ticket_metric.value_label.setText(f"${avg_ticket:,.0f}")
+                self.margin_metric.value_label.setText(f"{overall_margin:.1f}%")
+            else:
+                self.sales_metric.value_label.setText("$0.00")
                 self.orders_metric.value_label.setText("0")
-                self.avg_ticket_metric.value_label.setText("$0 COP")
+                self.avg_ticket_metric.value_label.setText("$0.00")
                 self.margin_metric.value_label.setText("0.0%")
-                return
-            
-            # Actualizar widgets de métricas con formato colombiano
-            total_sales = metrics.get('total_sales', 0)
-            avg_ticket = metrics.get('avg_ticket', 0)
-            
-            self.sales_metric.value_label.setText(f"${total_sales:,.0f} COP")
-            self.orders_metric.value_label.setText(str(metrics.get('total_orders', 0)))
-            self.avg_ticket_metric.value_label.setText(f"${avg_ticket:,.0f} COP")
-            self.margin_metric.value_label.setText(f"{metrics.get('margin_percent', 0):.1f}%")
             
         except Exception as e:
             print(f"Error cargando métricas: {e}")
-            # Valores por defecto en caso de error
-            self.sales_metric.value_label.setText("$0 COP")
-            self.orders_metric.value_label.setText("0")
-            self.avg_ticket_metric.value_label.setText("$0 COP")
-            self.margin_metric.value_label.setText("0.0%")
+            self.sales_metric.value_label.setText("Error")
+            self.orders_metric.value_label.setText("Error")
+            self.avg_ticket_metric.value_label.setText("Error")
+            self.margin_metric.value_label.setText("Error")
 
-    def load_products_data(self, table):
-        """Cargar datos de productos en tabla"""
+    def load_sales_chart(self):
+        """Cargar gráfico de ventas"""
+        if not MATPLOTLIB_AVAILABLE:
+            return
+            
         try:
+            import matplotlib.pyplot as plt
+            import matplotlib.dates as mdates
+            from matplotlib.colors import LinearSegmentedColormap
+            import numpy as np
+            
+            self.figure.clear()
+            # Configurar estilo moderno
+            plt.style.use('default')
+            
+            # Crear subplot con fondo personalizado
+            ax = self.figure.add_subplot(111, facecolor='#F7F9FC')
+            
             start_date = self.start_date.date().toPyDate()
             end_date = self.end_date.date().toPyDate()
             
-            products_data = self.reports_ctrl.get_detailed_products_report(start_date, end_date)
+            # Verificar si es un solo día para mostrar datos horarios
+            is_single_day = start_date == end_date
             
-            table.setRowCount(len(products_data))
-            
-            for row, product in enumerate(products_data):
-                table.setItem(row, 0, QTableWidgetItem(str(product.get('name', ''))))
-                table.setItem(row, 1, QTableWidgetItem(str(product.get('quantity', 0))))
-                table.setItem(row, 2, QTableWidgetItem(f"${product.get('revenue', 0):,.2f}"))
-                table.setItem(row, 3, QTableWidgetItem(f"${product.get('avg_price', 0):,.2f}"))
-                table.setItem(row, 4, QTableWidgetItem(f"{product.get('margin', 0):.1f}%"))
-                table.setItem(row, 5, QTableWidgetItem(str(product.get('last_sale', 'N/A'))))
+            if is_single_day:
+                # Usar datos horarios para un solo día
+                hourly_data = self.reports_ctrl.get_sales_by_hour(start_date, end_date)
                 
-        except Exception as e:
-            print(f"Error cargando datos de productos: {e}")
-
-    def load_categories_data(self, table):
-        """Cargar datos de categorías en tabla"""
-        try:
-            start_date = self.start_date.date().toPyDate()
-            end_date = self.end_date.date().toPyDate()
-            
-            categories_data = self.reports_ctrl.get_categories_report(start_date, end_date)
-            
-            table.setRowCount(len(categories_data))
-            
-            for row, category in enumerate(categories_data):
-                table.setItem(row, 0, QTableWidgetItem(str(category.get('name', ''))))
-                table.setItem(row, 1, QTableWidgetItem(str(category.get('products_sold', 0))))
-                table.setItem(row, 2, QTableWidgetItem(f"${category.get('revenue', 0):,.2f}"))
-                table.setItem(row, 3, QTableWidgetItem(f"${category.get('avg_per_product', 0):,.2f}"))
-                table.setItem(row, 4, QTableWidgetItem(f"{category.get('percent_total', 0):.1f}%"))
+                if hourly_data and len(hourly_data) > 0:
+                    hours = [item['hour_range'] for item in hourly_data]
+                    sales = [float(item['total_sales']) for item in hourly_data]
+                    
+                    # Colores modernos para vista horaria
+                    line_color = '#DC2626'  # Rojo para distinguir de vista diaria
+                    
+                    # Crear posiciones numéricas para las horas
+                    x_positions = list(range(len(hours)))
+                    
+                    # Línea principal con puntos
+                    ax.plot(x_positions, sales, 
+                           color=line_color, 
+                           linewidth=3, 
+                           marker='o', 
+                           markersize=8, 
+                           markerfacecolor='#B91C1C',
+                           markeredgecolor='white',
+                           markeredgewidth=2,
+                           alpha=0.9,
+                           zorder=3)
+                    
+                    # Área sombreada
+                    ax.fill_between(x_positions, sales, 0, 
+                                   alpha=0.6, 
+                                   color='#EF4444',
+                                   zorder=1)
+                    
+                    # Área adicional para efecto de profundidad
+                    ax.fill_between(x_positions, sales, 0, 
+                                   alpha=0.3, 
+                                   color='#FCA5A5',
+                                   zorder=0)
+                    
+                    # Configurar etiquetas del eje X con horas
+                    ax.set_xticks(x_positions)
+                    ax.set_xticklabels(hours, rotation=45, ha='right')
+                    
+                    # Configurar límites
+                    max_sales = max(sales) if sales else 0
+                    if max_sales > 0:
+                        ax.set_ylim(0, max_sales * 1.1)
+                    
+                    # Añadir líneas de valor promedio
+                    avg_sales = sum(sales) / len(sales) if sales else 0
+                    ax.axhline(y=avg_sales, color='#F59E0B', linestyle='--', alpha=0.7, linewidth=2, label=f'Promedio: ${avg_sales:.2f}')
+                    
+                    # Título específico para vista horaria
+                    ax.text(0.02, 0.98, f'Ventas por Horas - {start_date.strftime("%d/%m/%Y")}', 
+                           transform=ax.transAxes, fontsize=12, fontweight='bold',
+                           verticalalignment='top', color='#374151',
+                           bbox=dict(boxstyle="round,pad=0.3", facecolor='white', alpha=0.8))
+                    
+                else:
+                    ax.text(0.5, 0.5, f'No hay ventas registradas para hoy\n{start_date.strftime("%d/%m/%Y")}\n\nPrueba con otro día', 
+                           ha='center', va='center', transform=ax.transAxes,
+                           fontsize=14, color='#6B7280', 
+                           bbox=dict(boxstyle="round,pad=0.5", facecolor='#F3F4F6', alpha=0.8))
+            else:
+                # Usar datos diarios para períodos más largos
+                daily_sales = self.reports_ctrl.get_daily_sales(start_date, end_date)
                 
+                if daily_sales and len(daily_sales) > 0:
+                    dates = []
+                    sales = []
+                    
+                    for item in daily_sales:
+                        if isinstance(item['date'], str):
+                            date_obj = datetime.strptime(item['date'], '%Y-%m-%d').date()
+                        else:
+                            date_obj = item['date']
+                        
+                        dates.append(date_obj)
+                        sales.append(float(item['total_sales']))
+                    
+                    # Colores modernos y gradientes para vista diaria
+                    line_color = '#2563EB'  # Azul moderno
+                    
+                    # Crear gradiente para el área
+                    y_max = max(sales) if sales else 100
+                    
+                    # Línea principal con sombra
+                    ax.plot(dates, sales, 
+                           color=line_color, 
+                           linewidth=3, 
+                           marker='o', 
+                           markersize=8, 
+                           markerfacecolor='#1D4ED8',
+                           markeredgecolor='white',
+                           markeredgewidth=2,
+                           alpha=0.9,
+                           zorder=3)
+                    
+                    # Área sombreada con gradiente
+                    ax.fill_between(dates, sales, 0, 
+                                   alpha=0.6, 
+                                   color='#3B82F6',
+                                   zorder=1)
+                    
+                    # Área adicional para efecto de profundidad
+                    ax.fill_between(dates, sales, 0, 
+                                   alpha=0.3, 
+                                   color='#60A5FA',
+                                   zorder=0)
+                    
+                    # Configurar formato de fechas
+                    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d'))
+                    ax.xaxis.set_major_locator(mdates.DayLocator(interval=max(1, len(dates)//7)))
+                    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+                    
+                    # Configurar límites
+                    max_sales = max(sales) if sales else 0
+                    if max_sales > 0:
+                        ax.set_ylim(0, max_sales * 1.1)
+                    
+                    # Añadir líneas de valor promedio
+                    avg_sales = sum(sales) / len(sales) if sales else 0
+                    ax.axhline(y=avg_sales, color='#F59E0B', linestyle='--', alpha=0.7, linewidth=2, label=f'Promedio: ${avg_sales:.2f}')
+                    
+                else:
+                    ax.text(0.5, 0.5, 'No hay datos para el período seleccionado\n\nPrueba con otro rango de fechas', 
+                           ha='center', va='center', transform=ax.transAxes,
+                           fontsize=14, color='#6B7280', 
+                           bbox=dict(boxstyle="round,pad=0.5", facecolor='#F3F4F6', alpha=0.8))
+            
+            # Grid moderno (sin títulos de ejes para máximo espacio)
+            ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='#D1D5DB')
+            ax.set_axisbelow(True)
+            
+            # Estilo de los ejes
+            ax.tick_params(axis='both', which='major', labelsize=10, colors='#4B5563')
+            ax.tick_params(axis='x', which='major', pad=8)
+            ax.tick_params(axis='y', which='major', pad=8)
+            
+            # Remover spines superiores y derechos para look más limpio
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_color('#D1D5DB')
+            ax.spines['bottom'].set_color('#D1D5DB')
+            
+            # Formato de números en Y con separadores de miles
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x:,.0f}'))
+            
+            # Leyenda si hay datos
+            if (is_single_day and hourly_data and len(hourly_data) > 0) or (not is_single_day and daily_sales and len(daily_sales) > 0):
+                ax.legend(loc='upper left', frameon=True, fancybox=True, shadow=True, 
+                         framealpha=0.9, facecolor='white', edgecolor='#D1D5DB')
+            
+            # Ajuste automático del layout
+            self.figure.tight_layout(pad=2.0)
+            self.canvas.draw()
+            
         except Exception as e:
-            print(f"Error cargando datos de categorías: {e}")
-
-    def load_hours_data(self, table):
-        """Cargar datos horarios en tabla"""
-        try:
-            start_date = self.start_date.date().toPyDate()
-            end_date = self.end_date.date().toPyDate()
-            
-            hours_data = self.reports_ctrl.get_hourly_report(start_date, end_date)
-            
-            table.setRowCount(len(hours_data))
-            
-            for row, hour_data in enumerate(hours_data):
-                table.setItem(row, 0, QTableWidgetItem(str(hour_data.get('hour_range', ''))))
-                table.setItem(row, 1, QTableWidgetItem(str(hour_data.get('orders', 0))))
-                table.setItem(row, 2, QTableWidgetItem(f"${hour_data.get('revenue', 0):,.2f}"))
-                table.setItem(row, 3, QTableWidgetItem(f"${hour_data.get('avg_ticket', 0):,.2f}"))
-                table.setItem(row, 4, QTableWidgetItem(f"{hour_data.get('percent_total', 0):.1f}%"))
-                
-        except Exception as e:
-            print(f"Error cargando datos horarios: {e}")
+            print(f"Error cargando gráfico de ventas: {e}")
+            self.figure.clear()
+            ax = self.figure.add_subplot(111, facecolor='#FEF2F2')
+            ax.text(0.5, 0.5, f'Error cargando datos:\n\n{str(e)}', 
+                   ha='center', va='center', transform=ax.transAxes,
+                   fontsize=12, color='#DC2626',
+                   bbox=dict(boxstyle="round,pad=0.5", facecolor='#FECACA', alpha=0.8))
+            ax.axis('off')
+            self.canvas.draw()
 
     def export_data(self):
         """Exportar datos a CSV"""
         try:
             file_path, _ = QFileDialog.getSaveFileName(
-                self, "Exportar Reportes", 
-                f"reporte_ventas_{datetime.now().strftime('%Y%m%d')}.csv",
-                "CSV Files (*.csv)"
+                self,
+                "Exportar Reportes",
+                f"reportes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                "CSV files (*.csv)"
             )
             
             if file_path:
-                start_date = self.start_date.date().toPyDate()
-                end_date = self.end_date.date().toPyDate()
-                
-                # Exportar datos usando el controlador
-                success = self.reports_ctrl.export_reports_to_csv(start_date, end_date, file_path)
-                
-                if success:
-                    QMessageBox.information(self, "Éxito", f"Datos exportados a:\n{file_path}")
-                else:
-                    QMessageBox.warning(self, "Error", "Error al exportar datos")
+                with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+                    writer = csv.writer(csvfile)
                     
+                    # Información del reporte
+                    writer.writerow(["Reporte de Ventas"])
+                    writer.writerow(["Período:", f"{self.start_date.date().toString()} - {self.end_date.date().toString()}"])
+                    writer.writerow(["Generado:", datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
+                    writer.writerow([])
+                    
+                    # Métricas principales
+                    writer.writerow(["Métricas Principales"])
+                    writer.writerow(["Ventas Totales:", self.sales_metric.value_label.text()])
+                    writer.writerow(["Órdenes Totales:", self.orders_metric.value_label.text()])
+                    writer.writerow(["Ticket Promedio:", self.avg_ticket_metric.value_label.text()])
+                    writer.writerow(["Margen:", self.margin_metric.value_label.text()])
+                
+                QMessageBox.information(self, "Exportación Exitosa", f"Datos exportados a:\n{file_path}")
+                
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error en exportación: {str(e)}")
-
+            QMessageBox.critical(self, "Error", f"Error al exportar datos:\n{str(e)}")

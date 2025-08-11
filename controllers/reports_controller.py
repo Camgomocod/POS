@@ -385,3 +385,251 @@ class ReportsController:
         except Exception as e:
             print(f"Error obteniendo productos de bajo rendimiento: {e}")
             return []
+    
+    def get_period_metrics(self, start_date, end_date):
+        """Obtener métricas del período para dashboard"""
+        try:
+            # Usar get_sales_summary que ya existe
+            summary = self.get_sales_summary(start_date, end_date)
+            
+            # Agregar métricas adicionales
+            db = self.get_session()
+            
+            # Productos únicos vendidos
+            unique_products = db.query(func.count(func.distinct(OrderItem.product_id))).join(
+                Order, Order.id == OrderItem.order_id
+            ).filter(
+                Order.created_at >= self._ensure_datetime(start_date),
+                Order.created_at <= self._ensure_end_of_day(end_date),
+                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value])
+            ).scalar() or 0
+            
+            db.close()
+            
+            return {
+                'total_sales': summary['total_sales'],
+                'total_orders': summary['total_orders'],
+                'avg_ticket': summary['avg_ticket'],
+                'unique_products': unique_products
+            }
+                
+        except Exception as e:
+            print(f"Error obteniendo métricas del período: {e}")
+            return {'total_sales': 0, 'total_orders': 0, 'avg_ticket': 0, 'unique_products': 0}
+    
+    def get_detailed_products_report(self, start_date, end_date):
+        """Reporte detallado de productos"""
+        return self.get_top_products(start_date, end_date, limit=50)
+    
+    def get_categories_report(self, start_date, end_date):
+        """Reporte de categorías"""
+        return self.get_sales_by_category(start_date, end_date)
+    
+    def get_hourly_report(self, start_date, end_date):
+        """Reporte por horas"""
+        return self.get_sales_by_hour(start_date, end_date)
+    
+    def export_reports_to_csv(self, start_date, end_date, file_path):
+        """Exportar reportes a CSV"""
+        try:
+            import pandas as pd
+            
+            # Obtener datos
+            sales_summary = self.get_sales_summary(start_date, end_date)
+            daily_sales = self.get_daily_sales(start_date, end_date)
+            top_products = self.get_top_products(start_date, end_date)
+            categories = self.get_sales_by_category(start_date, end_date)
+            
+            # Crear archivo Excel con múltiples hojas
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                # Resumen
+                summary_df = pd.DataFrame([sales_summary])
+                summary_df.to_excel(writer, sheet_name='Resumen', index=False)
+                
+                # Ventas diarias
+                if daily_sales:
+                    daily_df = pd.DataFrame(daily_sales)
+                    daily_df.to_excel(writer, sheet_name='Ventas Diarias', index=False)
+                
+                # Top productos
+                if top_products:
+                    products_df = pd.DataFrame(top_products)
+                    products_df.to_excel(writer, sheet_name='Top Productos', index=False)
+                
+                # Categorías
+                if categories:
+                    categories_df = pd.DataFrame(categories)
+                    categories_df.to_excel(writer, sheet_name='Categorías', index=False)
+            
+            return True
+                
+        except Exception as e:
+            print(f"Error exportando a CSV: {e}")
+            return False
+
+    def get_period_metrics(self, start_date, end_date):
+        """Obtener métricas del período"""
+        try:
+            db = self.get_session()
+            start_datetime = self._ensure_datetime(start_date)
+            end_datetime = self._ensure_end_of_day(end_date)
+            
+            # Ventas totales
+            total_sales = db.query(func.sum(Order.total)).filter(
+                Order.created_at >= start_datetime,
+                Order.created_at <= end_datetime,
+                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value])
+            ).scalar() or 0
+            
+            # Número de órdenes
+            total_orders = db.query(func.count(Order.id)).filter(
+                Order.created_at >= start_datetime,
+                Order.created_at <= end_datetime,
+                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value])
+            ).scalar() or 0
+            
+            # Ticket promedio
+            avg_ticket = total_sales / total_orders if total_orders > 0 else 0
+            
+            # Productos únicos vendidos
+            unique_products = db.query(func.count(func.distinct(OrderItem.product_id))).join(Order).filter(
+                Order.created_at >= start_datetime,
+                Order.created_at <= end_datetime,
+                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value])
+            ).scalar() or 0
+            
+            db.close()
+            
+            return {
+                'total_sales': float(total_sales),
+                'total_orders': total_orders,
+                'avg_ticket': float(avg_ticket),
+                'unique_products': unique_products
+            }
+            
+        except Exception as e:
+            print(f"Error obteniendo métricas del período: {e}")
+            return {
+                'total_sales': 0.0,
+                'total_orders': 0,
+                'avg_ticket': 0.0,
+                'unique_products': 0
+            }
+
+    def get_detailed_products_report(self, start_date, end_date):
+        """Obtener reporte detallado de productos"""
+        try:
+            db = self.get_session()
+            start_datetime = self._ensure_datetime(start_date)
+            end_datetime = self._ensure_end_of_day(end_date)
+            
+            products_data = db.query(
+                Product.name,
+                Product.price,
+                Category.name.label('category_name'),
+                func.sum(OrderItem.quantity).label('total_quantity'),
+                func.sum(OrderItem.quantity * OrderItem.price).label('total_revenue'),
+                func.count(distinct(Order.id)).label('orders_count')
+            ).join(OrderItem).join(Order).join(Category).filter(
+                Order.created_at >= start_datetime,
+                Order.created_at <= end_datetime,
+                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value])
+            ).group_by(
+                Product.id, Product.name, Product.price, Category.name
+            ).order_by(
+                desc(func.sum(OrderItem.quantity))
+            ).all()
+            
+            db.close()
+            
+            result = []
+            for item in products_data:
+                result.append({
+                    'product_name': item.name,
+                    'category': item.category_name,
+                    'price': float(item.price),
+                    'quantity_sold': item.total_quantity,
+                    'total_revenue': float(item.total_revenue),
+                    'orders_count': item.orders_count
+                })
+            
+            return result
+            
+        except Exception as e:
+            print(f"Error obteniendo reporte detallado de productos: {e}")
+            return []
+
+    def get_categories_report(self, start_date, end_date):
+        """Obtener reporte de categorías"""
+        try:
+            db = self.get_session()
+            start_datetime = self._ensure_datetime(start_date)
+            end_datetime = self._ensure_end_of_day(end_date)
+            
+            categories_data = db.query(
+                Category.name,
+                func.sum(OrderItem.quantity).label('total_quantity'),
+                func.sum(OrderItem.quantity * OrderItem.price).label('total_revenue'),
+                func.count(distinct(Product.id)).label('products_count')
+            ).join(Product).join(OrderItem).join(Order).filter(
+                Order.created_at >= start_datetime,
+                Order.created_at <= end_datetime,
+                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value])
+            ).group_by(
+                Category.id, Category.name
+            ).order_by(
+                desc(func.sum(OrderItem.quantity * OrderItem.price))
+            ).all()
+            
+            db.close()
+            
+            result = []
+            for item in categories_data:
+                result.append({
+                    'category_name': item.name,
+                    'quantity_sold': item.total_quantity,
+                    'total_revenue': float(item.total_revenue),
+                    'products_count': item.products_count
+                })
+            
+            return result
+            
+        except Exception as e:
+            print(f"Error obteniendo reporte de categorías: {e}")
+            return []
+
+    def get_hourly_report(self, start_date, end_date):
+        """Obtener reporte de ventas por hora"""
+        try:
+            db = self.get_session()
+            start_datetime = self._ensure_datetime(start_date)
+            end_datetime = self._ensure_end_of_day(end_date)
+            
+            # Consulta para obtener ventas por hora
+            hourly_data = db.query(
+                func.extract('hour', Order.created_at).label('hour'),
+                func.sum(Order.total).label('total_sales'),
+                func.count(Order.id).label('orders_count')
+            ).filter(
+                Order.created_at >= start_datetime,
+                Order.created_at <= end_datetime,
+                Order.status.in_([OrderStatus.DELIVERED.value, OrderStatus.PAID.value])
+            ).group_by(
+                func.extract('hour', Order.created_at)
+            ).order_by('hour').all()
+            
+            db.close()
+            
+            result = []
+            for item in hourly_data:
+                result.append({
+                    'hour': int(item.hour),
+                    'total_sales': float(item.total_sales),
+                    'orders_count': item.orders_count
+                })
+            
+            return result
+            
+        except Exception as e:
+            print(f"Error obteniendo reporte horario: {e}")
+            return []
