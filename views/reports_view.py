@@ -9,10 +9,28 @@ from utils.colors import ColorPalette
 from controllers.menu_controller import MenuController
 from controllers.order_controller import OrderController
 from controllers.reports_controller import ReportsController
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
-import matplotlib.dates as mdates
+
+# Importación opcional de matplotlib para evitar crashes
+MATPLOTLIB_AVAILABLE = True
+try:
+    import matplotlib
+    matplotlib.use('Qt5Agg')  # Configurar backend antes de importar pyplot
+    import matplotlib.pyplot as plt
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.figure import Figure
+    import matplotlib.dates as mdates
+    print("✅ matplotlib cargado correctamente")
+except ImportError as e:
+    print(f"⚠️  matplotlib no disponible: {e}")
+    MATPLOTLIB_AVAILABLE = False
+    # Crear clases dummy para evitar errores
+    class FigureCanvas:
+        def __init__(self, *args, **kwargs):
+            pass
+    class Figure:
+        def __init__(self, *args, **kwargs):
+            pass
+
 from datetime import datetime, timedelta
 import csv
 import os

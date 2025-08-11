@@ -50,12 +50,15 @@ Si ves errores como "no se reconoce como comando":
 
 | Archivo                      | Descripción                          | Uso                   |
 | ---------------------------- | ------------------------------------ | --------------------- |
+| `fix_access_violation.bat`   | Solución Access Violation (NUEVO)    | Error -1073741819     |
+| `main_safe.py`               | Sistema sin gráficos (NUEVO)         | Modo seguro           |
 | `fix_dependencies.bat`       | Solución rápida dependencias (NUEVO) | Error matplotlib      |
 | `install_pos_simple.bat`     | Instalador principal (NUEVO)         | Primera instalación   |
 | `launcher_windows.bat`       | Ejecutor especial (NUEVO)            | Problemas PyQt5       |
 | `diagnostico_sistema.bat`    | Diagnóstico completo (NUEVO)         | Identificar problemas |
 | `solucionador_problemas.bat` | Solucionador automático (NUEVO)      | Reparar problemas     |
-| `test_pyqt5.py`              | Probar PyQt5 (NUEVO)                 | Verificar GUI         |
+| `test_pyqt5_simple.py`       | Prueba rápida PyQt5 (NUEVO)          | Test GUI mínimo       |
+| `test_pyqt5.py`              | Probar PyQt5                         | Verificar GUI         |
 | `install_pos_w11.bat`        | Instalador completo                  | Instalación avanzada  |
 | `run_pos.bat`                | Ejecutor principal                   | Uso diario            |
 | `quick_start.bat`            | Inicio rápido                        | Usuarios avanzados    |
@@ -91,7 +94,25 @@ run_pos.bat
 launcher_windows.bat
 ```
 
-### Opción 5: Línea de Comandos
+### Opción 5: Modo Seguro (NUEVO - Para Access Violation)
+
+```batch
+# Para error -1073741819 o crashes gráficos
+python main_safe.py
+# O usar:
+run_pos_safe.bat
+```
+
+### Opción 6: Test Rápido PyQt5 (NUEVO - Verificación)
+
+```batch
+# Para verificar que PyQt5 funciona antes del sistema completo
+python test_pyqt5_simple.py
+```
+
+**💡 Si este test funciona, PyQt5 está bien configurado y puedes usar el sistema completo.**
+
+### Opción 7: Línea de Comandos
 
 ```batch
 # Activar entorno virtual y ejecutar
@@ -192,6 +213,23 @@ python main.py
 # ALTERNATIVA AUTOMÁTICA:
 solucionador_problemas.bat
 # Seleccionar opción 1 (matplotlib) o 5 (todas las dependencias)
+```
+
+### Error: Código -1073741819 (Access Violation)
+
+```batch
+# SOLUCIÓN ESPECÍFICA PARA ACCESS VIOLATION:
+# 1. Ejecutar script de solución automática
+fix_access_violation.bat
+
+# 2. ALTERNATIVA: Usar modo seguro (sin gráficos)
+python main_safe.py
+
+# 3. O usar launcher seguro
+run_pos_safe.bat
+
+# El error -1073741819 es común con PyQt5 + matplotlib en Windows
+# Estas soluciones configuran el entorno correctamente
 ```
 
 ### Error: "Platform-specific printing modules not available"
