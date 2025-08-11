@@ -633,3 +633,43 @@ class ReportsController:
         except Exception as e:
             print(f"Error obteniendo reporte horario: {e}")
             return []
+
+    def get_general_statistics(self, start_date, end_date):
+        """Obtener estadísticas generales del período"""
+        try:
+            session = self.get_session()
+            
+            # Estadísticas básicas
+            stats = {}
+            
+            # Total de órdenes y ventas
+            summary = self.get_sales_summary(start_date, end_date)
+            if summary:
+                stats['Total de Órdenes'] = summary.get('total_orders', 0)
+                stats['Total de Ventas'] = summary.get('total_sales', 0.0)
+                stats['Ticket Promedio'] = summary.get('avg_ticket', 0.0)
+            
+            # Productos más vendido
+            top_products = self.get_top_products(start_date, end_date, limit=1)
+            if top_products:
+                stats['Producto Más Vendido'] = top_products[0].get('name', 'N/A')
+                stats['Unidades del Top Producto'] = top_products[0].get('total_quantity', 0)
+            
+            # Análisis de margen
+            margin_data = self.get_profit_margin_analysis(start_date, end_date)
+            if margin_data:
+                stats['Margen de Ganancia General'] = margin_data.get('overall_margin', 0.0)
+            
+            # Días del período
+            days_diff = (end_date - start_date).days + 1
+            stats['Días Analizados'] = days_diff
+            
+            if summary and summary.get('total_orders', 0) > 0:
+                stats['Órdenes por Día (Promedio)'] = summary.get('total_orders', 0) / days_diff
+                stats['Ventas por Día (Promedio)'] = summary.get('total_sales', 0.0) / days_diff
+            
+            return stats
+            
+        except Exception as e:
+            print(f"Error obteniendo estadísticas generales: {e}")
+            return {}

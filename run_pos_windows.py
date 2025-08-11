@@ -1,22 +1,25 @@
 #!/usr/bin/env python3
 """
-Script para ejecutar POS con PyQtGraph
-Ahora usa PyQtGraph en lugar de matplotlib para gráficos
+Script para ejecutar POS sin problemas de matplotlib en Windows 11
+Usa matplotlib deshabilitado para evitar cuelgues
 """
 
 import sys
 import os
 
-# Configurar entorno
+# Configurar entorno para Windows
 os.environ['QT_QPA_PLATFORM'] = 'windows'
 os.environ['QT_AUTO_SCREEN_SCALE_FACTOR'] = '1'
+
+# DESHABILITAR matplotlib para evitar cuelgues en Windows 11
+os.environ['DISABLE_MATPLOTLIB'] = '1'
 
 # Agregar directorio del proyecto
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, project_dir)
 
-print("🚀 POS SIN MATPLOTLIB (SOLUCIÓN TEMPORAL)")
-print("=" * 45)
+print("🚀 POS PARA WINDOWS 11 (MATPLOTLIB DESHABILITADO)")
+print("=" * 50)
 
 try:
     print("1. Configurando PyQt5...")
