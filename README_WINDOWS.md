@@ -46,15 +46,18 @@ Si ves errores como "no se reconoce como comando":
 
 ## 📁 Archivos de Instalación
 
-| Archivo                       | Descripción                    | Uso                  |
-| ----------------------------- | ------------------------------ | -------------------- |
-| `install_pos_simple.bat`      | Instalador principal (NUEVO)   | Primera instalación  |
-| `install_pos_w11.bat`         | Instalador completo            | Instalación avanzada |
-| `run_pos.bat`                 | Ejecutor principal             | Uso diario           |
-| `quick_start.bat`             | Inicio rápido                  | Usuarios avanzados   |
-| `check_requirements.bat`      | Verificar requisitos           | Diagnóstico          |
-| `create_shortcut_simple.bat`  | Crear accesos directos (NUEVO) | Configuración        |
-| `create_desktop_shortcut.ps1` | Crear accesos (PowerShell)     | Configuración        |
+| Archivo                      | Descripción                     | Uso                   |
+| ---------------------------- | ------------------------------- | --------------------- |
+| `install_pos_simple.bat`     | Instalador principal (NUEVO)    | Primera instalación   |
+| `launcher_windows.bat`       | Ejecutor especial (NUEVO)       | Problemas PyQt5       |
+| `diagnostico_sistema.bat`    | Diagnóstico completo (NUEVO)    | Identificar problemas |
+| `solucionador_problemas.bat` | Solucionador automático (NUEVO) | Reparar problemas     |
+| `test_pyqt5.py`              | Probar PyQt5 (NUEVO)            | Verificar GUI         |
+| `install_pos_w11.bat`        | Instalador completo             | Instalación avanzada  |
+| `run_pos.bat`                | Ejecutor principal              | Uso diario            |
+| `quick_start.bat`            | Inicio rápido                   | Usuarios avanzados    |
+| `check_requirements.bat`     | Verificar requisitos            | Diagnóstico           |
+| `create_shortcut_simple.bat` | Crear accesos directos (NUEVO)  | Configuración         |
 
 ## 🎯 Formas de Ejecutar el Sistema
 
@@ -78,7 +81,14 @@ run_pos.bat
 - Doble clic en **"Sistema POS - Inicio Rápido"**
 - Omite verificaciones (más rápido)
 
-### Opción 4: Línea de Comandos
+### Opción 4: Launcher Especial (NUEVO - Para Problemas)
+
+```batch
+# Para problemas con python main.py
+launcher_windows.bat
+```
+
+### Opción 5: Línea de Comandos
 
 ```batch
 # Activar entorno virtual y ejecutar
@@ -86,6 +96,33 @@ cd C:\ruta\a\tu\proyecto\POS
 venv\Scripts\activate
 python main.py
 ```
+
+## 🚨 ¿python main.py no funciona?
+
+Si `python main.py` no abre ninguna ventana:
+
+### Diagnóstico Rápido
+
+```batch
+# 1. Ejecutar diagnóstico
+diagnostico_sistema.bat
+
+# 2. Probar PyQt5 específicamente
+python test_pyqt5.py
+
+# 3. Usar launcher especial
+launcher_windows.bat
+
+# 4. Solucionador automático
+solucionador_problemas.bat
+```
+
+### Causas Comunes:
+
+- **PyQt5 mal instalado**: Usar `pip install --force-reinstall PyQt5`
+- **Entorno gráfico**: Windows bloquea aplicaciones GUI desde consola
+- **Ruta con espacios**: Mover proyecto a `C:\POS\`
+- **Dependencias faltantes**: Ejecutar `install_pos_simple.bat`
 
 ## 👤 Credenciales por Defecto
 
