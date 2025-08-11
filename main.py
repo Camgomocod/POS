@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+    #!/usr/bin/env python3
 """
 Sistema POS - Punto de Venta
 Main entry point del sistema
