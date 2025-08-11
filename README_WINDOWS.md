@@ -12,6 +12,8 @@
 
 ### ⚡ Instalación Manual
 
+cd ..
+
 ```batch
 # 1. Verificar requisitos
 check_requirements.bat
@@ -46,18 +48,19 @@ Si ves errores como "no se reconoce como comando":
 
 ## 📁 Archivos de Instalación
 
-| Archivo                      | Descripción                     | Uso                   |
-| ---------------------------- | ------------------------------- | --------------------- |
-| `install_pos_simple.bat`     | Instalador principal (NUEVO)    | Primera instalación   |
-| `launcher_windows.bat`       | Ejecutor especial (NUEVO)       | Problemas PyQt5       |
-| `diagnostico_sistema.bat`    | Diagnóstico completo (NUEVO)    | Identificar problemas |
-| `solucionador_problemas.bat` | Solucionador automático (NUEVO) | Reparar problemas     |
-| `test_pyqt5.py`              | Probar PyQt5 (NUEVO)            | Verificar GUI         |
-| `install_pos_w11.bat`        | Instalador completo             | Instalación avanzada  |
-| `run_pos.bat`                | Ejecutor principal              | Uso diario            |
-| `quick_start.bat`            | Inicio rápido                   | Usuarios avanzados    |
-| `check_requirements.bat`     | Verificar requisitos            | Diagnóstico           |
-| `create_shortcut_simple.bat` | Crear accesos directos (NUEVO)  | Configuración         |
+| Archivo                      | Descripción                          | Uso                   |
+| ---------------------------- | ------------------------------------ | --------------------- |
+| `fix_dependencies.bat`       | Solución rápida dependencias (NUEVO) | Error matplotlib      |
+| `install_pos_simple.bat`     | Instalador principal (NUEVO)         | Primera instalación   |
+| `launcher_windows.bat`       | Ejecutor especial (NUEVO)            | Problemas PyQt5       |
+| `diagnostico_sistema.bat`    | Diagnóstico completo (NUEVO)         | Identificar problemas |
+| `solucionador_problemas.bat` | Solucionador automático (NUEVO)      | Reparar problemas     |
+| `test_pyqt5.py`              | Probar PyQt5 (NUEVO)                 | Verificar GUI         |
+| `install_pos_w11.bat`        | Instalador completo                  | Instalación avanzada  |
+| `run_pos.bat`                | Ejecutor principal                   | Uso diario            |
+| `quick_start.bat`            | Inicio rápido                        | Usuarios avanzados    |
+| `check_requirements.bat`     | Verificar requisitos                 | Diagnóstico           |
+| `create_shortcut_simple.bat` | Crear accesos directos (NUEVO)       | Configuración         |
 
 ## 🎯 Formas de Ejecutar el Sistema
 
@@ -117,12 +120,32 @@ launcher_windows.bat
 solucionador_problemas.bat
 ```
 
+### 🔧 Solución al Error de Dependencias Faltantes
+
+**Error más común**: `ModuleNotFoundError: No module named 'matplotlib'`
+
+```batch
+# SOLUCIÓN RÁPIDA:
+# 1. Activar entorno virtual
+venv\Scripts\activate
+
+# 2. Instalar dependencias faltantes
+pip install matplotlib>=3.5.0
+pip install pywin32>=304
+pip install numpy>=1.21.0
+
+# 3. O reinstalar todas las dependencias
+pip install -r requirements.txt --force-reinstall
+```
+
 ### Causas Comunes:
 
+- **Dependencies incompletas**: Usar `pip install -r requirements.txt`
+- **matplotlib faltante**: Ejecutar `solucionador_problemas.bat` → opción 1
+- **win32print faltante**: Ejecutar `solucionador_problemas.bat` → opción 2
 - **PyQt5 mal instalado**: Usar `pip install --force-reinstall PyQt5`
 - **Entorno gráfico**: Windows bloquea aplicaciones GUI desde consola
 - **Ruta con espacios**: Mover proyecto a `C:\POS\`
-- **Dependencias faltantes**: Ejecutar `install_pos_simple.bat`
 
 ## 👤 Credenciales por Defecto
 
@@ -150,11 +173,35 @@ Acceso: POS y operaciones básicas
 install_pos_simple.bat
 ```
 
-### Error: "Python no encontrado"
+### Error: "ModuleNotFoundError: No module named 'matplotlib'"
 
 ```batch
-# Instalar Python desde python.org
-# ✅ Marcar "Add Python to PATH"
+# SOLUCIÓN INMEDIATA:
+# 1. Activar entorno virtual
+cd C:\POS
+venv\Scripts\activate
+
+# 2. Instalar matplotlib y dependencias
+pip install matplotlib>=3.5.0
+pip install pywin32>=304
+pip install numpy>=1.21.0
+
+# 3. Probar ejecución
+python main.py
+
+# ALTERNATIVA AUTOMÁTICA:
+solucionador_problemas.bat
+# Seleccionar opción 1 (matplotlib) o 5 (todas las dependencias)
+```
+
+### Error: "Platform-specific printing modules not available"
+
+```batch
+# Instalar módulos de impresión para Windows
+pip install pywin32>=304
+
+# Si persiste el error, es solo una advertencia
+# El sistema funcionará sin problemas de impresión
 ```
 
 ### Error: "Módulo no encontrado"
