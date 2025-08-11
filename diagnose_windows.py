@@ -197,42 +197,63 @@ def run_minimal_test():
         sys.path.insert(0, str(project_root))
         
         # Intentar importar controladores principales
-        from controllers.app_controller import AppController
-        print_result("Import AppController", True)
+        try:
+            from controllers.app_controller import AppController
+            print_result("Import AppController", True)
+        except Exception as e:
+            print_result("Import AppController", False, str(e))
+            return False
         
-        from views.login_window import LoginWindow  
-        print_result("Import LoginWindow", True)
+        try:
+            from views.login_window import LoginWindow  
+            print_result("Import LoginWindow", True)
+        except Exception as e:
+            print_result("Import LoginWindow", False, str(e))
+            return False
         
         # Intentar crear una aplicación QT mínima
-        from PyQt5.QtWidgets import QApplication
-        from PyQt5.QtCore import QTimer
-        
-        # Verificar si ya existe una app
-        app = QApplication.instance()
-        if app is None:
-            app = QApplication([])
-            app_created = True
-        else:
-            app_created = False
+        try:
+            from PyQt5.QtWidgets import QApplication
+            from PyQt5.QtCore import QTimer
             
-        print_result("QApplication ready", True)
+            # Verificar si ya existe una app
+            app = QApplication.instance()
+            if app is None:
+                app = QApplication([])
+                app_created = True
+            else:
+                app_created = False
+                
+            print_result("QApplication ready", True)
+        except Exception as e:
+            print_result("QApplication creation", False, str(e))
+            return False
         
         # Intentar crear ventana de login (sin mostrar)
         try:
             login_window = LoginWindow()
             print_result("LoginWindow creation", True)
             
+            # Test: intentar mostrar brevemente la ventana
+            login_window.show()
+            app.processEvents()  # Procesar eventos pendientes
+            login_window.hide()
+            print_result("LoginWindow show/hide test", True)
+            
             # Limpiar
             login_window.deleteLater()
             
         except Exception as e:
             print_result("LoginWindow creation", False, str(e))
+            import traceback
+            print(f"📋 Error details: {traceback.format_exc()}")
             return False
         
         # Limpiar aplicación si la creamos
         if app_created:
             app.quit()
             
+        print_result("Complete minimal test", True)
         return True
         
     except Exception as e:
