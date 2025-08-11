@@ -65,8 +65,13 @@ def verify_environment():
     
     for package in critical_packages:
         try:
-            __import__(package.lower().replace('-', '_'))
-            debug_print(f"✅ Paquete {package} disponible")
+            # Manejar el caso especial de PyQt5 en Windows
+            if package == 'PyQt5':
+                from PyQt5.QtWidgets import QApplication
+                debug_print(f"✅ Paquete {package} disponible")
+            else:
+                __import__(package.lower().replace('-', '_'))
+                debug_print(f"✅ Paquete {package} disponible")
         except ImportError as e:
             print(f"❌ Error: Falta paquete {package}. Ejecutar: pip install {package}")
             print(f"   Detalle: {e}")
