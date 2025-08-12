@@ -34,7 +34,7 @@ TESTING_PLAN_W11.md         # 🗓️ Plan detallado de testing semanal
 
 ```
 assets/pos_icon.ico         # 🎨 Icono básico para accesos directos
-```
+```cd 
 
 ## 🎯 Instrucciones para el Equipo Windows 11
 
