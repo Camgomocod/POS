@@ -56,7 +56,6 @@ class ThermalPrinter:
         self.connection_type = connection_type
         self.config_file = "printer_config.json"
         self.paper_width = self.PAPER_WIDTH_57MM
-        self.auto_cut = True
         self.load_config()
     
     def load_config(self):
@@ -68,23 +67,18 @@ class ThermalPrinter:
                     self.printer_name = config.get('printer_name', self.printer_name)
                     self.connection_type = config.get('connection_type', self.connection_type)
                     self.paper_width = config.get('paper_width', self.PAPER_WIDTH_57MM)
-                    self.auto_cut = config.get('auto_cut', True)
         except Exception as e:
             print(f"Error loading printer config: {e}")
             self.paper_width = self.PAPER_WIDTH_57MM
-            self.auto_cut = True
     
-    def save_config(self, printer_name: str, connection_type: str = "usb", 
-                    paper_width: int = None, auto_cut: bool = True):
+    def save_config(self, printer_name: str, connection_type: str = "usb", paper_width: int = None):
         """Guardar configuración de impresora"""
         if paper_width is None:
             paper_width = self.PAPER_WIDTH_57MM
-            
         config = {
             'printer_name': printer_name,
             'connection_type': connection_type,
-            'paper_width': paper_width,
-            'auto_cut': auto_cut
+            'paper_width': paper_width
         }
         try:
             with open(self.config_file, 'w') as f:
@@ -92,7 +86,6 @@ class ThermalPrinter:
             self.printer_name = printer_name
             self.connection_type = connection_type
             self.paper_width = paper_width
-            self.auto_cut = auto_cut
             return True
         except Exception as e:
             print(f"Error saving printer config: {e}")
@@ -326,12 +319,8 @@ class ThermalPrinter:
         # Espacios finales
         data.extend("\n\n".encode('utf-8'))
         
-        # Corte automático si está habilitado
-        if self.auto_cut:
-            data.extend(self.CUT_PAPER)
-        else:
-            data.extend("\n\n\n".encode('utf-8'))  # Espacios extra para corte manual
-        
+        # No usar corte automático, solo espacios extra para corte manual
+        data.extend("\n\n\n".encode('utf-8'))
         return bytes(data)
     
     def _line_separator_57mm(self, thin: bool = False) -> bytes:
@@ -364,7 +353,7 @@ class ThermalPrinter:
             import win32print
             import win32api
             
-            # Abrir impresora
+            # Abrir impresorapara la parte de #file:printer_config_view.py #file:printer.py quiero que quites la opción de corte aútomatico, porque la impresores que vamos a trabajar no lo tienen, y que cuando se de al test de impresión no se quede en imprimir constantemente, poqrue me pasaba eso con la impresora que tenía conectada 
             printer_handle = win32print.OpenPrinter(self.printer_name)
             
             try:
@@ -434,12 +423,13 @@ class ThermalPrinter:
             return False
     
     def test_print(self) -> bool:
-        """Imprimir página de prueba para impresora de 57mm"""
+        """Imprimir página de prueba para impresora de 57mm (solo una vez)"""
         if not self.is_configured():
             return False
             
         try:
             test_data = self._generate_test_page_57mm()
+            # Solo enviar una vez, sin bucles ni repeticiones
             return self._send_to_printer(test_data)
         except Exception as e:
             print(f"Test print error: {e}")
@@ -474,12 +464,7 @@ class ThermalPrinter:
         data.extend("Caracteres de prueba:\n".encode('utf-8'))
         data.extend("áéíóú ñÑ ¿¡ $ €\n".encode('utf-8'))
         
-        data.extend("\n\n".encode('utf-8'))
-        
-        if self.auto_cut:
-            data.extend(self.CUT_PAPER)
-        else:
-            data.extend("\n\n\n".encode('utf-8'))
+        data.extend("\n\n\n".encode('utf-8'))
         
         return bytes(data)
 

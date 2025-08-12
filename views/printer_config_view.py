@@ -456,28 +456,7 @@ class PrinterConfigView(QWidget):
         
         main_layout.addLayout(width_layout)
         
-        # Corte automático
-        self.auto_cut_checkbox = QCheckBox("✂️ Corte automático")
-        self.auto_cut_checkbox.setChecked(True)
-        self.auto_cut_checkbox.setStyleSheet(f"""
-            QCheckBox {{
-                font-size: 11px;
-                color: {ColorPalette.RICH_BLACK};
-                spacing: 5px;
-            }}
-            QCheckBox::indicator {{
-                width: 14px;
-                height: 14px;
-                border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.5)};
-                border-radius: 3px;
-                background-color: {ColorPalette.PLATINUM};
-            }}
-            QCheckBox::indicator:checked {{
-                background-color: {ColorPalette.SUCCESS};
-                border-color: {ColorPalette.SUCCESS};
-            }}
-        """)
-        main_layout.addWidget(self.auto_cut_checkbox)
+        # Eliminar opción de corte automático
         
         # Espaciador
         main_layout.addStretch()
@@ -887,42 +866,21 @@ class PrinterConfigView(QWidget):
     def save_advanced_config(self):
         """Guardar configuración avanzada"""
         if not self.printer.printer_name:
-            QMessageBox.warning(
-                self,
-                "⚠️ Sin Impresora",
-                "Primero debe seleccionar una impresora antes de guardar la configuración avanzada."
-            )
+            QMessageBox.warning(self, "❌ Error", "Debe seleccionar una impresora antes de guardar la configuración.")
             return
-        
         try:
-            # Actualizar configuración
-            config_saved = self.printer.save_config(
-                printer_name=self.printer.printer_name,
-                connection_type=self.printer.connection_type,
-                paper_width=self.paper_width_spinbox.value(),
-                auto_cut=self.auto_cut_checkbox.isChecked()
+            paper_width = self.paper_width_spinbox.value()
+            result = self.printer.save_config(
+                self.printer.printer_name,
+                self.printer.connection_type,
+                paper_width
             )
-            
-            if config_saved:
-                self.load_current_config()
-                QMessageBox.information(
-                    self,
-                    "✅ Configuración Guardada",
-                    "La configuración avanzada ha sido guardada correctamente."
-                )
+            if result:
+                QMessageBox.information(self, "✅ Configuración guardada", "La configuración avanzada se guardó correctamente.")
             else:
-                QMessageBox.warning(
-                    self,
-                    "❌ Error",
-                    "No se pudo guardar la configuración avanzada."
-                )
-                
+                QMessageBox.critical(self, "❌ Error", "No se pudo guardar la configuración avanzada.")
         except Exception as e:
-            QMessageBox.critical(
-                self,
-                "❌ Error",
-                f"Error al guardar configuración:\n{str(e)}"
-            )
+            QMessageBox.critical(self, "❌ Error", f"Error al guardar configuración avanzada: {e}")
 
     def create_database_backup(self):
         """Crear respaldo de la base de datos en el directorio del proyecto"""
