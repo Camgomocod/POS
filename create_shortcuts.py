@@ -87,8 +87,8 @@ class ShortcutCreator:
             desktop = winshell.desktop()
             shortcut_path = os.path.join(desktop, "POS RestauranteFast.lnk")
             
-            # Usar POS_Windows11.bat como target para mejor compatibilidad
-            batch_file = self.project_path / "POS_Windows11.bat"
+            # Usar POS_Windows11_UTF8.bat como target para mejor compatibilidad
+            batch_file = self.project_path / "POS_Windows11_UTF8.bat"
             if not batch_file.exists():
                 self.create_batch_file_windows()
             
