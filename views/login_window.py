@@ -23,8 +23,8 @@ class LoginWindow(QMainWindow):
     def init_ui(self):
         """Configurar interfaz de usuario simplificada"""
         # Configuración de ventana - tamaño compacto
-        self.setWindowTitle("RestauranteFast POS - Iniciar Sesión")
-        self.setFixedSize(480, 580)  # Ventana compacta
+        self.setWindowTitle("Iniciar Sesión")
+        self.setFixedSize(440, 450)  # Ventana compacta
         self.setWindowFlags(Qt.Window | Qt.WindowCloseButtonHint)
         
         # Centrar ventana
@@ -40,7 +40,7 @@ class LoginWindow(QMainWindow):
         main_layout.setSpacing(10)  # Espaciado reducido
         
         # Título principal compacto
-        title_label = QLabel("🍽️ RestauranteFast POS")
+        title_label = QLabel("Asados al Karbon")
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet("""
             QLabel {
@@ -52,19 +52,6 @@ class LoginWindow(QMainWindow):
             }
         """)
         main_layout.addWidget(title_label)
-        
-        # Subtítulo compacto
-        subtitle_label = QLabel("Sistema de Punto de Venta")
-        subtitle_label.setAlignment(Qt.AlignCenter)
-        subtitle_label.setStyleSheet("""
-            QLabel {
-                font-size: 14px;
-                color: #778da9;
-                margin-bottom: 8px;
-                font-style: italic;
-            }
-        """)
-        main_layout.addWidget(subtitle_label)
         
         # Formulario compacto
         form_layout = QVBoxLayout()
@@ -225,35 +212,6 @@ class LoginWindow(QMainWindow):
         buttons_layout.addWidget(self.exit_btn)
         
         main_layout.addLayout(buttons_layout)
-        
-        # Información de usuarios compacta
-        info_label = QLabel("💡 Usuarios de prueba:")
-        info_label.setAlignment(Qt.AlignCenter)
-        info_label.setStyleSheet("""
-            QLabel {
-                font-size: 12px;
-                color: #415a77;
-                font-weight: bold;
-                margin-top: 10px;
-                margin-bottom: 3px;
-            }
-        """)
-        main_layout.addWidget(info_label)
-        
-        users_info = QLabel("👨‍💼 admin/admin123 | 👤 usuario/usuario123")
-        users_info.setAlignment(Qt.AlignCenter)
-        users_info.setStyleSheet("""
-            QLabel {
-                font-size: 11px;
-                color: #778da9;
-                padding: 8px;
-                background-color: #f8f9fa;
-                border: 1px solid #778da9;
-                border-radius: 5px;
-                margin-bottom: 5px;
-            }
-        """)
-        main_layout.addWidget(users_info)
         
         # Conectar Enter para login
         self.password_input.returnPressed.connect(self.handle_login)

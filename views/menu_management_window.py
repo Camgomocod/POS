@@ -856,27 +856,6 @@ class MenuManagementWidget(QWidget):
         new_product_btn.clicked.connect(self.create_product)
         buttons_layout.addWidget(new_product_btn)
         
-        # Botón refrescar
-        refresh_btn = QPushButton("🔄 Refrescar")
-        refresh_btn.setFixedHeight(40)
-        refresh_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
-                color: {ColorPalette.SILVER_LAKE_BLUE};
-                border: 2px solid {ColorPalette.SILVER_LAKE_BLUE};
-                padding: 8px 20px;
-                border-radius: 8px;
-                font-weight: bold;
-                font-size: 12px;
-            }}
-            QPushButton:hover {{
-                background-color: {ColorPalette.SILVER_LAKE_BLUE};
-                color: {ColorPalette.PLATINUM};
-            }}
-        """)
-        refresh_btn.clicked.connect(self.load_data)
-        buttons_layout.addWidget(refresh_btn)
-        
         layout.addLayout(buttons_layout)
         
         return header_frame

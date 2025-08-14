@@ -43,8 +43,8 @@ class OrderCard(QFrame):
         self.update_card_style()
         
         layout = QVBoxLayout(self)
-        layout.setSpacing(10)  # Espaciado más generoso
-        layout.setContentsMargins(15, 15, 15, 15)  # Márgenes más amplios
+        layout.setSpacing(6)  # Espaciado más generoso
+        layout.setContentsMargins(12, 12, 12, 12)  # Márgenes más amplios
         
         # Header con número de orden y tiempo - simplificado
         header_layout = QHBoxLayout()
@@ -428,7 +428,7 @@ class KitchenOrdersView(QWidget):
         # Layout principal optimizado
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(12, 12, 12, 12)  # Márgenes más compactos
-        main_layout.setSpacing(8)
+        main_layout.setSpacing(12)
         
         # Header simplificado
         header_layout = QHBoxLayout()
@@ -521,27 +521,7 @@ class KitchenOrdersView(QWidget):
         history_btn.clicked.connect(lambda: self.open_history.emit())
         controls_layout.addWidget(history_btn)
         
-        # Botón actualizar
-        self.refresh_btn = QPushButton("🔄 Actualizar")
-        self.refresh_btn.setFixedHeight(btn_height)
-        self.refresh_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {ColorPalette.SILVER_LAKE_BLUE};
-                color: #ffffff;
-                border: none;
-                padding: 6px 12px;
-                border-radius: 8px;
-                font-weight: bold;
-                font-size: {btn_font_size}px;
-                min-width: 100px;
-            }}
-            QPushButton:hover {{
-                background-color: {ColorPalette.YINMN_BLUE};
-            }}
-        """)
-        self.refresh_btn.clicked.connect(self.load_orders)
-        controls_layout.addWidget(self.refresh_btn)
-        
+
         header_layout.addWidget(controls_container)
         main_layout.addLayout(header_layout)
         
@@ -782,8 +762,7 @@ class KitchenOrdersView(QWidget):
         """Cargar y mostrar pedidos con filtros actualizados"""
         try:
             # Mostrar indicador de carga
-            self.refresh_btn.setText("⏳ Cargando...")
-            self.refresh_btn.setEnabled(False)
+
             
             # Recalcular número de columnas según el ancho actual de la ventana
             self.columns = self.calculate_columns()
@@ -902,11 +881,6 @@ class KitchenOrdersView(QWidget):
                 color: {ColorPalette.ERROR};
                 font-weight: bold;
             """)
-        
-        finally:
-            # Restaurar botón
-            self.refresh_btn.setText("🔄 Actualizar")
-            self.refresh_btn.setEnabled(True)
     
     def update_order_status(self, order_id, new_status):
         """Actualizar estado de un pedido con feedback visual discreto"""

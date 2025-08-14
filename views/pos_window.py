@@ -514,6 +514,7 @@ class POSWindow(QMainWindow):
         
         # Contenedor del título con gradiente de fondo (estilo unificado con kitchen_orders)
         title_container = QFrame()
+        title_container.setFixedHeight(45)
         title_container.setStyleSheet(f"""
             QFrame {{
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -521,7 +522,7 @@ class POSWindow(QMainWindow):
                            stop:0.5 {ColorPalette.with_alpha(ColorPalette.PLATINUM, 0.98)},
                            stop:1 {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.05)});
                 border-radius: 8px;
-                padding: 8px 12px;
+                padding: 4px 6px;
                 border: 1px solid {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.2)};
             }}
         """)
@@ -530,7 +531,7 @@ class POSWindow(QMainWindow):
         
         title = QLabel("🍽️ MENÚ")
         title.setAlignment(Qt.AlignLeft)
-        title_font_size = 22 if self.is_small_screen else 26
+        title_font_size = 18 if self.is_small_screen else 20
         title.setStyleSheet(f"""
             font-size: {title_font_size}px;
             font-weight: bold;
@@ -548,15 +549,17 @@ class POSWindow(QMainWindow):
         
         # Botón abrir cocina (estilo unificado)
         kitchen_btn = QPushButton("👨‍🍳 Cocina")
+        kitchen_btn.setFixedWidth(110)
         kitchen_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ColorPalette.WARNING};
                 color: #ffffff;
                 border: none;
-                padding: 12px 18px;
+                padding: 6px 9px;
                 border-radius: 8px;
                 font-weight: bold;
-                font-size: 14px;
+                font-size: 12px;
+                min-height: 25px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.WARNING, 0.8)};
@@ -567,15 +570,17 @@ class POSWindow(QMainWindow):
         
         # Botón historial de pagos (estilo unificado)
         history_btn = QPushButton("💰 Historial")
+        history_btn.setFixedWidth(110)
         history_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ColorPalette.YINMN_BLUE};
                 color: #ffffff;
                 border: none;
-                padding: 12px 18px;
+                padding: 6px 9px;
                 border-radius: 8px;
                 font-weight: bold;
-                font-size: 14px;
+                font-size: 12px;
+                min-height: 25px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.OXFORD_BLUE};
@@ -585,16 +590,17 @@ class POSWindow(QMainWindow):
         header_layout.addWidget(history_btn)
         
         # Botón cerrar sesión
-        logout_btn = QPushButton("🚪 Logout")
+        logout_btn = QPushButton("🚪 Cerrar Sesión")
         logout_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ColorPalette.ERROR};
                 color: #ffffff;
                 border: none;
-                padding: 12px 18px;
+                padding: 6px 9px;
                 border-radius: 8px;
                 font-weight: bold;
-                font-size: 14px;
+                font-size: 12px;
+                min-height: 25px;
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.ERROR, 0.8)};

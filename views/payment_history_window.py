@@ -20,7 +20,7 @@ class PaymentDetailDialog(QDialog):
         super().__init__(parent)
         self.order = order
         self.setWindowTitle(f"Detalle del Pago - Orden #{order.id}")
-        self.setFixedSize(400, 450)  # Tamaño optimizado para laptop
+        self.setFixedSize(500, 450)  # Tamaño optimizado para laptop
         self.setModal(True)
         self.init_ui()
     
@@ -42,12 +42,12 @@ class PaymentDetailDialog(QDialog):
         """)
         header_layout = QVBoxLayout(header_frame)
         header_layout.setContentsMargins(8, 8, 8, 8)
-        header_layout.setSpacing(2)
+        header_layout.setSpacing(5)
         
         # Título principal
         title = QLabel(f"🧾 ORDEN #{self.order.id}")
         title.setStyleSheet(f"""
-            font-size: 18px; 
+            font-size: 16px; 
             font-weight: bold; 
             color: {ColorPalette.PLATINUM};
         """)
@@ -94,7 +94,7 @@ class PaymentDetailDialog(QDialog):
         """)
         customer_layout = QVBoxLayout(customer_frame)
         customer_layout.setContentsMargins(8, 6, 8, 6)
-        customer_layout.setSpacing(2)
+        customer_layout.setSpacing(8)
         
         # Información en líneas horizontales compactas
         customer_info_layout = QHBoxLayout()
@@ -110,7 +110,7 @@ class PaymentDetailDialog(QDialog):
         customer_layout.addLayout(customer_info_layout)
         
         # Método de pago
-        payment_info = QLabel(f"💳 Pago: {(self.order.payment_method or 'Efectivo').capitalize()}")
+        payment_info = QLabel(f"💳 Pago: {(self.order.payment_method or 'donddoo').capitalize()}")
         payment_info.setStyleSheet(f"font-size: 14px; color: {ColorPalette.RICH_BLACK};")
         customer_layout.addWidget(payment_info)
         
@@ -179,12 +179,12 @@ class PaymentDetailDialog(QDialog):
             # Cantidad y precio
             qty_price = QLabel(f"{item.quantity}x")
             qty_price.setStyleSheet(f"font-size: 16px; color: {ColorPalette.SILVER_LAKE_BLUE}; font-weight: bold;")
-            qty_price.setFixedWidth(25)
+            qty_price.setFixedWidth(60)
             item_layout.addWidget(qty_price)
             
             price_label = QLabel(f"$ {item.unit_price:,.0f}")
             price_label.setStyleSheet(f"font-size: 16px; color: {ColorPalette.SILVER_LAKE_BLUE};")
-            price_label.setFixedWidth(40)
+            price_label.setFixedWidth(90)
             price_label.setAlignment(Qt.AlignRight)
             item_layout.addWidget(price_label)
             
@@ -195,7 +195,7 @@ class PaymentDetailDialog(QDialog):
                 color: {ColorPalette.SUCCESS}; 
                 font-size: 14px;
             """)
-            subtotal_label.setFixedWidth(50)
+            subtotal_label.setFixedWidth(90)
             subtotal_label.setAlignment(Qt.AlignRight)
             item_layout.addWidget(subtotal_label)
             
@@ -486,7 +486,7 @@ class PaymentHistoryView(QWidget):
         
         # Título simple y claro (mismo estilo que kitchen orders)
         title = QLabel("💰 HISTORIAL DE PAGOS")
-        title_font_size = 24 if self.is_small_screen else 28
+        title_font_size = 22 if self.is_small_screen else 26
         title.setStyleSheet(f"""
             font-size: {title_font_size}px;
             font-weight: bold;
@@ -518,7 +518,7 @@ class PaymentHistoryView(QWidget):
         btn_font_size = 12 if is_small_screen else 14
         
         # Botón volver a POS (estilo unificado)
-        pos_btn = QPushButton("🍽️ POS")
+        pos_btn = QPushButton("🍽️ Pos")
         pos_btn.setFixedHeight(btn_height)
         pos_btn.setStyleSheet(f"""
             QPushButton {{
@@ -539,7 +539,7 @@ class PaymentHistoryView(QWidget):
         controls_layout.addWidget(pos_btn)
         
         # Botón cocina (nuevo)
-        kitchen_btn = QPushButton("👨‍� Cocina")
+        kitchen_btn = QPushButton("👨‍🍳 Cocina")
         kitchen_btn.setFixedHeight(btn_height)
         kitchen_btn.setStyleSheet(f"""
             QPushButton {{
@@ -558,27 +558,6 @@ class PaymentHistoryView(QWidget):
         """)
         kitchen_btn.clicked.connect(lambda: self.open_kitchen.emit())
         controls_layout.addWidget(kitchen_btn)
-        
-        # Botón actualizar (estilo unificado)
-        refresh_btn = QPushButton("🔄 Actualizar")
-        refresh_btn.setFixedHeight(btn_height)
-        refresh_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {ColorPalette.SILVER_LAKE_BLUE};
-                color: white;
-                border: none;
-                padding: 6px;
-                border-radius: 8px;
-                font-weight: bold;
-                font-size: {btn_font_size}px;
-                min-width: 100px;
-            }}
-            QPushButton:hover {{
-                background-color: {ColorPalette.YINMN_BLUE};
-            }}
-        """)
-        refresh_btn.clicked.connect(self.refresh_data)
-        controls_layout.addWidget(refresh_btn)
         
         layout.addWidget(controls_container)
         
@@ -907,11 +886,11 @@ class PaymentHistoryView(QWidget):
         header.setSectionResizeMode(5, QHeaderView.Fixed)          # Acción - ancho fijo
         
         # Establecer anchos específicos calculados para evitar solapamiento
-        self.payment_table.setColumnWidth(0, 80)   # Fecha - espacio justo para dd/mm/yyyy
+        self.payment_table.setColumnWidth(0, 90)   # Fecha - espacio justo para dd/mm/yyyy
         self.payment_table.setColumnWidth(1, 55)   # Orden - espacio para #123
         # Cliente: se expande automáticamente (resto del espacio)
-        self.payment_table.setColumnWidth(3, 65)   # Total - espacio para $999.99
-        self.payment_table.setColumnWidth(4, 70)   # Método - espacio para "Efec." o "Tarj."
+        self.payment_table.setColumnWidth(3, 200)   # Total - espacio para $999.99
+        self.payment_table.setColumnWidth(4, 150)   # Método - espacio para "Efec." o "Tarj."
         self.payment_table.setColumnWidth(5, 45)   # Acción - botón pequeño
         
         # Configuración adicional de la tabla

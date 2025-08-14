@@ -27,7 +27,7 @@ class UserFormDialog(QDialog):
         """Configurar interfaz del diálogo"""
         title = "Editar Usuario" if self.is_edit else "Nuevo Usuario"
         self.setWindowTitle(title)
-        self.setFixedSize(450, 500)
+        self.setFixedSize(500, 550)
         self.setModal(True)
         
         # Layout principal
@@ -52,6 +52,10 @@ class UserFormDialog(QDialog):
             QDialog {{
                 background-color: {ColorPalette.PLATINUM};
             }}
+            QLabel {{
+                font-size: 12px;
+                color: {ColorPalette.RICH_BLACK};
+            }}  
         """)
     
     def create_header(self):
@@ -590,26 +594,6 @@ class UserManagementWidget(QWidget):
         buttons_layout = QHBoxLayout()
         buttons_layout.setSpacing(5)
         
-        # Botón refrescar
-        refresh_btn = QPushButton("🔄 Refrescar")
-        refresh_btn.setStyleSheet(f"""
-            QPushButton {{
-                font-size: 12px;
-                background-color: {ColorPalette.with_alpha(ColorPalette.SILVER_LAKE_BLUE, 0.1)};
-                color: {ColorPalette.SILVER_LAKE_BLUE};
-                border: 2px solid {ColorPalette.SILVER_LAKE_BLUE};
-                padding: 4px 10px;
-                border-radius: 8px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {ColorPalette.SILVER_LAKE_BLUE};
-                color: {ColorPalette.PLATINUM};
-            }}
-        """)
-        refresh_btn.clicked.connect(self.load_users)
-        buttons_layout.addWidget(refresh_btn)
-        
         # Botón nuevo usuario
         new_user_btn = QPushButton("➕ Nuevo Usuario")
         new_user_btn.setFixedHeight(40)
@@ -735,6 +719,7 @@ class UserManagementWidget(QWidget):
                 border-top-right-radius: 8px;
             }}
         """)
+        self.users_table.verticalHeader().setDefaultSectionSize(45)
         
         # Conectar selección
         self.users_table.itemSelectionChanged.connect(self.on_user_selected)
@@ -759,7 +744,7 @@ class UserManagementWidget(QWidget):
         layout.setSpacing(15)
         
         # Título
-        title_label = QLabel("ℹ️ Detalles del Usuario")
+        title_label = QLabel("Detalles del Usuario")
         title_label.setStyleSheet(f"""
             font-size: 16px;
             font-weight: bold;

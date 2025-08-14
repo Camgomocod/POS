@@ -578,7 +578,7 @@ class AdminWindow(QMainWindow):
     def create_top_bar(self):
         """Crear barra superior"""
         top_bar = QFrame()
-        top_bar.setFixedHeight(60)
+        top_bar.setFixedHeight(35)
         top_bar.setStyleSheet(f"""
             QFrame {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -589,53 +589,27 @@ class AdminWindow(QMainWindow):
         """)
         
         layout = QHBoxLayout(top_bar)
-        layout.setContentsMargins(20, 10, 20, 10)
-        
-        # Logo y título
-        title_layout = QHBoxLayout()
-        
-        logo_label = QLabel("🛡️")
-        logo_label.setStyleSheet("""
-            font-size: 24px;
-            color: white;
-        """)
-        title_layout.addWidget(logo_label)
-        
-        title_label = QLabel("Panel de Administración")
-        title_label.setStyleSheet(f"""
-            font-size: 18px;
-            font-weight: bold;
-            color: {ColorPalette.PLATINUM};
-            margin-left: 10px;
-        """)
-        title_layout.addWidget(title_label)
-        
-        layout.addLayout(title_layout)
+        layout.setContentsMargins(10, 5, 10, 5)
+
         layout.addStretch()
-        
+
         # Información del usuario y logout
         user_layout = QHBoxLayout()
-        user_layout.setSpacing(15)
-        
-        user_info = QLabel(f"👨‍💼 {self.user.full_name}")
-        user_info.setStyleSheet(f"""
-            color: {ColorPalette.PLATINUM};
-            font-size: 14px;
-            font-weight: 500;
-        """)
-        user_layout.addWidget(user_info)
+
         
         logout_btn = QPushButton("🚪 Cerrar Sesión")
-        logout_btn.setFixedHeight(35)
+        logout_btn.setFixedHeight(25)
         logout_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {ColorPalette.ERROR};
                 color: {ColorPalette.PLATINUM};
                 border: none;
-                padding: 6px 12px;
+                padding: 2px 10px;
                 border-radius: 8px;
                 font-weight: bold;
-                font-size: 13px;
+                font-size: 11px;
+                max-width: 150px;
+
             }}
             QPushButton:hover {{
                 background-color: {ColorPalette.with_alpha(ColorPalette.ERROR, 0.8)};

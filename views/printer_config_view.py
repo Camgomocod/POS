@@ -693,7 +693,7 @@ class PrinterConfigView(QWidget):
         self.printers_table.setCellWidget(row, 4, select_btn)
     
     def select_printer(self, printer_name):
-        """Seleccionar impresora"""
+        """Seleccionar impresora y guardar configuración"""
         reply = QMessageBox.question(
             self,
             "🖨️ Confirmar Selección",
@@ -702,38 +702,14 @@ class PrinterConfigView(QWidget):
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.Yes
         )
-        
         if reply == QMessageBox.Yes:
-            try:
-                # Guardar configuración
-                config_saved = self.printer.save_config(
-                    printer_name=printer_name,
-                    connection_type="usb",
-                    paper_width=self.paper_width_spinbox.value(),
-                    auto_cut=self.auto_cut_checkbox.isChecked()
-                )
-                
-                if config_saved:
-                    self.load_current_config()
-                    QMessageBox.information(
-                        self,
-                        "✅ Configuración Guardada",
-                        f"Impresora '{printer_name}' configurada correctamente.\n\n"
-                        f"Ahora puede imprimir recibos desde el sistema POS."
-                    )
-                else:
-                    QMessageBox.warning(
-                        self,
-                        "❌ Error",
-                        "No se pudo guardar la configuración de la impresora."
-                    )
-                    
-            except Exception as e:
-                QMessageBox.critical(
-                    self,
-                    "❌ Error",
-                    f"Error al configurar impresora:\n{str(e)}"
-                )
+            paper_width = self.paper_width_spinbox.value() if hasattr(self, 'paper_width_spinbox') else 42
+            result = self.printer.save_config(printer_name, "usb", paper_width)
+            if result:
+                QMessageBox.information(self, "✅ Impresora configurada", f"Impresora '{printer_name}' configurada correctamente.")
+                self.load_current_config()
+            else:
+                QMessageBox.critical(self, "❌ Error", "No se pudo guardar la configuración de la impresora.")
     
     def load_current_config(self):
         """Cargar configuración actual"""

@@ -15,6 +15,9 @@ class MenuController:
     
     def __init__(self):
         self.db = get_db()
+        
+    def refresh_session(self):
+        self.db.expire_all()
     
     # === GESTIÓN DE CATEGORÍAS ===
     
@@ -109,6 +112,7 @@ class MenuController:
             return False, f"Error al eliminar categoría: {str(e)}"
     
     # === GESTIÓN DE PRODUCTOS ===
+    
     
     def get_all_products(self, include_inactive=True, category_id=None):
         """Obtener todos los productos"""
@@ -251,6 +255,7 @@ class MenuController:
             return False, f"Error al eliminar producto: {str(e)}"
     
     # === DASHBOARD Y ESTADÍSTICAS ===
+    
     
     def get_best_selling_products(self, limit=10, days=30):
         """Obtener productos más vendidos"""

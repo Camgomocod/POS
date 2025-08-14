@@ -211,13 +211,13 @@ class CategoriesManagementView(QWidget):
         if self.is_small_screen:
             # Pantalla pequeña: columnas más compactas
             self.categories_table.setColumnWidth(0, 50)   # ID
-            self.categories_table.setColumnWidth(1, 110)  # Nombre
+            self.categories_table.setColumnWidth(1, 200)  # Nombre
             self.categories_table.setColumnWidth(3, 80)   # Productos
             self.categories_table.setColumnWidth(4, 80)   # Estado
             self.categories_table.setColumnWidth(5, 120)  # Acciones
             
             # Altura de filas más compacta
-            self.categories_table.verticalHeader().setDefaultSectionSize(32)
+            self.categories_table.verticalHeader().setDefaultSectionSize(50)
         else:
             # Pantalla grande: columnas normales
             self.categories_table.setColumnWidth(0, 60)   # ID
@@ -227,7 +227,7 @@ class CategoriesManagementView(QWidget):
             self.categories_table.setColumnWidth(5, 140)  # Acciones
             
             # Altura de filas normal
-            self.categories_table.verticalHeader().setDefaultSectionSize(38)
+            self.categories_table.verticalHeader().setDefaultSectionSize(55)
         
         # Política de tamaño para permitir expansión
         from PyQt5.QtWidgets import QSizePolicy
@@ -353,6 +353,8 @@ class CategoriesManagementView(QWidget):
                 color: {ColorPalette.WARNING};
                 font-weight: bold;
             """)
+            
+            self.menu_ctrl.refresh_session()
             
             # Obtener categorías
             categories = self.menu_ctrl.get_all_categories(include_inactive=True)
@@ -586,11 +588,12 @@ class CategoriesManagementView(QWidget):
     def edit_category(self, category):
         """Editar categoría existente"""
         from views.menu_management_window import CategoryFormDialog
-        
         dialog = CategoryFormDialog(self, category=category, is_edit=True)
         if dialog.exec_() == dialog.Accepted:
             self.load_categories()
             self.category_updated.emit()
+        
+        
     
     def toggle_category_status(self, category):
         """Cambiar estado activo/inactivo de la categoría"""

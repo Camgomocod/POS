@@ -154,22 +154,22 @@ class ProductsManagementView(QWidget):
         
         if self.is_small_screen:
             self.products_table.setColumnWidth(0, 50)   # ID
-            self.products_table.setColumnWidth(2, 110)  # Categoría
-            self.products_table.setColumnWidth(3, 85)   # Precio
-            self.products_table.setColumnWidth(4, 85)   # Costo
+            self.products_table.setColumnWidth(2, 160)  # Categoría
+            self.products_table.setColumnWidth(3, 90)   # Precio
+            self.products_table.setColumnWidth(4, 90)   # Costo
             self.products_table.setColumnWidth(5, 80)   # Stock
             self.products_table.setColumnWidth(6, 80)   # Estado
             self.products_table.setColumnWidth(7, 120)  # Acciones
-            self.products_table.verticalHeader().setDefaultSectionSize(32)
+            self.products_table.verticalHeader().setDefaultSectionSize(50)
         else:
             self.products_table.setColumnWidth(0, 60)   # ID
-            self.products_table.setColumnWidth(2, 130)  # Categoría
+            self.products_table.setColumnWidth(2, 170)  # Categoría
             self.products_table.setColumnWidth(3, 100)  # Precio
-            self.products_table.setColumnWidth(4, 100)  # Costo
+            self.products_table.setColumnWidth(4, 120)  # Costo
             self.products_table.setColumnWidth(5, 90)   # Stock
             self.products_table.setColumnWidth(6, 90)   # Estado
             self.products_table.setColumnWidth(7, 140)  # Acciones
-            self.products_table.verticalHeader().setDefaultSectionSize(38)
+            self.products_table.verticalHeader().setDefaultSectionSize(55)
         
         # Política de tamaño para permitir expansión
         self.products_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -179,6 +179,7 @@ class ProductsManagementView(QWidget):
         """Carga los productos en la tabla."""
         try:
             products = self.menu_ctrl.get_all_products(include_inactive=True)
+            self.menu_ctrl.refresh_session()  # Forzar refresco de datos
             self.products_table.setRowCount(0)
             for product in products:
                 self.add_product_row(product)
