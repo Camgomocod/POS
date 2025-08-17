@@ -24,7 +24,7 @@ class LoginWindow(QMainWindow):
         """Configurar interfaz de usuario simplificada"""
         # Configuración de ventana - tamaño compacto
         self.setWindowTitle("Iniciar Sesión")
-        self.setFixedSize(440, 450)  # Ventana compacta
+        self.setFixedSize(440, 420)  # Ventana compacta
         self.setWindowFlags(Qt.Window | Qt.WindowCloseButtonHint)
         
         # Centrar ventana
@@ -36,8 +36,8 @@ class LoginWindow(QMainWindow):
         
         # Layout principal compacto
         main_layout = QVBoxLayout(main_widget)
-        main_layout.setContentsMargins(20, 20, 30, 20)  # Márgenes reducidos
-        main_layout.setSpacing(10)  # Espaciado reducido
+        main_layout.setContentsMargins(20, 20, 20, 20)  # Márgenes reducidos
+        main_layout.setSpacing(12)  # Espaciado reducido
         
         # Título principal compacto
         title_label = QLabel("Asados al Karbon")
@@ -49,6 +49,7 @@ class LoginWindow(QMainWindow):
                 color: #415a77;
                 margin-bottom: 5px;
                 padding: 5px;
+                margin-bottom: 10px;
             }
         """)
         main_layout.addWidget(title_label)
@@ -74,7 +75,7 @@ class LoginWindow(QMainWindow):
         self.username_input.setText("admin")
         self.username_input.setStyleSheet("""
             QLineEdit {
-                padding: 5px 10px;
+                padding: 5px 5px;
                 border: 2px solid #778da9;
                 border-radius: 8px;
                 font-size: 14px;
@@ -110,7 +111,7 @@ class LoginWindow(QMainWindow):
         self.password_input.setText("admin123")
         self.password_input.setStyleSheet("""
             QLineEdit {
-                padding: 5px 10px;
+                padding: 5px 5px;
                 border: 2px solid #778da9;
                 border-radius: 8px;
                 font-size: 14px;
@@ -128,35 +129,12 @@ class LoginWindow(QMainWindow):
         """)
         form_layout.addWidget(self.password_input)
         
-        # Checkbox compacto
-        self.remember_checkbox = QCheckBox("🔐 Recordar usuario")
-        self.remember_checkbox.setStyleSheet("""
-            QCheckBox {
-                color: #0d1b2a;
-                font-size: 12px;
-                margin-top: 8px;
-                padding: 3px;
-            }
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-                border-radius: 3px;
-                border: 2px solid #778da9;
-                background-color: white;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #415a77;
-                border-color: #415a77;
-            }
-        """)
-        form_layout.addWidget(self.remember_checkbox)
-        
         main_layout.addLayout(form_layout)
         
         # Botones compactos
         buttons_layout = QVBoxLayout()
-        buttons_layout.setSpacing(12)  # Espaciado reducido
-        
+        buttons_layout.setContentsMargins(0, 20, 0, 20)  # Espaciado reducido
+
         # Botón iniciar sesión compacto
         self.login_btn = QPushButton("🚀 Iniciar Sesión")
         self.login_btn.clicked.connect(self.handle_login)

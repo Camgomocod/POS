@@ -48,7 +48,7 @@ class ThermalPrinter:
     FONT_SMALL = ESC + b'M\x01'          # Fuente pequeña
     
     # Configuración específica para papel de 57mm
-    PAPER_WIDTH_57MM = 42  # Caracteres para papel de 57mm
+    PAPER_WIDTH_57MM = 32  # Caracteres para papel de 57mm
     PRINT_WIDTH_48MM = 38  # Área de impresión de 48mm
     
     def __init__(self, printer_name: str = None, connection_type: str = "usb"):
@@ -230,13 +230,14 @@ class ThermalPrinter:
         data.extend(self.ALIGN_CENTER)
         data.extend(self.FONT_DOUBLE_HEIGHT)
         data.extend(self.BOLD_ON)
-        data.extend("FAST FOOD\n".encode('utf-8'))
-        data.extend("RESTAURANT\n".encode('utf-8'))
+        data.extend("ASADOS AL\n".encode('utf-8'))
+        data.extend("KARBON\n".encode('utf-8'))
         data.extend(self.BOLD_OFF)
         data.extend(self.FONT_NORMAL)
         
-        data.extend("Calle Principal #123\n".encode('utf-8'))
-        data.extend("Tel: (123) 456-7890\n".encode('utf-8'))
+        data.extend("Cra 4 N#12-76\n".encode('utf-8'))
+        data.extend("Tel: 3177509439\n".encode('utf-8'))
+        data.extend("Tel: 3150000191\n".encode('utf-8'))
         data.extend(self._line_separator_57mm())
         
         # Información de la orden
@@ -257,7 +258,7 @@ class ThermalPrinter:
         
         data.extend(self._line_separator_57mm(thin=True))
         
-        # Items - Formato optimizado para 42 caracteres
+        # Items - Formato optimizado para 32 caracteres
         data.extend(self.BOLD_ON)
         data.extend("PRODUCTOS\n".encode('utf-8'))
         data.extend(self.BOLD_OFF)
@@ -279,9 +280,9 @@ class ThermalPrinter:
             # Cantidad x precio = subtotal
             qty_price = f"{quantity} x ${float(product.price):,.0f}"
             subtotal_text = f"${subtotal:,.0f}"
-            
-            # Calcular espacios para alineación (máximo 42 caracteres)
-            max_width = 42
+
+            # Calcular espacios para alineación (máximo 32 caracteres)
+            max_width = 32
             spacing_needed = max_width - len(qty_price) - len(subtotal_text)
             spacing = " " * max(1, spacing_needed)
             
@@ -326,7 +327,7 @@ class ThermalPrinter:
     def _line_separator_57mm(self, thin: bool = False) -> bytes:
         """Generar línea separadora optimizada para 57mm"""
         char = "-" if thin else "="
-        line = char * 42 + "\n"  # 42 caracteres para papel de 57mm
+        line = char * 32 + "\n"  # 32 caracteres para papel de 57mm
         return line.encode('utf-8')
     
     def _send_to_printer(self, data: bytes) -> bool:
